@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import '../mock_data.dart';
 
 class KonfirmasiBidanScreen extends StatelessWidget {
   final String layanan;
+  final String bidan;
   final String jam;
+  final String tanggal;
+  final bool isHomeCare;
 
   const KonfirmasiBidanScreen({
     super.key,
     required this.layanan,
+    required this.bidan,
     required this.jam,
+    required this.tanggal,
+    required this.isHomeCare,
   });
 
   String _endTime(String jam) {
@@ -76,10 +83,10 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Mohon tunggu sebentar. Bidan\nsedang meninjau jadwal kunjungan\nAnda.',
+                  Text(
+                    'Mohon tunggu sebentar. $bidan\nsedang meninjau jadwal kunjungan\nAnda.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Colors.black45, height: 1.5),
+                    style: const TextStyle(fontSize: 13, color: Colors.black45, height: 1.5),
                   ),
                   const SizedBox(height: 20),
 
@@ -122,7 +129,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Kunjungan Rumah • 60 Menit',
+                              isHomeCare ? 'Kunjungan Rumah • 60 Menit' : 'Datang ke Klinik • 60 Menit',
                               style: const TextStyle(fontSize: 11, color: Colors.black45),
                             ),
                           ],
@@ -162,13 +169,13 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                   _buildRincianRow(
                     icon: Icons.calendar_month_outlined,
                     label: 'WAKTU KUNJUNGAN',
-                    value: 'Senin, 24 Mei 2026\n$jam - ${_endTime(jam)} WIB',
+                    value: '$tanggal\n$jam - ${_endTime(jam)} WIB',
                   ),
                   const Divider(height: 20, color: Color(0xFFF5F5F5)),
                   _buildRincianRow(
                     icon: Icons.location_on_outlined,
                     label: 'LOKASI ANDA',
-                    value: 'Jl. Buah Batu, Malang,\nJawa Timur',
+                    value: MockDatabase.currentUser?.alamat ?? 'Alamat belum diatur',
                   ),
                   const Divider(height: 20, color: Color(0xFFF5F5F5)),
                   _buildRincianRow(

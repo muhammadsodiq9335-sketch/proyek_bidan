@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
+import '../mock_data.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -167,6 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: "Masukkan email atau no. hp Anda",
               hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
@@ -185,6 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
           TextField(
             controller: _passwordController,
             obscureText: _obscurePassword,
+            keyboardType: TextInputType.visiblePassword,
             decoration: InputDecoration(
               hintText: "Masukkan kata sandi Anda",
               hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
@@ -239,8 +242,11 @@ class _LoginScreenState extends State<LoginScreen> {
           // Login Button
           ElevatedButton(
             onPressed: () {
-              // Validasi login
-              if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+              final email = _emailController.text.trim();
+              final password = _passwordController.text.trim();
+
+              // Validasi field kosong
+              if (email.isEmpty || password.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Email/No. HP dan Kata Sandi harus diisi!"),
@@ -250,7 +256,51 @@ class _LoginScreenState extends State<LoginScreen> {
                 return;
               }
 
-              // Jika validasi sukses (Untuk sementara dianggap login berhasil jika form diisi)
+              // Validasi role mode
+              if (isPatientMode) {
+                // Cek apakan email/hp sudah terdaftar di MockDatabase
+                if (!MockDatabase.registeredUsers.containsKey(email)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Akun belum terdaftar. Silakan daftar terlebih dahulu!"),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                // Cek kecocokan password
+                if (MockDatabase.registeredUsers[email] != password) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Kata Sandi salah!"),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                // Login sukses, set pengguna aktif
+                MockDatabase.currentUser = MockDatabase.userProfiles[email] ?? UserProfile(
+                  email: email, 
+                  nama: "Pengguna", 
+                  tglLahir: "-", 
+                  alamat: "-"
+                );
+              } else {
+                // Admin mode: hardcoded untuk demo
+                if (email != "admin" || password != "admin") {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Kredensial Admin tidak valid! (Gunakan admin / admin)"),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+              }
+
+              // Jika lolos semua validasi
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Login berhasil!"),
