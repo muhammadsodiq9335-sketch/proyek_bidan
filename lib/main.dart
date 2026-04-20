@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         // Gunakan font default jika google_fonts gagal, tapi kita atur styling agar modern
         fontFamily: 'Segoe UI',
       ),
-      home: const AdminDashboardScreen(),
+      home: const LoginScreen(),
     );
   }
 }

@@ -110,6 +110,14 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                     'timestamp': DateTime.now(),
                   });
 
+                  // Tambah notifikasi otomatis
+                  MockDatabase.notifications.insert(0, {
+                    'title': 'Reservasi Terkirim',
+                    'message': 'Reservasi $layanan Anda sedang menunggu persetujuan admin.',
+                    'time': 'Baru saja',
+                    'icon': 0xe0e5, // Icons.access_time
+                  });
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(

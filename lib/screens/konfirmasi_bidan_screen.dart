@@ -70,12 +70,12 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                       color: const Color(0xFFE0F2F1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_circle_outline,
+                    child: const Icon(Icons.access_time,
                         color: Color(0xFF00897B), size: 44),
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Permintaan Terkirim',
+                    'Menunggu Persetujuan',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -84,9 +84,22 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Mohon tunggu sebentar. $bidan\nsedang meninjau jadwal kunjungan\nAnda.',
+                    'Permintaan Anda telah kami terima.\nMohon tunggu admin/bidan menyetujui\njadwal Anda.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 13, color: Colors.black45, height: 1.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: const Text(
+                      'STATUS: MENUNGGU PERSETUJUAN',
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFFB48A00)),
+                    ),
                   ),
                   const SizedBox(height: 20),
 
