@@ -17,7 +17,7 @@ class AdminDashboardScreen extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _reservationCard(),
                     const SizedBox(height: 20),
@@ -61,6 +61,7 @@ class AdminDashboardScreen extends StatelessWidget {
   // ================= RESERVATION =================
   Widget _reservationCard() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFE7999F),

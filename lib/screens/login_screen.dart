@@ -289,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               } else {
                 // Admin mode: hardcoded untuk demo
-                if (email != "admin" || password != "admin") {
+                if (email != "admin@gmail.com" || password != "admin") {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Kredensial Admin tidak valid! (Gunakan admin / admin)"),
@@ -325,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
               });
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPatientMode ? const Color(0xFFAED581) : const Color(0xFFB0BEC5), // Different color for admin
+              backgroundColor: const Color(0xFFAED581),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
