@@ -99,6 +99,17 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // Simpan ke riwayat reservasi
+                  MockDatabase.userReservations.insert(0, {
+                    'layanan': layanan,
+                    'bidan': bidan,
+                    'jam': jam,
+                    'tanggal': tanggal,
+                    'isHomeCare': isHomeCare,
+                    'status': 'Menunggu Konfirmasi',
+                    'timestamp': DateTime.now(),
+                  });
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(

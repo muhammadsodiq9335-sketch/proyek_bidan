@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'layanan_screen.dart';
 import 'login_screen.dart';
+import 'riwayat_reservasi_screen.dart';
+import 'notifikasi_screen.dart';
+import 'pusat_bantuan_screen.dart';
+import 'pengaturan_akun_screen.dart';
 import '../mock_data.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -749,13 +753,29 @@ class _ProfilPage extends StatelessWidget {
                 children: [
                   _buildProfileMenu(Icons.favorite_border, "Data Kesehatan Kehamilan", isComingSoon: true),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildProfileMenu(Icons.history, "Riwayat Reservasi"),
+                  _buildProfileMenu(
+                    Icons.history,
+                    "Riwayat Reservasi",
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RiwayatReservasiScreen())),
+                  ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildProfileMenu(Icons.notifications_none, "Notifikasi"),
+                  _buildProfileMenu(
+                    Icons.notifications_none,
+                    "Notifikasi",
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
+                  ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildProfileMenu(Icons.help_outline, "Pusat Bantuan"),
+                  _buildProfileMenu(
+                    Icons.help_outline,
+                    "Pusat Bantuan",
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PusatBantuanScreen())),
+                  ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildProfileMenu(Icons.settings_outlined, "Pengaturan Akun"),
+                  _buildProfileMenu(
+                    Icons.settings_outlined,
+                    "Pengaturan Akun",
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaturanAkunScreen())),
+                  ),
                 ],
               ),
             ),
@@ -795,7 +815,7 @@ class _ProfilPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileMenu(IconData icon, String title, {bool isComingSoon = false}) {
+  Widget _buildProfileMenu(IconData icon, String title, {bool isComingSoon = false, VoidCallback? onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -832,7 +852,7 @@ class _ProfilPage extends StatelessWidget {
         ],
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-      onTap: isComingSoon ? null : () {},
+      onTap: isComingSoon ? null : (onTap ?? () {}),
     );
   }
 }

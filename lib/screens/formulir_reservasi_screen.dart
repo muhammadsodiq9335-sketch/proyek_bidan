@@ -110,6 +110,26 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                const Text('Pilih Bidan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedBidan,
+                      hint: const Text('Pilih bidan yang bertugas', style: TextStyle(fontSize: 13, color: Colors.black38)),
+                      isExpanded: true,
+                      items: bidanList.map((b) {
+                        return DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13)));
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedBidan = val),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text('Pilih Tanggal Kunjungan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),

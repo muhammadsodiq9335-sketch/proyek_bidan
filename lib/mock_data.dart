@@ -21,4 +21,17 @@ class MockDatabase {
 
   // User yang sedang login
   static UserProfile? currentUser;
+
+  // Riwayat Reservasi (Setiap entry: {layanan, bidan, tanggal, jam, isHomeCare, status})
+  static final List<Map<String, dynamic>> userReservations = [];
+
+  // Notifikasi (Setiap entry: {title, message, time, icon})
+  static final List<Map<String, dynamic>> notifications = [
+    {
+      'title': 'Pendaftaran Berhasil',
+      'message': 'Selamat datang di aplikasi MORA! Akun Anda telah berhasil dibuat.',
+      'time': 'Baru saja',
+      'icon': 0xe156, // Icons.check_circle
+    },
+  ];
 }
