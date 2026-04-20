@@ -279,6 +279,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                   return;
                 }
+
+                // Login sukses, set pengguna aktif
+                MockDatabase.currentUser = MockDatabase.userProfiles[email] ?? UserProfile(
+                  email: email, 
+                  nama: "Pengguna", 
+                  tglLahir: "-", 
+                  alamat: "-"
+                );
               } else {
                 // Admin mode: hardcoded untuk demo
                 if (email != "admin" || password != "admin") {

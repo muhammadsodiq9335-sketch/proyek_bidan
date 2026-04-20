@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'konfirmasi_reservasi_screen.dart';
+import '../mock_data.dart';
 
 class FormulirReservasiScreen extends StatefulWidget {
   final String layanan;
-  const FormulirReservasiScreen({super.key, required this.layanan});
+  final bool isHomeCare;
+  const FormulirReservasiScreen({
+    super.key, 
+    required this.layanan, 
+    this.isHomeCare = false
+  });
 
   @override
   State<FormulirReservasiScreen> createState() =>
@@ -11,14 +17,11 @@ class FormulirReservasiScreen extends StatefulWidget {
 }
 
 class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
-  final _namaController = TextEditingController();
-  final _nikController = TextEditingController();
-  final _tglLahirController = TextEditingController();
-  final _teleponController = TextEditingController();
-  final _alamatController = TextEditingController();
   String? _selectedLayanan;
-  String? _selectedTanggal;
+  String? _selectedBidan;
   String? _selectedJam;
+  DateTime? _selectedDate;
+  final _dateController = TextEditingController();
 
   final List<String> jamList = [
     '08:00', '09:00', '10:00', '11:00', '13:00', '14:00'
@@ -29,6 +32,12 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
     'Imunisasi Bayi',
     'Perawatan Nifas',
     'Perawatan Bayi',
+  ];
+
+  final List<String> bidanList = [
+    'Bidan Salsah Amalia',
+    'Bidan Siti Khadijah',
+    'Bidan Rani Puspita',
   ];
 
   @override
@@ -62,51 +71,20 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // DATA DIRI PASIEN
-            _buildSection(
-              title: 'DATA DIRI PASIEN',
-              children: [
-                _buildTextField('Nama Lengkap', 'Masukkan nama sesuai KTP', _namaController),
-                const SizedBox(height: 12),
-                _buildTextField('NIK (Nomor Induk Kependudukan)', '16 digit nomor identitas', _nikController, keyboardType: TextInputType.number),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: _buildTextField('Tanggal Lahir (TTL)', 'mm/dd/yyyy', _tglLahirController),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Usia', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F8E9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              'Terhitung\notomatis',
-                              style: TextStyle(fontSize: 11, color: Colors.black45),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildTextField('No. Telepon/WhatsApp', '', _teleponController, keyboardType: TextInputType.phone),
-                const SizedBox(height: 12),
-                _buildTextField('Alamat Lengkap', 'Jl. Mawar No. 123...', _alamatController, maxLines: 2),
-              ],
-            ),
-            const SizedBox(height: 16),
+            // DATA DIRI PASIEN (Read Only)
+            if (MockDatabase.currentUser != null)
+              _buildSection(
+                title: 'PROFIL PASIEN',
+                children: [
+                  _buildReadOnlyRow(Icons.person_outline, 'Nama', MockDatabase.currentUser!.nama),
+                  const SizedBox(height: 10),
+                  _buildReadOnlyRow(Icons.cake_outlined, 'Tanggal Lahir', MockDatabase.currentUser!.tglLahir),
+                  const SizedBox(height: 10),
+                  _buildReadOnlyRow(Icons.location_on_outlined, 'Alamat', MockDatabase.currentUser!.alamat),
+                ],
+              ),
+            if (MockDatabase.currentUser != null)
+              const SizedBox(height: 16),
 
             // LAYANAN & JADWAL
             _buildSection(
@@ -132,8 +110,42 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     ),
                   ),
                 ),
+                ),
                 const SizedBox(height: 12),
-                _buildTextField('Pilih Tanggal', 'mm/dd/yyyy', TextEditingController()),
+                const Text('Pilih Tanggal Kunjungan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 1)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDate = picked;
+                        _dateController.text = "${picked.day} ${_getMonthName(picked.month)} ${picked.year}";
+                      });
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextField(
+                      controller: _dateController,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Pilih tanggal',
+                        hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
+                        prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF00897B)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 const Text('Pilih Jam Kunjungan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
                 const SizedBox(height: 8),
@@ -196,16 +208,24 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  if (_selectedBidan == null || _selectedDate == null || _selectedJam == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mohon lengkapi semua pilihan (Bidan, Tanggal, dan Jam)'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => KonfirmasiReservasiScreen(
-                        nama: _namaController.text.isEmpty ? 'Aminah' : _namaController.text,
-                        nik: _nikController.text.isEmpty ? '3271234567890001' : _nikController.text,
-                        tglLahir: _tglLahirController.text.isEmpty ? 'Malang, 12 Mei 1995' : _tglLahirController.text,
-                        alamat: _alamatController.text.isEmpty ? 'Jl. Simpang Ijen Blok A No.12, Malang' : _alamatController.text,
-                        layanan: _selectedLayanan ?? 'Perawatan Bayi',
-                        jam: _selectedJam ?? '09:00',
+                        layanan: _selectedLayanan ?? widget.layanan,
+                        bidan: _selectedBidan!,
+                        jam: _selectedJam!,
+                        tanggal: _dateController.text,
+                        isHomeCare: widget.isHomeCare,
                       ),
                     ),
                   );
@@ -301,5 +321,33 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildReadOnlyRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF00897B)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 11, color: Colors.black45)),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B2E35))),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return months[month - 1];
   }
 }

@@ -143,8 +143,8 @@ class _LayananScreenState extends State<LayananScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildServiceList(klinikServices, 'Pilih Layanan Klinik'),
-                _buildServiceList(homeCareServices, 'Pilih Layanan Home Care'),
+                _buildServiceList(klinikServices, 'Pilih Layanan Klinik', isHomeCare: false),
+                _buildServiceList(homeCareServices, 'Pilih Layanan Home Care', isHomeCare: true),
               ],
             ),
           ),
@@ -190,7 +190,7 @@ class _LayananScreenState extends State<LayananScreen>
     );
   }
 
-  Widget _buildServiceList(List<Map<String, dynamic>> services, String title) {
+  Widget _buildServiceList(List<Map<String, dynamic>> services, String title, {required bool isHomeCare}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -206,7 +206,7 @@ class _LayananScreenState extends State<LayananScreen>
             ),
           ),
           const SizedBox(height: 12),
-          ...services.map((s) => _buildServiceCard(s)).toList(),
+          ...services.map((s) => _buildServiceCard(s, isHomeCare: isHomeCare)).toList(),
           const SizedBox(height: 16),
           _buildPromoCard(),
           const SizedBox(height: 16),
@@ -215,7 +215,7 @@ class _LayananScreenState extends State<LayananScreen>
     );
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> service) {
+  Widget _buildServiceCard(Map<String, dynamic> service, {required bool isHomeCare}) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -223,6 +223,7 @@ class _LayananScreenState extends State<LayananScreen>
           MaterialPageRoute(
             builder: (context) => FormulirReservasiScreen(
               layanan: service['title'],
+              isHomeCare: isHomeCare,
             ),
           ),
         );

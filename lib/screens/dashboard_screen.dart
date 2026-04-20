@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'layanan_screen.dart';
+import 'login_screen.dart';
+import '../mock_data.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -182,9 +184,11 @@ class _BerandaPage extends StatelessWidget {
               height: 1.2,
             ),
           ),
-          const Text(
-            "Mama.",
-            style: TextStyle(
+          Text(
+            MockDatabase.currentUser != null 
+                ? "${MockDatabase.currentUser!.nama.split(' ')[0]}." 
+                : "Mama.",
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: Color(0xFF00897B),
@@ -235,6 +239,11 @@ class _BerandaPage extends StatelessWidget {
             title: "Datang Klinik Langsung",
             subtitle: "Visit our modern facility for scheduled check-ups and care.",
             tab: 0,
+          ),
+          const SizedBox(height: 12),
+          _buildComingSoonCard(
+            icon: Icons.book_outlined,
+            title: "Jurnal Bunda",
           ),
           const SizedBox(height: 20),
         ],
@@ -325,6 +334,46 @@ class _BerandaPage extends StatelessWidget {
               ),
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComingSoonCard({
+    required IconData icon,
+    required String title,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.black26, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.black26,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              "PENGEMBANGAN",
+              style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.black38),
+            ),
+          ),
         ],
       ),
     );
@@ -671,18 +720,18 @@ class _ProfilPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Mama",
-              style: TextStyle(
+            Text(
+              MockDatabase.currentUser?.nama ?? "Mama",
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1B2E35),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              "+62 812-3456-7890",
-              style: TextStyle(fontSize: 14, color: Colors.black54),
+            Text(
+              MockDatabase.currentUser?.email ?? "+62 812-3456-7890",
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
             ),
             const SizedBox(height: 30),
 
@@ -698,7 +747,7 @@ class _ProfilPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildProfileMenu(Icons.favorite_border, "Data Kesehatan Kehamilan"),
+                  _buildProfileMenu(Icons.favorite_border, "Data Kesehatan Kehamilan", isComingSoon: true),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(Icons.history, "Riwayat Reservasi"),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -719,34 +768,12 @@ class _ProfilPage extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Kembali ke layar login
-                    Navigator.of(context, rootNavigator: true).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          // Untuk menghindari circular import rumit, kembali ke root '/'
-                          // (Kondisional: Jika sudah didefinisikan di MaterialApp routes)
-                          return Scaffold(
-                            backgroundColor: const Color(0xFFFCE4EC),
-                            body: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const CircularProgressIndicator(color: Color(0xFF00897B)),
-                                  const SizedBox(height: 16),
-                                  const Text("Logout..."),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    // Benar-benar logout dan kembali ke login
+                    MockDatabase.currentUser = null;
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
                     );
-                    
-                    // Supaya langsung ter-restart, dalam aplikasi asli sebaiknya gunakan
-                    // Navigator.pushAndRemoveUntil dengan LoginScreen()
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      Navigator.of(context, rootNavigator: true).pop(); // Exit dummy shield if possible
-                    });
                   },
                   icon: const Icon(Icons.logout, color: Colors.redAccent),
                   label: const Text(
@@ -768,7 +795,7 @@ class _ProfilPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileMenu(IconData icon, String title) {
+  Widget _buildProfileMenu(IconData icon, String title, {bool isComingSoon = false}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -778,16 +805,34 @@ class _ProfilPage extends StatelessWidget {
         ),
         child: Icon(icon, color: const Color(0xFF00897B), size: 20),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1B2E35),
-        ),
+      title: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isComingSoon ? Colors.black26 : const Color(0xFF1B2E35),
+            ),
+          ),
+          if (isComingSoon) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                "COMING SOON",
+                style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.amber),
+              ),
+            ),
+          ],
+        ],
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-      onTap: () {},
+      onTap: isComingSoon ? null : () {},
     );
   }
 }

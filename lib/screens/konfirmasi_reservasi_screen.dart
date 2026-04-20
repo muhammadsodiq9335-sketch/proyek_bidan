@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
+import '../mock_data.dart';
 
 class KonfirmasiReservasiScreen extends StatelessWidget {
-  final String nama;
-  final String nik;
-  final String tglLahir;
-  final String alamat;
   final String layanan;
+  final String bidan;
   final String jam;
+  final String tanggal;
+  final bool isHomeCare;
 
   const KonfirmasiReservasiScreen({
     super.key,
-    required this.nama,
-    required this.nik,
-    required this.tglLahir,
-    required this.alamat,
     required this.layanan,
+    required this.bidan,
     required this.jam,
+    required this.tanggal,
+    required this.isHomeCare,
   });
 
   @override
@@ -48,7 +47,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             const SizedBox(height: 8),
             // Header title
             const Text(
-              'Ringkasan Data Pasien',
+              'Ringkasan Reservasi',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -57,14 +56,16 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             const Text(
-              'Mohon periksa kembali data Anda sebelum mengirim',
+              'Mohon periksa kembali pilihan Anda sebelum mengirim',
               style: TextStyle(fontSize: 12, color: Colors.black45),
             ),
             const SizedBox(height: 16),
 
-            // Data Pasien Card
-            _buildDataCard(context),
-            const SizedBox(height: 16),
+            // Detail Profil Card (Read Only)
+            if (MockDatabase.currentUser != null) ...[
+              _buildProfilCard(),
+              const SizedBox(height: 16),
+            ],
 
             // Detail Layanan Card
             _buildLayananCard(),
@@ -103,7 +104,10 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => KonfirmasiBidanScreen(
                         layanan: layanan,
+                        bidan: bidan,
                         jam: jam,
+                        tanggal: tanggal,
+                        isHomeCare: isHomeCare,
                       ),
                     ),
                   );
@@ -128,9 +132,11 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDataCard(BuildContext context) {
+
+
+  Widget _buildProfilCard() {
     return Container(
-      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -139,51 +145,22 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        children: [
-          _buildDataRow('NAMA LENGKAP', nama, isFirst: true),
-          _buildDataRow('NIK', nik),
-          _buildDataRow('TEMPAT, TGL LAHIR', tglLahir),
-          _buildDataRow('ALAMAT', alamat, isLast: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDataRow(String label, String value,
-      {bool isFirst = false, bool isLast = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: isLast
-              ? BorderSide.none
-              : const BorderSide(color: Color(0xFFF5F5F5), width: 1),
-        ),
-      ),
-      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.black45,
-                letterSpacing: 0.3,
-              ),
+          const Text(
+            'Profil Pasien',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1B2E35),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1B2E35),
-              ),
-            ),
-          ),
+          const SizedBox(height: 14),
+          _buildDetailRow(Icons.person_outline, 'Nama Lengkap', MockDatabase.currentUser!.nama),
+          const Divider(height: 16, color: Color(0xFFF5F5F5)),
+          _buildDetailRow(Icons.cake_outlined, 'Tanggal Lahir', MockDatabase.currentUser!.tglLahir),
+          const Divider(height: 16, color: Color(0xFFF5F5F5)),
+          _buildDetailRow(Icons.location_on_outlined, 'Alamat', MockDatabase.currentUser!.alamat),
         ],
       ),
     );
@@ -211,10 +188,13 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          _buildDetailRow(Icons.calendar_month_outlined, 'Layanan Dipilih', layanan),
+          _buildDetailRow(Icons.medical_services_outlined, 'Layanan Dipilih', 
+              "$layanan\n(${isHomeCare ? 'Kunjungan Rumah' : 'Klinik'})"),
+          const Divider(height: 16, color: Color(0xFFF5F5F5)),
+          _buildDetailRow(Icons.person_outline, 'Bidan', bidan),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
           _buildDetailRow(Icons.access_time_outlined, 'Jadwal Kunjungan',
-              'Senin, 24 Mei 2026\nPukul $jam - ${_endTime(jam)} WIB'),
+              '$tanggal\nPukul $jam - ${_endTime(jam)} WIB'),
         ],
       ),
     );

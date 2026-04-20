@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../mock_data.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -11,6 +12,9 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _tglLahirController = TextEditingController();
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _alamatController = TextEditingController();
 
   bool isChecked = false;
   bool isPasswordVisible = false;
@@ -20,7 +24,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _tglLahirController.dispose();
+    _namaController.dispose();
+    _alamatController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _tglLahirController.text = "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
+      });
+    }
   }
 
   @override
@@ -58,11 +79,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLabel("Nama Lengkap"),
-              _buildTextField(hint: "Masukkan nama lengkap sesuai KTP", icon: Icons.person_outline, keyboardType: TextInputType.name),
+              _buildTextField(hint: "Masukkan nama lengkap sesuai KTP", icon: Icons.person_outline, keyboardType: TextInputType.name, controller: _namaController),
               const SizedBox(height: 16),
               
               _buildLabel("Tanggal Lahir"),
-              _buildTextField(hint: "mm/dd/yyyy", icon: Icons.calendar_today_outlined, keyboardType: TextInputType.datetime),
+              _buildTextField(
+                hint: "mm/dd/yyyy", 
+                icon: Icons.calendar_today_outlined, 
+                keyboardType: TextInputType.number,
+                controller: _tglLahirController,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9/]'))],
+                onIconTap: () => _selectDate(context),
+              ),
               const SizedBox(height: 4),
               const Text(
                 "* Usia akan dihitung otomatis",
@@ -71,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 16),
               
               _buildLabel("Alamat Lengkap"),
-              _buildTextField(hint: "Masukkan alamat domisili", icon: null, maxLines: 3, keyboardType: TextInputType.streetAddress),
+              _buildTextField(hint: "Masukkan alamat domisili", icon: null, maxLines: 3, keyboardType: TextInputType.streetAddress, controller: _alamatController),
               const SizedBox(height: 16),
               
               _buildLabel("Email atau No. HP"),
@@ -182,6 +210,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Simpan ke mock database
                     MockDatabase.registeredUsers[email] = password;
+                    MockDatabase.userProfiles[email] = UserProfile(
+                      email: email,
+                      nama: _namaController.text.trim().isNotEmpty ? _namaController.text.trim() : "Pengguna Baru",
+                      tglLahir: _tglLahirController.text.trim(),
+                      alamat: _alamatController.text.trim(),
+                    );
 
                     // Pendaftaran sukses (mock)
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -261,16 +295,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     bool isObscure = false,
     VoidCallback? onVisibilityToggle,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    VoidCallback? onIconTap,
   }) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
       obscureText: isObscure,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
-        prefixIcon: icon != null ? Icon(icon, color: Colors.black38, size: 20) : null,
+        prefixIcon: icon != null 
+            ? (onIconTap != null 
+                ? IconButton(icon: Icon(icon, color: Colors.black38, size: 20), onPressed: onIconTap)
+                : Icon(icon, color: Colors.black38, size: 20))
+            : null,
         suffixIcon: isPassword 
             ? IconButton(
                 icon: Icon(isObscure ? Icons.remove_red_eye_outlined : Icons.visibility_off_outlined, color: Colors.black38, size: 20),
