@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'admin_jadwal_screen.dart';
+import 'admin_pengaturan_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -8,7 +9,7 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE6BFC5), // pink background
+      backgroundColor: const Color(0xFFFCE4EC), // pink background
       bottomNavigationBar: _bottomNav(context),
       body: SafeArea(
         child: Column(
@@ -26,7 +27,7 @@ class AdminDashboardScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     _summaryCard(),
                     const SizedBox(height: 20),
-                    _jadwalHeader(),
+                    _jadwalHeader(context),
                     const SizedBox(height: 10),
                     _scheduleCard("Dewi Lestari", "Imunisasi Bayi", "08.00"),
                     const SizedBox(height: 12),
@@ -43,21 +44,27 @@ class AdminDashboardScreen extends StatelessWidget {
 
   // ================= HEADER =================
   Widget _header() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: const Color(0xFFE0E0E0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text("MORA", style: TextStyle(fontWeight: FontWeight.bold)),
-          CircleAvatar(
-            backgroundColor: Colors.grey,
-            child: Icon(Icons.person, color: Colors.white),
-          )
-        ],
-      ),
-    );
-  }
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    color: const Color(0xFFF8FAFC),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: const [
+        Text(
+          "MORA",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1B4F72),
+          ),
+        ),
+        CircleAvatar(
+          backgroundColor: Colors.grey,
+          child: Icon(Icons.person, color: Colors.white),
+        )
+      ],
+    ),
+  );
+}
 
   // ================= RESERVATION =================
   Widget _reservationCard() {
@@ -153,26 +160,36 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   // ================= JADWAL HEADER =================
-  Widget _jadwalHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        Text(
-          "JADWAL MENDATANG",
-          style: TextStyle(
-            fontSize: 11,
-            letterSpacing: 2,
-            fontWeight: FontWeight.bold,
-            color: Colors.black54,
-          ),
+  Widget _jadwalHeader(BuildContext context) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      const Text(
+        "JADWAL MENDATANG",
+        style: TextStyle(
+          fontSize: 11,
+          letterSpacing: 2,
+          fontWeight: FontWeight.bold,
+          color: Colors.black54,
         ),
-        Text(
+      ),
+      InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminJadwalScreen(),
+            ),
+          );
+        },
+        child: const Text(
           "Cek Kalender →",
           style: TextStyle(fontSize: 12, color: Colors.blue),
-        )
-      ],
-    );
-  }
+        ),
+      ),
+    ],
+  );
+}
 
   // ================= SCHEDULE CARD =================
   Widget _scheduleCard(String name, String service, String time) {
@@ -247,6 +264,11 @@ class AdminDashboardScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
+          );
+        } else if (index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminPengaturanScreen()),
           );
         }
       },

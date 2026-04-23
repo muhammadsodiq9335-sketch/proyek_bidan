@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_pengaturan_screen.dart';
+import 'login_screen.dart';
+
 
 class AdminJadwalScreen extends StatefulWidget {
   const AdminJadwalScreen({super.key});
@@ -399,7 +402,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: statusColor.darken(0.2),
+                    color: statusColor.withOpacity(1.0),
                   ),
                 ),
               ),
@@ -424,36 +427,65 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 1,
-      backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF1B5E20),
-      unselectedItemColor: const Color(0xFF9E9E9E),
-      showUnselectedLabels: true,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Beranda'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Jadwal'),
-        BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Pasien'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Pengaturan'),
-      ],
-      onTap: (index) {
-        if (index == 0) {
+  return BottomNavigationBar(
+    currentIndex: 1,
+    backgroundColor: Colors.white,
+    selectedItemColor: const Color(0xFF1B5E20),
+    unselectedItemColor: const Color(0xFF9E9E9E),
+    showUnselectedLabels: true,
+    type: BottomNavigationBarType.fixed,
+    items: const [
+      BottomNavigationBarItem(
+        icon: Icon(Icons.home_outlined),
+        label: 'Beranda',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_today),
+        label: 'Jadwal',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.people_outline),
+        label: 'Pasien',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.settings_outlined),
+        label: 'Pengaturan',
+      ),
+    ],
+    onTap: (index) {
+      switch (index) {
+        case 0:
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
           );
-        }
-      },
-    );
-  }
-}
+          break;
 
-extension on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
-  }
+        case 1:
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminJadwalScreen(),
+            ),
+          );
+          break;
+
+        case 2:
+          // sementara belum ada halaman pasien
+          break;
+
+        case 3:
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminPengaturanScreen(),
+            ),
+          );
+          break;
+      }
+    },
+  );
+}
 }
