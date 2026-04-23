@@ -3,6 +3,7 @@ import 'login_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_notif_screen.dart';
+import 'admin_pasien_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -279,8 +280,11 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
               context,
               MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
             );
-          } else {
-            setState(() => _currentIndex = index);
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPasienScreen()),
+            );
           }
         },
         type: BottomNavigationBarType.fixed,

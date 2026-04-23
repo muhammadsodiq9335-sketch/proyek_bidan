@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
+import 'admin_pasien_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -269,6 +270,11 @@ class AdminDashboardScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AdminPengaturanScreen()),
+          );
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminPasienScreen()),
           );
         }
       },
