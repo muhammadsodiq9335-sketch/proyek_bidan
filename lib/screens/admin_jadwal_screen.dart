@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_jadwal_deatail-reservasi_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'login_screen.dart';
 
@@ -408,7 +409,14 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminJadwalDetailReservasiScreen(),
+                    ),
+                  );
+                },
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFF1B5E20),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
