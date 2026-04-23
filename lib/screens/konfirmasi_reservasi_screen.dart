@@ -4,7 +4,6 @@ import '../mock_data.dart';
 
 class KonfirmasiReservasiScreen extends StatelessWidget {
   final String layanan;
-  final String bidan;
   final String jam;
   final String tanggal;
   final bool isHomeCare;
@@ -12,7 +11,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
   const KonfirmasiReservasiScreen({
     super.key,
     required this.layanan,
-    required this.bidan,
     required this.jam,
     required this.tanggal,
     required this.isHomeCare,
@@ -38,6 +36,12 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             fontSize: 17,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
+            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -102,7 +106,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   // Simpan ke riwayat reservasi
                   MockDatabase.userReservations.insert(0, {
                     'layanan': layanan,
-                    'bidan': bidan,
                     'jam': jam,
                     'tanggal': tanggal,
                     'isHomeCare': isHomeCare,
@@ -118,17 +121,17 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                     'icon': 0xe0e5, // Icons.access_time
                   });
 
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (context) => KonfirmasiBidanScreen(
                         layanan: layanan,
-                        bidan: bidan,
                         jam: jam,
                         tanggal: tanggal,
                         isHomeCare: isHomeCare,
                       ),
                     ),
+                    (route) => route.isFirst,
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -209,8 +212,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _buildDetailRow(Icons.medical_services_outlined, 'Layanan Dipilih', 
               "$layanan\n(${isHomeCare ? 'Kunjungan Rumah' : 'Klinik'})"),
-          const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.person_outline, 'Bidan', bidan),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
           _buildDetailRow(Icons.access_time_outlined, 'Jadwal Kunjungan',
               '$tanggal\nPukul $jam - ${_endTime(jam)} WIB'),

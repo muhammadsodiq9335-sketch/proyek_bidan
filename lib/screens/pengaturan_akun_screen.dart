@@ -35,6 +35,10 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
+            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+          ),
           TextButton(
             onPressed: () {
               if (MockDatabase.currentUser != null) {

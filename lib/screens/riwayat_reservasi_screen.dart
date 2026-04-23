@@ -19,6 +19,12 @@ class RiwayatReservasiScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1B2E35)),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
+            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+          ),
+        ],
       ),
       body: reservations.isEmpty
           ? _buildEmptyState()
@@ -92,10 +98,6 @@ class RiwayatReservasiScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1B2E35)),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Bidan: ${res['bidan']}',
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
-          ),
           const Divider(height: 20),
           Row(
             children: [

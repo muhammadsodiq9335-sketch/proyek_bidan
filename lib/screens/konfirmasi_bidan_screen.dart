@@ -3,7 +3,6 @@ import '../mock_data.dart';
 
 class KonfirmasiBidanScreen extends StatelessWidget {
   final String layanan;
-  final String bidan;
   final String jam;
   final String tanggal;
   final bool isHomeCare;
@@ -11,7 +10,6 @@ class KonfirmasiBidanScreen extends StatelessWidget {
   const KonfirmasiBidanScreen({
     super.key,
     required this.layanan,
-    required this.bidan,
     required this.jam,
     required this.tanggal,
     required this.isHomeCare,
@@ -31,10 +29,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1B2E35)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false, // Matikan tombol back
         title: const Text(
           'Konfirmasi Bidan',
           style: TextStyle(
@@ -43,6 +38,12 @@ class KonfirmasiBidanScreen extends StatelessWidget {
             fontSize: 17,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
+            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

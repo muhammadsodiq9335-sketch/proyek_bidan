@@ -5,6 +5,7 @@ import 'riwayat_reservasi_screen.dart';
 import 'notifikasi_screen.dart';
 import 'pusat_bantuan_screen.dart';
 import 'pengaturan_akun_screen.dart';
+
 import '../mock_data.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -17,18 +18,13 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  void _goToReservasi() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LayananScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      _BerandaPage(onReservasi: _goToReservasi),
-      const SizedBox(), // Tab 1 is intercepted by BottomNavBar onTap
+      _BerandaPage(
+        onTabChange: (index) => setState(() => _currentIndex = index),
+      ),
+      _ReservasiPage(),
       const _ArtikelPage(),
       const _ProfilPage(),
     ];
@@ -47,16 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LayananScreen()),
-            );
-          } else {
-            setState(() => _currentIndex = index);
-          }
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF00897B),
@@ -102,8 +89,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 // BERANDA PAGE
 // ─────────────────────────────────────────────
 class _BerandaPage extends StatelessWidget {
-  final VoidCallback onReservasi;
-  const _BerandaPage({required this.onReservasi});
+  final Function(int) onTabChange;
+  const _BerandaPage({required this.onTabChange});
 
   @override
   Widget build(BuildContext context) {
@@ -112,18 +99,11 @@ class _BerandaPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top App Bar
-            _buildTopBar(),
-
-            // Welcome Section
+            _buildTopBar(context),
             _buildWelcomeSection(),
-
-            // Layanan Section
-            _buildLayananSection(context),
-
-            // Tips Kesehatan Section
+            _buildHeroBanner(context),
+            _buildReservasiTerakhir(context),
             _buildTipsSection(),
-
             const SizedBox(height: 24),
           ],
         ),
@@ -131,13 +111,13 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar() {
+  // ── Top Bar ──
+  Widget _buildTopBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Logo
           const Text(
             "MORA",
             style: TextStyle(
@@ -147,12 +127,18 @@ class _BerandaPage extends StatelessWidget {
               letterSpacing: 2,
             ),
           ),
-          // Icon buttons
           Row(
             children: [
-              _iconCircle(Icons.notifications_outlined),
+              _iconCircle(
+                Icons.notifications_outlined,
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
+              ),
               const SizedBox(width: 8),
-              _iconCircle(Icons.person_outline),
+              _iconCircle(
+                Icons.person_outline,
+                onTap: () => onTabChange(3),
+              ),
             ],
           )
         ],
@@ -160,19 +146,23 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  Widget _iconCircle(IconData icon) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+  Widget _iconCircle(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Icon(icon, size: 18, color: const Color(0xFF546E7A)),
       ),
-      child: Icon(icon, size: 18, color: const Color(0xFF546E7A)),
     );
   }
 
+  // ── Welcome ──
   Widget _buildWelcomeSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -180,20 +170,20 @@ class _BerandaPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Welcome home,",
+            "Halo,",
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1B2E35),
               height: 1.2,
             ),
           ),
           Text(
-            MockDatabase.currentUser != null 
-                ? "${MockDatabase.currentUser!.nama.split(' ')[0]}." 
-                : "Mama.",
+            MockDatabase.currentUser != null
+                ? "${MockDatabase.currentUser!.nama.split(' ')[0]} 👋"
+                : "Mama 👋",
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               color: Color(0xFF00897B),
               height: 1.2,
@@ -201,67 +191,192 @@ class _BerandaPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "Selamat datang kembali. Ada yang bisa kami bantu hari ini?",
+            "Jaga kesehatanmu hari ini ya, Bunda ❤️",
             style: TextStyle(
               fontSize: 13,
               color: Colors.black.withOpacity(0.5),
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
         ],
       ),
     );
   }
 
-  Widget _buildLayananSection(BuildContext context) {
+  // ── Hero Banner CTA ──
+  Widget _buildHeroBanner(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GestureDetector(
+        onTap: () => onTabChange(1),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00897B), Color(0xFF26A69A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00897B).withOpacity(0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "✨ Tersedia Layanan Klinik & Home Care",
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Buat Reservasi\nSekarang",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Pilih Layanan →",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00897B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Icon(Icons.calendar_today_rounded,
+                  color: Colors.white30, size: 72),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  // ── Reservasi Terakhir ──
+  Widget _buildReservasiTerakhir(BuildContext context) {
+    final reservations = MockDatabase.userReservations;
+    final bool hasReservasi = reservations.isNotEmpty;
+    final last = hasReservasi ? reservations.last : null;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Pilih Layanan Bunda",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2E35),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Reservasi Terakhir",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2E35),
+                ),
+              ),
+              if (hasReservasi)
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const RiwayatReservasiScreen()),
+                  ),
+                  child: const Text(
+                    "Lihat Semua →",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF00897B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _buildLayananCard(
-            context: context,
-            icon: Icons.home_work_outlined,
-            title: "Home Care",
-            subtitle: "Professional midwifery in the comfort of your sanctuary.",
-            tab: 1,
-          ),
-          const SizedBox(height: 12),
-          _buildLayananCard(
-            context: context,
-            icon: Icons.local_hospital_outlined,
-            title: "Datang Klinik Langsung",
-            subtitle: "Visit our modern facility for scheduled check-ups and care.",
-            tab: 0,
-          ),
-          const SizedBox(height: 12),
-          _buildComingSoonCard(
-            icon: Icons.book_outlined,
-            title: "Jurnal Bunda",
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          if (!hasReservasi)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.calendar_today_outlined,
+                      size: 36, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Belum ada reservasi",
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black45),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    "Buat reservasi pertamamu sekarang!",
+                    style: TextStyle(fontSize: 11, color: Colors.black26),
+                  ),
+                ],
+              ),
+            )
+          else
+            _buildLastReservasiCard(last!),
         ],
       ),
     );
   }
 
-  Widget _buildLayananCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required int tab,
-  }) {
+  Widget _buildLastReservasiCard(Map<String, dynamic> r) {
+    final bool isWaiting = r['status'] == 'Menunggu Persetujuan';
+    final Color statusColor =
+        isWaiting ? const Color(0xFFF9A825) : const Color(0xFF00897B);
+    final Color statusBg =
+        isWaiting ? const Color(0xFFFFF8E1) : const Color(0xFFE0F2F1);
+    final IconData statusIcon =
+        isWaiting ? Icons.hourglass_top_rounded : Icons.check_circle_outline;
+    final bool isHomeCare = r['isHomeCare'] == true;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -282,28 +397,55 @@ class _BerandaPage extends StatelessWidget {
                   color: const Color(0xFFF1F8E9),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: const Color(0xFF00897B), size: 22),
+                child: Icon(
+                  isHomeCare
+                      ? Icons.home_work_outlined
+                      : Icons.local_hospital_outlined,
+                  color: const Color(0xFF00897B),
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      r['layanan'] ?? '-',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1B2E35),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black45,
-                        height: 1.4,
+                      isHomeCare ? 'Home Care' : 'Klinik',
+                      style: const TextStyle(fontSize: 11, color: Colors.black45),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 11, color: statusColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      r['status'] ?? '-',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
                       ),
                     ),
                   ],
@@ -311,78 +453,34 @@ class _BerandaPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LayananScreen(initialTab: tab),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00897B),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFF5F5F5)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined,
+                  size: 13, color: Colors.black38),
+              const SizedBox(width: 4),
+              Text(
+                r['tanggal'] ?? '-',
+                style: const TextStyle(fontSize: 11, color: Colors.black54),
               ),
-              child: const Text(
-                "Buat Reservasi",
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              const SizedBox(width: 14),
+              const Icon(Icons.access_time_outlined,
+                  size: 13, color: Colors.black38),
+              const SizedBox(width: 4),
+              Text(
+                r['jam'] ?? '-',
+                style: const TextStyle(fontSize: 11, color: Colors.black54),
               ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComingSoonCard({
-    required IconData icon,
-    required String title,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.black26, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.black26,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              "PENGEMBANGAN",
-              style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.black38),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  // ── Tips Kesehatan ──
   Widget _buildTipsSection() {
     final List<Map<String, String>> articles = [
       {
@@ -409,14 +507,14 @@ class _BerandaPage extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             "Tips Kesehatan Bunda",
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1B2E35),
             ),
@@ -440,7 +538,6 @@ class _BerandaPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Image
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(14),
@@ -459,7 +556,6 @@ class _BerandaPage extends StatelessWidget {
               ),
             ),
           ),
-          // Content
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -516,6 +612,382 @@ class _BerandaPage extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
+// RESERVASI PAGE
+// ─────────────────────────────────────────────
+class _ReservasiPage extends StatelessWidget {
+  const _ReservasiPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final reservations = MockDatabase.userReservations;
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            _buildHeader(context),
+
+            // Pilih Jenis Layanan
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Pilih Jenis Layanan",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2E35),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    "Pilih cara bidan merawat Bunda",
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLayananCard(
+                    context: context,
+                    icon: Icons.home_work_outlined,
+                    title: "Home Care",
+                    subtitle:
+                        "Bidan datang ke rumah Bunda. Tersedia layanan pijat, konseling, perawatan bayi & lebih.",
+                    badgeText: "8 Layanan",
+                    gradientColors: const [Color(0xFF26A69A), Color(0xFF80CBC4)],
+                    badgeColor: const Color(0xFF00897B),
+                    tab: 1,
+                  ),
+                  const SizedBox(height: 14),
+                  _buildLayananCard(
+                    context: context,
+                    icon: Icons.local_hospital_outlined,
+                    title: "Datang ke Klinik",
+                    subtitle:
+                        "Kunjungi klinik kami. Tersedia periksa hamil, imunisasi, KB, persalinan & lebih.",
+                    badgeText: "11 Layanan",
+                    gradientColors: const [Color(0xFFF48FB1), Color(0xFFF8BBD0)],
+                    badgeColor: const Color(0xFFF06292),
+                    tab: 0,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Riwayat Reservasi
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Riwayat Reservasi",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B2E35),
+                        ),
+                      ),
+                      if (reservations.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const RiwayatReservasiScreen()),
+                          ),
+                          child: const Text(
+                            "Lihat Semua →",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF00897B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (reservations.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 28, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEEEEEE)),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.inbox_outlined,
+                              size: 44, color: Colors.grey.shade300),
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Belum ada reservasi",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black38,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Pilih layanan di atas untuk mulai",
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.black26),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...reservations.reversed
+                        .take(3)
+                        .map((r) => _buildReservasiItem(r))
+                        .toList(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+            bottom: BorderSide(color: Color(0xFFF5F5F5), width: 1)),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Buat Reservasi",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2E35),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                MockDatabase.currentUser != null
+                    ? "Halo, ${MockDatabase.currentUser!.nama.split(' ')[0]}! Mau layanan apa hari ini?"
+                    : "Pilih layanan yang Bunda butuhkan",
+                style: const TextStyle(fontSize: 12, color: Colors.black45),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0F2F1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.calendar_month_outlined,
+                color: Color(0xFF00897B), size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLayananCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required List<Color> gradientColors,
+    required Color badgeColor,
+    required int tab,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LayananScreen(initialTab: tab),
+        ),
+      ),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors.first.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white70,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "$badgeText tersedia →",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReservasiItem(Map<String, dynamic> r) {
+    final bool isWaiting = r['status'] == 'Menunggu Persetujuan';
+    final Color statusColor =
+        isWaiting ? const Color(0xFFF9A825) : const Color(0xFF00897B);
+    final Color statusBg =
+        isWaiting ? const Color(0xFFFFF8E1) : const Color(0xFFE0F2F1);
+    final bool isHomeCare = r['isHomeCare'] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F8E9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              isHomeCare
+                  ? Icons.home_work_outlined
+                  : Icons.local_hospital_outlined,
+              color: const Color(0xFF00897B),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  r['layanan'] ?? '-',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1B2E35),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "${r['tanggal'] ?? '-'} • ${r['jam'] ?? '-'}",
+                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusBg,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              r['status'] ?? '-',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: statusColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 // ARTIKEL PAGE
 // ─────────────────────────────────────────────
 class _ArtikelPage extends StatelessWidget {
@@ -527,36 +999,46 @@ class _ArtikelPage extends StatelessWidget {
       {
         "category": "NUTRITION",
         "title": "Optimal diet for the second trimester",
-        "desc": "Fueling your baby's growth with the right nutrients. Cara menjaga keseimbangan gizi saat hamil trimester kedua agar bayi tumbuh sehat dan cerdas.",
-        "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&q=80",
+        "desc":
+            "Fueling your baby's growth with the right nutrients. Cara menjaga keseimbangan gizi saat hamil trimester kedua agar bayi tumbuh sehat dan cerdas.",
+        "image":
+            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&q=80",
         "date": "10 Apr 2026",
       },
       {
         "category": "MENTAL WELLNESS",
         "title": "The art of the Fourth Trimester transition",
-        "desc": "Preparing your home and mind for the new baby. Memahami perubahan emosional pasca persalinan.",
-        "image": "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80",
+        "desc":
+            "Preparing your home and mind for the new baby. Memahami perubahan emosional pasca persalinan.",
+        "image":
+            "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80",
         "date": "11 Apr 2026",
       },
       {
         "category": "KESEHATAN",
         "title": "Persiapan melahirkan yang perlu kamu tahu",
-        "desc": "Panduan lengkap untuk persiapan mental dan fisik menghadapi hari-H persalinan di klinik kami.",
-        "image": "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80",
+        "desc":
+            "Panduan lengkap untuk persiapan mental dan fisik menghadapi hari-H persalinan di klinik kami.",
+        "image":
+            "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80",
         "date": "12 Apr 2026",
       },
       {
         "category": "NEWBORN CARE",
         "title": "Panduan menyusui eksklusif untuk ibu baru",
-        "desc": "Tips sukses ASI eksklusif dan cara mengatasi masalah pelekatan pada bayi baru lahir.",
-        "image": "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&q=80",
+        "desc":
+            "Tips sukses ASI eksklusif dan cara mengatasi masalah pelekatan pada bayi baru lahir.",
+        "image":
+            "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&q=80",
         "date": "13 Apr 2026",
       },
       {
         "category": "WELLNESS",
         "title": "Pentingnya senam hamil secara rutin",
-        "desc": "Olahraga ringan yang sangat dianjurkan untuk mempersiapkan otot panggul sebelum melahirkan.",
-        "image": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80",
+        "desc":
+            "Olahraga ringan yang sangat dianjurkan untuk mempersiapkan otot panggul sebelum melahirkan.",
+        "image":
+            "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80",
         "date": "14 Apr 2026",
       },
     ];
@@ -593,7 +1075,10 @@ class _ArtikelPage extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+                      BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 4))
                     ],
                   ),
                   child: Column(
@@ -609,10 +1094,12 @@ class _ArtikelPage extends StatelessWidget {
                           height: 160,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
                             height: 160,
                             color: const Color(0xFFEEEEEE),
-                            child: const Icon(Icons.image_outlined, color: Colors.black26, size: 40),
+                            child: const Icon(Icons.image_outlined,
+                                color: Colors.black26, size: 40),
                           ),
                         ),
                       ),
@@ -622,10 +1109,12 @@ class _ArtikelPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0F2F1),
                                     borderRadius: BorderRadius.circular(6),
@@ -642,7 +1131,8 @@ class _ArtikelPage extends StatelessWidget {
                                 ),
                                 Text(
                                   article["date"]!,
-                                  style: const TextStyle(fontSize: 10, color: Colors.black45),
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.black45),
                                 ),
                               ],
                             ),
@@ -705,9 +1195,11 @@ class _ProfilPage extends StatelessWidget {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF00897B), width: 3),
+                      border:
+                          Border.all(color: const Color(0xFF00897B), width: 3),
                       image: const DecorationImage(
-                        image: NetworkImage("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80"),
+                        image: NetworkImage(
+                            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80"),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -746,35 +1238,58 @@ class _ProfilPage extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+                  BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2))
                 ],
               ),
               child: Column(
                 children: [
-                  _buildProfileMenu(Icons.favorite_border, "Data Kesehatan Kehamilan", isComingSoon: true),
+                  _buildProfileMenu(context, Icons.favorite_border,
+                      "Data Kesehatan Kehamilan",
+                      isComingSoon: true),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(
+                    context,
                     Icons.history,
                     "Riwayat Reservasi",
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RiwayatReservasiScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const RiwayatReservasiScreen())),
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(
+                    context,
                     Icons.notifications_none,
                     "Notifikasi",
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const NotifikasiScreen())),
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(
+                    context,
                     Icons.help_outline,
                     "Pusat Bantuan",
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PusatBantuanScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const PusatBantuanScreen())),
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(
+                    context,
                     Icons.settings_outlined,
                     "Pengaturan Akun",
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PengaturanAkunScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const PengaturanAkunScreen())),
                   ),
                 ],
               ),
@@ -788,22 +1303,25 @@ class _ProfilPage extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Benar-benar logout dan kembali ke login
                     MockDatabase.currentUser = null;
-                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    Navigator.of(context, rootNavigator: true)
+                        .pushAndRemoveUntil(
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                       (route) => false,
                     );
                   },
                   icon: const Icon(Icons.logout, color: Colors.redAccent),
                   label: const Text(
                     "Keluar",
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.redAccent, fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Colors.redAccent),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
@@ -815,7 +1333,8 @@ class _ProfilPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileMenu(IconData icon, String title, {bool isComingSoon = false, VoidCallback? onTap}) {
+  Widget _buildProfileMenu(BuildContext context, IconData icon, String title,
+      {bool isComingSoon = false, VoidCallback? onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -845,7 +1364,10 @@ class _ProfilPage extends StatelessWidget {
               ),
               child: const Text(
                 "COMING SOON",
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.amber),
+                style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber),
               ),
             ),
           ],

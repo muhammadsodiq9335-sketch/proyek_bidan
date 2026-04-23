@@ -18,26 +18,12 @@ class FormulirReservasiScreen extends StatefulWidget {
 
 class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
   String? _selectedLayanan;
-  String? _selectedBidan;
   String? _selectedJam;
   DateTime? _selectedDate;
   final _dateController = TextEditingController();
 
   final List<String> jamList = [
     '08:00', '09:00', '10:00', '11:00', '13:00', '14:00'
-  ];
-
-  final List<String> layananList = [
-    'Pemeriksaan Kehamilan',
-    'Imunisasi Bayi',
-    'Perawatan Nifas',
-    'Perawatan Bayi',
-  ];
-
-  final List<String> bidanList = [
-    'Bidan Salsah Amalia',
-    'Bidan Siti Khadijah',
-    'Bidan Rani Puspita',
   ];
 
   @override
@@ -66,6 +52,12 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
             fontSize: 17,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
+            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -93,42 +85,22 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                 const Text('Jenis Layanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedLayanan,
-                      hint: const Text('Pilih jenis layanan', style: TextStyle(fontSize: 13, color: Colors.black38)),
-                      isExpanded: true,
-                      items: layananList.map((l) {
-                        return DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(fontSize: 13)));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _selectedLayanan = val),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('Pilih Bidan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedBidan,
-                      hint: const Text('Pilih bidan yang bertugas', style: TextStyle(fontSize: 13, color: Colors.black38)),
-                      isExpanded: true,
-                      items: bidanList.map((b) {
-                        return DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13)));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _selectedBidan = val),
-                    ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.medical_services_outlined, size: 18, color: Color(0xFF00897B)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _selectedLayanan ?? widget.layanan,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B2E35)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -228,10 +200,10 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  if (_selectedBidan == null || _selectedDate == null || _selectedJam == null) {
+                  if (_selectedDate == null || _selectedJam == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Mohon lengkapi semua pilihan (Bidan, Tanggal, dan Jam)'),
+                        content: Text('Mohon lengkapi Tanggal dan Jam kunjungan'),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -242,7 +214,6 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     MaterialPageRoute(
                       builder: (context) => KonfirmasiReservasiScreen(
                         layanan: _selectedLayanan ?? widget.layanan,
-                        bidan: _selectedBidan!,
                         jam: _selectedJam!,
                         tanggal: _dateController.text,
                         isHomeCare: widget.isHomeCare,
