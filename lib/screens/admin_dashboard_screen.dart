@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'admin_jadwal_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -8,7 +9,7 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE6BFC5), // pink background
-      bottomNavigationBar: _bottomNav(),
+      bottomNavigationBar: _bottomNav(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -235,11 +236,20 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   // ================= BOTTOM NAV =================
-  Widget _bottomNav() {
+  Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Colors.green,
       unselectedItemColor: Colors.grey,
+      currentIndex: 0,
+      onTap: (index) {
+        if (index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
+          );
+        }
+      },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
