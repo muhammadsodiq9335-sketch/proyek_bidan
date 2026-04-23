@@ -327,8 +327,6 @@ class _LayananScreenState extends State<LayananScreen>
             gradientColors: const [Color(0xFF26A69A), Color(0xFF80CBC4)],
             services: _klinikAnakServices,
           ),
-          const SizedBox(height: 20),
-          _buildPromoCard(),
           const SizedBox(height: 16),
         ],
       ),
@@ -512,8 +510,6 @@ class _LayananScreenState extends State<LayananScreen>
             services: _homeCareByiServices,
             isHomeCare: true,
           ),
-          const SizedBox(height: 20),
-          _buildPromoCard(),
           const SizedBox(height: 16),
         ],
       ),
@@ -602,6 +598,7 @@ class _LayananScreenState extends State<LayananScreen>
             builder: (context) => FormulirReservasiScreen(
               layanan: service['title'],
               isHomeCare: isHomeCare,
+              harga: service['price'] ?? '-',
             ),
           ),
         );
@@ -682,67 +679,4 @@ class _LayananScreenState extends State<LayananScreen>
     );
   }
 
-  Widget _buildPromoCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF48FB1), Color(0xFFF8BBD0)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'PROMO BULAN INI',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Diskon 20% Paket Home Care',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Text(
-                'Gunakan kode: ',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'BIDANCARE20',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }

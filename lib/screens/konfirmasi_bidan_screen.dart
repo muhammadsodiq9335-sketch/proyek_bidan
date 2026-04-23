@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
+import 'pusat_bantuan_screen.dart';
 
 class KonfirmasiBidanScreen extends StatelessWidget {
   final String layanan;
   final String jam;
   final String tanggal;
   final bool isHomeCare;
+  final String harga;
 
   const KonfirmasiBidanScreen({
     super.key,
@@ -13,6 +15,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
     required this.jam,
     required this.tanggal,
     required this.isHomeCare,
+    this.harga = '-',
   });
 
   String _endTime(String jam) {
@@ -195,7 +198,9 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                   _buildRincianRow(
                     icon: Icons.payments_outlined,
                     label: 'ESTIMASI BIAYA',
-                    value: 'Rp 175.000',
+                    value: harga == 'Chat Admin'
+                        ? 'Hubungi Admin (harga khusus)'
+                        : harga,
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -225,7 +230,12 @@ class KonfirmasiBidanScreen extends StatelessWidget {
 
             // Butuh bantuan
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PusatBantuanScreen()),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -263,11 +273,20 @@ class KonfirmasiBidanScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
+                  // Hapus reservasi terakhir yang baru dibuat
+                  if (MockDatabase.userReservations.isNotEmpty) {
+                    MockDatabase.userReservations.removeAt(0);
+                  }
+                  // Hapus notifikasi reservasi terkait yang baru ditambahkan
+                  if (MockDatabase.notifications.isNotEmpty &&
+                      MockDatabase.notifications.first['title'] == 'Reservasi Terkirim') {
+                    MockDatabase.notifications.removeAt(0);
+                  }
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black54,
-                  side: const BorderSide(color: Colors.black26),
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

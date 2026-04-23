@@ -22,7 +22,11 @@ class MockDatabase {
   // User yang sedang login
   static UserProfile? currentUser;
 
-  // Riwayat Reservasi (Setiap entry: {layanan, bidan, tanggal, jam, isHomeCare, status})
+  // Fitur "Ingat Saya" — menyimpan email yang terakhir login
+  static String rememberedEmail = '';
+  static bool rememberMe = false;
+
+  // Riwayat Reservasi (Setiap entry: {layanan, jam, tanggal, isHomeCare, status, namaPasien, emailPasien, harga})
   static final List<Map<String, dynamic>> userReservations = [];
 
   // Notifikasi (Setiap entry: {title, message, time, icon})
@@ -33,5 +37,15 @@ class MockDatabase {
       'time': 'Baru saja',
       'icon': 0xe156, // Icons.check_circle
     },
+  ];
+
+  // Pesan Chat (Setiap entry: {sender, text, time})
+  // sender: 'admin' atau 'user'
+  static final List<Map<String, dynamic>> chatMessages = [
+    {
+      'sender': 'admin',
+      'text': 'Halo Bunda, ada yang bisa kami bantu?',
+      'time': '10:00'
+    }
   ];
 }

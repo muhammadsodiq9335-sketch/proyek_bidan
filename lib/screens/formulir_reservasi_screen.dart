@@ -5,10 +5,12 @@ import '../mock_data.dart';
 class FormulirReservasiScreen extends StatefulWidget {
   final String layanan;
   final bool isHomeCare;
+  final String harga;
   const FormulirReservasiScreen({
     super.key, 
     required this.layanan, 
-    this.isHomeCare = false
+    this.isHomeCare = false,
+    this.harga = '-',
   });
 
   @override
@@ -145,8 +147,14 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: jamList.map((jam) {
+                    // Cek apakah sudah ada reservasi pada tanggal & jam tersebut
+                    final isFull = MockDatabase.userReservations.any((res) =>
+                        res['jam'] == jam &&
+                        res['tanggal'] == _dateController.text &&
+                        res['status'] != 'Dibatalkan' &&
+                        res['status'] != 'Selesai');
+                    
                     final isSelected = _selectedJam == jam;
-                    final isFull = jam == '10:00' || jam == '13:00';
                     return GestureDetector(
                       onTap: isFull ? null : () => setState(() => _selectedJam = jam),
                       child: Container(
@@ -217,6 +225,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                         jam: _selectedJam!,
                         tanggal: _dateController.text,
                         isHomeCare: widget.isHomeCare,
+                        harga: widget.harga,
                       ),
                     ),
                   );

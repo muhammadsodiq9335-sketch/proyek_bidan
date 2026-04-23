@@ -5,6 +5,7 @@ import 'riwayat_reservasi_screen.dart';
 import 'notifikasi_screen.dart';
 import 'pusat_bantuan_screen.dart';
 import 'pengaturan_akun_screen.dart';
+import 'chat_screen.dart';
 
 import '../mock_data.dart';
 
@@ -25,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTabChange: (index) => setState(() => _currentIndex = index),
       ),
       _ReservasiPage(),
+      const ChatScreen(),
       const _ArtikelPage(),
       const _ProfilPage(),
     ];
@@ -68,6 +70,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icon(Icons.calendar_month_outlined),
             activeIcon: Icon(Icons.calendar_month),
             label: 'RESERVASI',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble),
+            label: 'CHAT',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.article_outlined),
@@ -137,7 +144,7 @@ class _BerandaPage extends StatelessWidget {
               const SizedBox(width: 8),
               _iconCircle(
                 Icons.person_outline,
-                onTap: () => onTabChange(3),
+                onTap: () => onTabChange(4),
               ),
             ],
           )
@@ -294,7 +301,7 @@ class _BerandaPage extends StatelessWidget {
   Widget _buildReservasiTerakhir(BuildContext context) {
     final reservations = MockDatabase.userReservations;
     final bool hasReservasi = reservations.isNotEmpty;
-    final last = hasReservasi ? reservations.last : null;
+    final last = hasReservasi ? reservations.first : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -368,13 +375,24 @@ class _BerandaPage extends StatelessWidget {
   }
 
   Widget _buildLastReservasiCard(Map<String, dynamic> r) {
-    final bool isWaiting = r['status'] == 'Menunggu Persetujuan';
-    final Color statusColor =
-        isWaiting ? const Color(0xFFF9A825) : const Color(0xFF00897B);
-    final Color statusBg =
-        isWaiting ? const Color(0xFFFFF8E1) : const Color(0xFFE0F2F1);
-    final IconData statusIcon =
-        isWaiting ? Icons.hourglass_top_rounded : Icons.check_circle_outline;
+    final String status = r['status'] ?? '-';
+    final bool isWaiting = status == 'Menunggu Persetujuan';
+    final bool isConfirmed = status == 'Dikonfirmasi';
+    final Color statusColor = isWaiting
+        ? const Color(0xFFF9A825)
+        : isConfirmed
+            ? const Color(0xFF00897B)
+            : const Color(0xFF9E9E9E);
+    final Color statusBg = isWaiting
+        ? const Color(0xFFFFF8E1)
+        : isConfirmed
+            ? const Color(0xFFE0F2F1)
+            : const Color(0xFFF5F5F5);
+    final IconData statusIcon = isWaiting
+        ? Icons.hourglass_top_rounded
+        : isConfirmed
+            ? Icons.check_circle_outline
+            : Icons.info_outline;
     final bool isHomeCare = r['isHomeCare'] == true;
 
     return Container(
