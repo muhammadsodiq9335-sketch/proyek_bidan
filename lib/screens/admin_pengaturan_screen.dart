@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
+import 'admin_pengaturan_notif_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -52,16 +53,29 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
                   color: Color(0xFF1B2E35),
                 ),
               ),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PengaturanNotifikasiScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_outlined,
+                    size: 18,
+                    color: Color(0xFF546E7A),
+                  ),
                 ),
-                child: const Icon(Icons.notifications_outlined,
-                  size: 18, color: Color(0xFF546E7A)),
               ),
             ],
           ),
