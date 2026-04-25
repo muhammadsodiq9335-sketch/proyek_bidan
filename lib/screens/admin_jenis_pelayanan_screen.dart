@@ -1,0 +1,294 @@
+import 'package:flutter/material.dart';
+
+// SESUAIKAN IMPORT
+import 'admin_dashboard_screen.dart';
+import 'admin_jadwal_screen.dart';
+import 'admin_pasien_screen.dart';
+import 'admin_pengaturan_screen.dart';
+import 'admin_tambah_jenis_pelayanan_screen.dart';
+
+class AdminJenisPelayananScreen extends StatefulWidget {
+  const AdminJenisPelayananScreen({super.key});
+
+  @override
+  State<AdminJenisPelayananScreen> createState() =>
+      _AdminJenisPelayananScreenState();
+}
+
+class _AdminJenisPelayananScreenState
+    extends State<AdminJenisPelayananScreen> {
+
+  int selectedTab = 0; // 0 = Klinik, 1 = Home Care
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFDDE6CF),
+
+      /// ===== APPBAR =====
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFDDE6CF),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Jenis Pelayanan",
+          style: TextStyle(color: Colors.black),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Icon(Icons.search, color: Colors.black),
+          )
+        ],
+      ),
+
+      /// ===== BODY =====
+      body: Container(
+        color: const Color(0xFFE6B8BE),
+        child: Column(
+          children: [
+
+            /// ===== TAB =====
+            Row(
+              children: [
+                _tabItem("Layanan Klinik", 0),
+                _tabItem("Layanan Home Care", 1),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            /// ===== LIST =====
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: selectedTab == 0
+                    ? _klinikList()
+                    : _homeCareList(),
+              ),
+            ),
+
+            /// ===== BUTTON TAMBAH =====
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminTambahJenisPelayananScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text("Tambah Jenis Pemeriksaan"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F5F5F),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+
+      /// ===== BOTTOM NAV =====
+      bottomNavigationBar: _bottomNav(context, 3),
+    );
+  }
+
+  /// ===== TAB ITEM =====
+  Widget _tabItem(String title, int index) {
+    bool isActive = selectedTab == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => selectedTab = index);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? Colors.black : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ===== CARD =====
+  Widget _card(Color color, String title, String desc, String price, String tag) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: const [
+                  Icon(Icons.edit, size: 16),
+                  SizedBox(width: 6),
+                  Icon(Icons.delete, size: 16),
+                ],
+              )
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(desc, style: const TextStyle(fontSize: 11)),
+
+          const SizedBox(height: 8),
+
+          Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              tag,
+              style: const TextStyle(fontSize: 10),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  /// ===== DATA KLINIK =====
+  List<Widget> _klinikList() {
+    return [
+      _card(
+        const Color(0xFFF4C6CC),
+        "Perinatal Care",
+        "Perawatan menyeluruh bagi ibu dan bayi",
+        "Rp 250.000",
+        "Klinik Utama",
+      ),
+      _card(
+        const Color(0xFFF8D7DA),
+        "USG 2D/3D",
+        "Pemeriksaan perkembangan janin",
+        "Rp 350.000",
+        "Radiologi",
+      ),
+      _card(
+        const Color(0xFFFDE2E4),
+        "Imunisasi Bayi",
+        "Layanan vaksinasi dasar",
+        "Rp 125.000",
+        "Pediatrik",
+      ),
+      _card(
+        const Color(0xFFFADADD),
+        "Konsultasi KB",
+        "Perencanaan keluarga",
+        "Rp 150.000",
+        "Kebidanan",
+      ),
+    ];
+  }
+
+  /// ===== DATA HOME CARE =====
+  List<Widget> _homeCareList() {
+    return [
+      _card(
+        const Color(0xFFF4C6CC),
+        "Home Visit",
+        "Kunjungan bidan ke rumah",
+        "Rp 300.000",
+        "Home Care",
+      ),
+      _card(
+        const Color(0xFFF8D7DA),
+        "Pijat Bayi",
+        "Terapi pijat bayi di rumah",
+        "Rp 200.000",
+        "Home Care",
+      ),
+    ];
+  }
+
+  /// ===== BOTTOM NAV =====
+  Widget _bottomNav(BuildContext context, int currentIndex) {
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      selectedItemColor: const Color(0xFF1B5E20),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+      onTap: (index) {
+        if (index == currentIndex) return;
+
+        switch (index) {
+          case 0:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminDashboardScreen(),
+              ),
+            );
+            break;
+          case 1:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminJadwalScreen(),
+              ),
+            );
+            break;
+          case 2:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminPasienScreen(),
+              ),
+            );
+            break;
+          case 3:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminPengaturanScreen(),
+              ),
+            );
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+      ],
+    );
+  }
+}

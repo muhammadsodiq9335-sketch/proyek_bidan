@@ -5,6 +5,7 @@ import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_notif_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_cek_profil_bidan_screen.dart';
+import 'admin_jenis_pelayanan_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -177,6 +178,13 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => const AdminCekProfilBidanScreen(),
+            ),
+          );
+        } else if (item.title == 'Jenis Pelayanan') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminJenisPelayananScreen(),
             ),
           );
         }
