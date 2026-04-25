@@ -4,6 +4,7 @@ import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_notif_screen.dart';
 import 'admin_pasien_screen.dart';
+import 'admin_cek_profil_bidan_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -171,6 +172,13 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
       onTap: () {
         if (item.title == 'Log Out') {
           _showLogoutConfirmation(context);
+        } else if (item.title == 'Cek Profil Bidan') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminCekProfilBidanScreen(),
+            ),
+          );
         }
         // Add navigation for other menu items as needed
       },
