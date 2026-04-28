@@ -27,28 +27,7 @@ class MockDatabase {
   static bool rememberMe = false;
 
   // Riwayat Reservasi (Setiap entry: {layanan, jam, tanggal, isHomeCare, status, namaPasien, emailPasien, harga})
-  static final List<Map<String, dynamic>> userReservations = [
-    {
-      'layanan': 'Imunisasi Bayi',
-      'jam': '08:00',
-      'tanggal': '24 April 2026',
-      'isHomeCare': false,
-      'status': 'Menunggu Persetujuan',
-      'namaPasien': 'Dewi Lestari',
-      'emailPasien': 'dewi@example.com',
-      'harga': 'Rp 150.000',
-    },
-    {
-      'layanan': 'Pijat Bayi',
-      'jam': '10:00',
-      'tanggal': '24 April 2026',
-      'isHomeCare': true,
-      'status': 'Dikonfirmasi',
-      'namaPasien': 'Maya Putri',
-      'emailPasien': 'maya@example.com',
-      'harga': 'Rp 200.000',
-    },
-  ];
+  static final List<Map<String, dynamic>> userReservations = [];
 
   // Notifikasi (Setiap entry: {title, message, time, icon})
   static final List<Map<String, dynamic>> notifications = [

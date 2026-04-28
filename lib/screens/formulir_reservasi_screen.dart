@@ -3,14 +3,12 @@ import 'konfirmasi_reservasi_screen.dart';
 import '../mock_data.dart';
 
 class FormulirReservasiScreen extends StatefulWidget {
-  final String layanan;
+  final List<Map<String, dynamic>> selectedServices;
   final bool isHomeCare;
-  final String harga;
   const FormulirReservasiScreen({
     super.key, 
-    required this.layanan, 
+    required this.selectedServices, 
     this.isHomeCare = false,
-    this.harga = '-',
   });
 
   @override
@@ -19,7 +17,6 @@ class FormulirReservasiScreen extends StatefulWidget {
 }
 
 class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
-  String? _selectedLayanan;
   String? _selectedJam;
   DateTime? _selectedDate;
   final _dateController = TextEditingController();
@@ -31,7 +28,36 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedLayanan = widget.layanan;
+  }
+
+  String _calculateTotalHarga() {
+    int total = 0;
+    for (var service in widget.selectedServices) {
+      String priceStr = service['price'] ?? '0';
+      // Hanya jumlahkan jika formatnya berawalan Rp
+      if (priceStr.startsWith('Rp')) {
+        String numericStr = priceStr.replaceAll(RegExp(r'[^0-9]'), '');
+        if (numericStr.isNotEmpty) {
+          total += int.parse(numericStr);
+        }
+      }
+    }
+    
+    // Format kembali ke Rp
+    if (total == 0) return '0';
+    String result = total.toString();
+    String formatted = '';
+    for (int i = 0; i < result.length; i++) {
+      if (i > 0 && i % 3 == 0) {
+        formatted = '.$formatted';
+      }
+      formatted = result[result.length - 1 - i] + formatted;
+    }
+    return 'Rp $formatted';
+  }
+
+  String _getLayananNames() {
+    return widget.selectedServices.map((e) => e['title']).join(', ');
   }
 
   @override
@@ -92,17 +118,25 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.medical_services_outlined, size: 18, color: Color(0xFF00897B)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _selectedLayanan ?? widget.layanan,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B2E35)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.selectedServices.map((service) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          children: [
+                            Icon(service['icon'] ?? Icons.medical_services_outlined, size: 18, color: const Color(0xFF00897B)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                service['title'] ?? '',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B2E35)),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -114,7 +148,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                       context: context,
                       initialDate: DateTime.now().add(const Duration(days: 1)),
                       firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                      lastDate: DateTime.now().add(const Duration(days: 7)),
                     );
                     if (picked != null) {
                       setState(() {
@@ -221,11 +255,12 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => KonfirmasiReservasiScreen(
-                        layanan: _selectedLayanan ?? widget.layanan,
+                        selectedServices: widget.selectedServices,
                         jam: _selectedJam!,
                         tanggal: _dateController.text,
                         isHomeCare: widget.isHomeCare,
-                        harga: widget.harga,
+                        hargaTotal: _calculateTotalHarga(),
+                        layananNames: _getLayananNames(),
                       ),
                     ),
                   );

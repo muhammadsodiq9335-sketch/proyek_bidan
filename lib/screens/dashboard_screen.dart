@@ -109,6 +109,7 @@ class _BerandaPage extends StatelessWidget {
             _buildTopBar(context),
             _buildWelcomeSection(),
             _buildHeroBanner(context),
+            _buildBidanSection(),
             _buildReservasiTerakhir(context),
             _buildTipsSection(),
             const SizedBox(height: 24),
@@ -494,6 +495,171 @@ class _BerandaPage extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Bidan Kami ──
+  Widget _buildBidanSection() {
+    final List<Map<String, String>> bidanList = [
+      {
+        'nama': 'Bidan Siti',
+        'spesialis': 'Persalinan & Nifas',
+        'pengalaman': '8 Tahun',
+        'avatar': 'https://i.pravatar.cc/150?img=47',
+        'status': 'Tersedia',
+      },
+      {
+        'nama': 'Bidan Maya',
+        'spesialis': 'Imunisasi & Bayi',
+        'pengalaman': '6 Tahun',
+        'avatar': 'https://i.pravatar.cc/150?img=48',
+        'status': 'Tersedia',
+      },
+      {
+        'nama': 'Bidan Ani',
+        'spesialis': 'Kehamilan & KB',
+        'pengalaman': '10 Tahun',
+        'avatar': 'https://i.pravatar.cc/150?img=45',
+        'status': 'Tersedia',
+      },
+      {
+        'nama': 'Bidan Nur Aeni',
+        'spesialis': 'Home Care & Pijat',
+        'pengalaman': '5 Tahun',
+        'avatar': 'https://i.pravatar.cc/150?img=44',
+        'status': 'Tersedia',
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 0, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Bidan Kami',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1B2E35),
+                  ),
+                ),
+                Text(
+                  '${bidanList.length} Bidan Aktif',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF00897B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Padding(
+            padding: EdgeInsets.only(right: 20),
+            child: Text(
+              'Tim bidan profesional siap melayani Bunda',
+              style: TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 190,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(right: 20),
+              itemCount: bidanList.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final bidan = bidanList[index];
+                return _buildBidanCard(bidan);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBidanCard(Map<String, String> bidan) {
+    return Container(
+      width: 145,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Avatar + status dot
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF00897B),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      bidan['avatar']!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFFE0F2F1),
+                        child: const Icon(
+                          Icons.person,
+                          color: Color(0xFF00897B),
+                          size: 32,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF43A047),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Nama
+            Text(
+              bidan['nama']!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1B2E35),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+
+          ],
+        ),
       ),
     );
   }

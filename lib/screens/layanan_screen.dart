@@ -50,7 +50,7 @@ class _LayananScreenState extends State<LayananScreen>
       'icon': Icons.emoji_people_outlined,
       'title': 'Persalinan Normal Gentle Birth',
       'desc': 'Persalinan gentle birth dengan pendampingan bidan',
-      'price': 'Chat Admin',
+      'price': 'Rp 1.500.000',
     },
   ];
 
@@ -589,7 +589,6 @@ class _LayananScreenState extends State<LayananScreen>
 
   Widget _buildServiceCard(Map<String, dynamic> service,
       {required bool isHomeCare}) {
-    final bool isChatAdmin = service['price'] == 'Chat Admin';
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -653,19 +652,15 @@ class _LayananScreenState extends State<LayananScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isChatAdmin
-                        ? const Color(0xFFE3F2FD)
-                        : const Color(0xFFE0F2F1),
+                    color: const Color(0xFFE0F2F1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     service['price'],
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: isChatAdmin
-                          ? const Color(0xFF1976D2)
-                          : const Color(0xFF00897B),
+                      color: Color(0xFF00897B),
                     ),
                   ),
                 ),

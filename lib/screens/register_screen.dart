@@ -44,6 +44,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _showTermsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Syarat & Ketentuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: SingleChildScrollView(
+            child: const Text(
+              '1. Layanan Kami\n'
+              'Aplikasi ini menyediakan platform untuk mempermudah pemesanan layanan kesehatan ibu dan anak (Klinik & Home Care).\n\n'
+              '2. Pendaftaran Akun\n'
+              'Pasien diwajibkan memberikan data diri yang valid. Pasien bertanggung jawab atas keamanan akunnya.\n\n'
+              '3. Reservasi & Jadwal\n'
+              'Pemesanan bersifat estimasi waktu. Jadwal final bergantung konfirmasi Bidan. Untuk Home Care, Bidan berhak membatalkan jika lokasi tidak aman.\n\n'
+              '4. Pembatalan\n'
+              'Pembatalan maksimal 2 jam sebelum jadwal. Keterlambatan lebih dari 30 menit dapat menyebabkan pembatalan sepihak.\n\n'
+              '5. Biaya & Pembayaran\n'
+              'Harga yang tertera adalah estimasi. Pembayaran dilakukan setelah layanan selesai.\n\n'
+              '6. Kerahasiaan Medis\n'
+              'Seluruh data medis dan pribadi Anda dijaga kerahasiaannya sesuai standar etika kebidanan.',
+              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.5),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup', style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,22 +192,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: RichText(
-                      text: const TextSpan(
-                        text: "Saya menyetujui ",
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
-                        children: [
-                          TextSpan(
-                            text: "Syarat dan Ketentuan",
-                            style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold),
+                    child: Wrap(
+                      children: [
+                        const Text("Saya menyetujui ", style: TextStyle(color: Colors.black54, fontSize: 12)),
+                        GestureDetector(
+                          onTap: _showTermsDialog,
+                          child: const Text(
+                            "Syarat dan Ketentuan",
+                            style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold, fontSize: 12),
                           ),
-                          TextSpan(text: " serta "),
-                          TextSpan(
-                            text: "Kebijakan Privasi",
-                            style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold),
+                        ),
+                        const Text(" serta ", style: TextStyle(color: Colors.black54, fontSize: 12)),
+                        GestureDetector(
+                          onTap: _showTermsDialog,
+                          child: const Text(
+                            "Kebijakan Privasi",
+                            style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold, fontSize: 12),
                           ),
-                        ]
-                      ),
+                        ),
+                      ],
                     ),
                   )
                 ],
