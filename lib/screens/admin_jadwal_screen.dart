@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_deatail-reservasi_screen.dart';
 import 'admin_pengaturan_screen.dart';
+import 'admin_pasien_screen.dart';
 import 'login_screen.dart';
 
 
@@ -481,7 +482,12 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
           break;
 
         case 2:
-          // sementara belum ada halaman pasien
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminPasienScreen(),
+            ),
+          );
           break;
 
         case 3:

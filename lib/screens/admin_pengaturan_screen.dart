@@ -3,6 +3,9 @@ import 'login_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_notif_screen.dart';
+import 'admin_pasien_screen.dart';
+import 'admin_cek_profil_bidan_screen.dart';
+import 'admin_jenis_pelayanan_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -170,6 +173,20 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
       onTap: () {
         if (item.title == 'Log Out') {
           _showLogoutConfirmation(context);
+        } else if (item.title == 'Cek Profil Bidan') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminCekProfilBidanScreen(),
+            ),
+          );
+        } else if (item.title == 'Jenis Pelayanan') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminJenisPelayananScreen(),
+            ),
+          );
         }
         // Add navigation for other menu items as needed
       },
@@ -279,8 +296,11 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
               context,
               MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
             );
-          } else {
-            setState(() => _currentIndex = index);
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPasienScreen()),
+            );
           }
         },
         type: BottomNavigationBarType.fixed,
