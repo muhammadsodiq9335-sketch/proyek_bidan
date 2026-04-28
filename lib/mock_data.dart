@@ -13,60 +13,70 @@ class UserProfile {
 }
 
 class MockDatabase {
-  // Simpan data user dengan format {email/nohp: password}
   static final Map<String, String> registeredUsers = {};
-
-  // Simpan profil user dengan format {email/nohp: UserProfile}
   static final Map<String, UserProfile> userProfiles = {};
-
-  // User yang sedang login
   static UserProfile? currentUser;
 
-  // Fitur "Ingat Saya" — menyimpan email yang terakhir login
   static String rememberedEmail = '';
   static bool rememberMe = false;
 
-  // Riwayat Reservasi (Setiap entry: {layanan, jam, tanggal, isHomeCare, status, namaPasien, emailPasien, harga})
-  static final List<Map<String, dynamic>> userReservations = [
+  // ================= CHAT FIX =================
+  static Map<String, List<Map<String, dynamic>>> chatRooms = {
+    "Sifa Harum": [
+      {
+        'sender': 'admin',
+        'text': 'Halo Bunda Sifa 😊',
+        'time': '10:00',
+        'type': 'text',
+      }
+    ],
+    "Anisa Melia": [
+      {
+        'sender': 'user',
+        'text': 'Halo bidan',
+        'time': '09:30',
+        'type': 'text',
+      }
+    ],
+  };
+
+  // ================= USER RESERVATIONS =================
+  static List<Map<String, dynamic>> userReservations = [
     {
-      'layanan': 'Imunisasi Bayi',
-      'jam': '08:00',
-      'tanggal': '24 April 2026',
+      'layanan': 'Pemeriksaan Kehamilan',
+      'jam': '10:00',
+      'tanggal': '2024-05-15',
       'isHomeCare': false,
       'status': 'Menunggu Persetujuan',
-      'namaPasien': 'Dewi Lestari',
-      'emailPasien': 'dewi@example.com',
+      'namaPasien': 'Sifa Harum',
+      'emailPasien': 'sifa@example.com',
       'harga': 'Rp 150.000',
+      'timestamp': DateTime(2024, 5, 10),
     },
     {
-      'layanan': 'Pijat Bayi',
-      'jam': '10:00',
-      'tanggal': '24 April 2026',
+      'layanan': 'Imunisasi Bayi',
+      'jam': '14:00',
+      'tanggal': '2024-05-20',
       'isHomeCare': true,
-      'status': 'Dikonfirmasi',
-      'namaPasien': 'Maya Putri',
-      'emailPasien': 'maya@example.com',
+      'status': 'Disetujui',
+      'namaPasien': 'Anisa Melia',
+      'emailPasien': 'anisa@example.com',
       'harga': 'Rp 200.000',
+      'timestamp': DateTime(2024, 5, 12),
     },
   ];
 
-  // Notifikasi (Setiap entry: {title, message, time, icon})
-  static final List<Map<String, dynamic>> notifications = [
+  // ================= NOTIFICATIONS =================
+  static List<Map<String, dynamic>> notifications = [
     {
-      'title': 'Pendaftaran Berhasil',
-      'message': 'Selamat datang di aplikasi MORA! Akun Anda telah berhasil dibuat.',
-      'time': 'Baru saja',
-      'icon': 0xe156, // Icons.check_circle
+      'title': 'Reservasi Terkirim',
+      'message': 'Reservasi Anda sedang diproses',
+      'timestamp': DateTime.now(),
     },
-  ];
-
-  // Pesan Chat (Setiap entry: {sender, text, time})
-  // sender: 'admin' atau 'user'
-  static final List<Map<String, dynamic>> chatMessages = [
     {
-      'sender': 'admin',
-      'text': 'Halo Bunda, ada yang bisa kami bantu?',
-      'time': '10:00'
-    }
+      'title': 'Pemeriksaan Dikonfirmasi',
+      'message': 'Bidan telah mengkonfirmasi jadwal Anda',
+      'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
+    },
   ];
 }
