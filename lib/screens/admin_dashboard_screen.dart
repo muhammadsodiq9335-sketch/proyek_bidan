@@ -121,7 +121,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  first['status'] = 'Dikonfirmasi';
+                  first?['status'] = 'Dikonfirmasi';
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
