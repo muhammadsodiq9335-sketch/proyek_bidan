@@ -44,8 +44,8 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
+        title: Row(
+          children: const [
             Icon(Icons.lock_reset, color: Color(0xFF00897B)),
             SizedBox(width: 8),
             Text('Lupa Kata Sandi', style: TextStyle(fontSize: 17)),
