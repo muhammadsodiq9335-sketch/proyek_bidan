@@ -5,6 +5,7 @@ import 'chat_screen.dart';
 import '../mock_data.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_pasien_screen.dart';
+import 'admin_chat_list_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -287,38 +288,73 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
+      currentIndex: 0,
       selectedItemColor: Colors.green,
       unselectedItemColor: Colors.grey,
-      currentIndex: 0,
       onTap: (index) {
-        if (index == 1) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
-          );
-        } else if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatScreen(isAdmin: true)),
-          );
-        } else if (index == 4) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminPengaturanScreen()),
-          );
-        } else if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminPasienScreen()),
-          );
+        switch (index) {
+          case 0:
+            // Tetap di dashboard
+            break;
+
+          case 1:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminJadwalScreen(),
+              ),
+            );
+            break;
+
+          case 2:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminChatListScreen(),
+              ),
+            );
+            break;
+
+          case 3:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminPasienScreen(),
+              ),
+            );
+            break;
+
+          case 4:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminPengaturanScreen(),
+              ),
+            );
+            break;
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: "Beranda",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: "Jadwal",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat_bubble),
+          label: "Chat",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: "Pasien",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: "Pengaturan",
+        ),
       ],
     );
   }
