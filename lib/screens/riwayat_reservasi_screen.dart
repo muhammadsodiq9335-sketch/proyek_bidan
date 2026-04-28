@@ -61,6 +61,20 @@ class RiwayatReservasiScreen extends StatelessWidget {
   }
 
   Widget _buildReservationCard(Map<String, dynamic> res) {
+    final String status = res['status'] ?? '-';
+    final bool isWaiting = status == 'Menunggu Persetujuan';
+    final bool isConfirmed = status == 'Dikonfirmasi';
+    final Color statusBg = isWaiting
+        ? const Color(0xFFFFF8E1)
+        : isConfirmed
+            ? const Color(0xFFE0F2F1)
+            : const Color(0xFFF5F5F5);
+    final Color statusTextColor = isWaiting
+        ? const Color(0xFFF9A825)
+        : isConfirmed
+            ? const Color(0xFF00796B)
+            : const Color(0xFF9E9E9E);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -78,12 +92,12 @@ class RiwayatReservasiScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0F2F1),
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  res['status'],
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF00796B)),
+                  status,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusTextColor),
                 ),
               ),
               Text(

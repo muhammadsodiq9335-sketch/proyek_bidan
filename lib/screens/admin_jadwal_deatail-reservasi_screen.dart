@@ -72,10 +72,10 @@ class AdminJadwalDetailReservasiScreen extends StatelessWidget {
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.location_on, size: 16),
-                      SizedBox(width: 4),
-                      Flexible(
+                    children: [
+                      const Icon(Icons.location_on, size: 16),
+                      const SizedBox(width: 4),
+                      const Flexible(
                         child: Text(
                           "Jl. Bandung, Kota Malang, Jawa Timur",
                           textAlign: TextAlign.center,

@@ -39,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (picked != null) {
       setState(() {
-        _tglLahirController.text = "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
+        _tglLahirController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               
               _buildLabel("Tanggal Lahir"),
               _buildTextField(
-                hint: "mm/dd/yyyy", 
+                hint: "dd/mm/yyyy", 
                 icon: Icons.calendar_today_outlined, 
                 keyboardType: TextInputType.number,
                 controller: _tglLahirController,
@@ -128,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _buildLabel("Konfirmasi Kata Sandi"),
               _buildTextField(
                 hint: "Konfirmasi kata sandi", 
-                icon: Icons.history, // Menggunakan icon mirip dengan mockup
+                icon: Icons.verified_outlined, // Icon centang untuk konfirmasi
                 isPassword: true,
                 isObscure: !isConfirmPasswordVisible,
                 keyboardType: TextInputType.visiblePassword,

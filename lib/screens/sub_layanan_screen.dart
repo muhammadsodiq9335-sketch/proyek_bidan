@@ -1,6 +1,7 @@
 import 'package:proyek_bidan/mock_data.dart';
 import 'package:flutter/material.dart';
 import 'formulir_reservasi_screen.dart';
+import '../mock_data.dart';
 
 class SubLayananScreen extends StatelessWidget {
   final String kategori;
@@ -148,6 +149,7 @@ class SubLayananScreen extends StatelessWidget {
         builder: (context) => FormulirReservasiScreen(
           layanan: service['title'],
           isHomeCare: isHomeCare,
+          harga: service['price'] ?? '-',
         ),
       ),
     );

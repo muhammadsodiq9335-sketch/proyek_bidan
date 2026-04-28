@@ -7,6 +7,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
   final String jam;
   final String tanggal;
   final bool isHomeCare;
+  final String harga;
 
   const KonfirmasiReservasiScreen({
     super.key,
@@ -14,6 +15,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     required this.jam,
     required this.tanggal,
     required this.isHomeCare,
+    this.harga = '-',
   });
 
   @override
@@ -109,7 +111,10 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                     'jam': jam,
                     'tanggal': tanggal,
                     'isHomeCare': isHomeCare,
-                    'status': 'Menunggu Konfirmasi',
+                    'status': 'Menunggu Persetujuan',
+                    'namaPasien': MockDatabase.currentUser?.nama ?? 'Pasien',
+                    'emailPasien': MockDatabase.currentUser?.email ?? '',
+                    'harga': harga,
                     'timestamp': DateTime.now(),
                   });
 
@@ -129,6 +134,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                         jam: jam,
                         tanggal: tanggal,
                         isHomeCare: isHomeCare,
+                        harga: harga,
                       ),
                     ),
                     (route) => route.isFirst,

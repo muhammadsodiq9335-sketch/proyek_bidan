@@ -22,8 +22,33 @@ class MockDatabase {
   // User yang sedang login
   static UserProfile? currentUser;
 
-  // Riwayat Reservasi (Setiap entry: {layanan, bidan, tanggal, jam, isHomeCare, status})
-  static final List<Map<String, dynamic>> userReservations = [];
+  // Fitur "Ingat Saya" — menyimpan email yang terakhir login
+  static String rememberedEmail = '';
+  static bool rememberMe = false;
+
+  // Riwayat Reservasi (Setiap entry: {layanan, jam, tanggal, isHomeCare, status, namaPasien, emailPasien, harga})
+  static final List<Map<String, dynamic>> userReservations = [
+    {
+      'layanan': 'Imunisasi Bayi',
+      'jam': '08:00',
+      'tanggal': '24 April 2026',
+      'isHomeCare': false,
+      'status': 'Menunggu Persetujuan',
+      'namaPasien': 'Dewi Lestari',
+      'emailPasien': 'dewi@example.com',
+      'harga': 'Rp 150.000',
+    },
+    {
+      'layanan': 'Pijat Bayi',
+      'jam': '10:00',
+      'tanggal': '24 April 2026',
+      'isHomeCare': true,
+      'status': 'Dikonfirmasi',
+      'namaPasien': 'Maya Putri',
+      'emailPasien': 'maya@example.com',
+      'harga': 'Rp 200.000',
+    },
+  ];
 
   // Notifikasi (Setiap entry: {title, message, time, icon})
   static final List<Map<String, dynamic>> notifications = [
@@ -33,5 +58,15 @@ class MockDatabase {
       'time': 'Baru saja',
       'icon': 0xe156, // Icons.check_circle
     },
+  ];
+
+  // Pesan Chat (Setiap entry: {sender, text, time})
+  // sender: 'admin' atau 'user'
+  static final List<Map<String, dynamic>> chatMessages = [
+    {
+      'sender': 'admin',
+      'text': 'Halo Bunda, ada yang bisa kami bantu?',
+      'time': '10:00'
+    }
   ];
 }

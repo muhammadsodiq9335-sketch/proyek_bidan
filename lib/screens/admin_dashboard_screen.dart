@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'admin_jadwal_screen.dart';
+import 'chat_screen.dart';
+import '../mock_data.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_pasien_screen.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
+  @override
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +29,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _reservationCard(),
+                    _reservationCard(context),
                     const SizedBox(height: 20),
                     _sectionTitle("RINGKASAN HARIAN"),
                     const SizedBox(height: 10),
@@ -50,8 +57,8 @@ class AdminDashboardScreen extends StatelessWidget {
     color: const Color(0xFFF8FAFC),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        Text(
+      children: [
+        const Text(
           "MORA",
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -60,7 +67,7 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
         CircleAvatar(
           backgroundColor: Colors.grey,
-          child: Icon(Icons.person, color: Colors.white),
+          child: const Icon(Icons.person, color: Colors.white),
         )
       ],
     ),
@@ -68,7 +75,14 @@ class AdminDashboardScreen extends StatelessWidget {
 }
 
   // ================= RESERVATION =================
-  Widget _reservationCard() {
+  Widget _reservationCard(BuildContext context) {
+    // Ambil reservasi yang menunggu persetujuan
+    final pending = MockDatabase.userReservations
+        .where((r) => r['status'] == 'Menunggu Persetujuan')
+        .toList();
+    final hasPending = pending.isNotEmpty;
+    final first = hasPending ? pending.first : null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -82,43 +96,59 @@ class AdminDashboardScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.brown,
+              color: hasPending ? Colors.brown : Colors.grey,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
-              "PERLU TINDAKAN",
-              style: TextStyle(color: Colors.white, fontSize: 10),
+            child: Text(
+              hasPending ? "PERLU TINDAKAN" : "TIDAK ADA ANTRIAN",
+              style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            "Permintaan\nReservasi Baru",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Text(
+            hasPending ? "Permintaan\nReservasi Baru" : "Semua Reservasi\nTelah Ditangani",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          const Text(
-            "Aminah telah mengajukan permintaan konsultasi prenatal untuk pukul 09.00 pagi hari ini",
-            style: TextStyle(fontSize: 13),
+          Text(
+            hasPending
+                ? "${first!['namaPasien'] ?? 'Pasien'} mengajukan ${first['layanan']} untuk pukul ${first['jam']} pada ${first['tanggal']}."
+                : "Tidak ada reservasi yang menunggu konfirmasi saat ini.",
+            style: const TextStyle(fontSize: 13),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFAED581),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          if (hasPending) ...[
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  first['status'] = 'Dikonfirmasi';
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Reservasi berhasil dikonfirmasi!'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFAED581),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text("Konfirmasi Reservasi"),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()),
+              ),
+              child: const Text(
+                "Lihat Detail",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1B2E35)),
               ),
             ),
-            child: const Text("Konfirmasi Reservasi"),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Lihat Detail",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          )
+          ],
         ],
       ),
     );
@@ -162,35 +192,35 @@ class AdminDashboardScreen extends StatelessWidget {
 
   // ================= JADWAL HEADER =================
   Widget _jadwalHeader(BuildContext context) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      const Text(
-        "JADWAL MENDATANG",
-        style: TextStyle(
-          fontSize: 11,
-          letterSpacing: 2,
-          fontWeight: FontWeight.bold,
-          color: Colors.black54,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "JADWAL MENDATANG",
+          style: TextStyle(
+            fontSize: 11,
+            letterSpacing: 2,
+            fontWeight: FontWeight.bold,
+            color: Colors.black54,
+          ),
         ),
-      ),
-      InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AdminJadwalScreen(),
-            ),
-          );
-        },
-        child: const Text(
-          "Cek Kalender →",
-          style: TextStyle(fontSize: 12, color: Colors.blue),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminJadwalScreen(),
+              ),
+            );
+          },
+          child: const Text(
+            "Cek Kalender →",
+            style: TextStyle(fontSize: 12, color: Colors.blue),
+          ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   // ================= SCHEDULE CARD =================
   Widget _scheduleCard(String name, String service, String time) {
@@ -266,7 +296,12 @@ class AdminDashboardScreen extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => const AdminJadwalScreen()),
           );
-        } else if (index == 3) {
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatScreen(isAdmin: true)),
+          );
+        } else if (index == 4) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AdminPengaturanScreen()),
@@ -281,6 +316,7 @@ class AdminDashboardScreen extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],

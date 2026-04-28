@@ -19,12 +19,102 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill email jika "Ingat Saya" pernah diaktifkan
+    _rememberMe = MockDatabase.rememberMe;
+    if (_rememberMe && MockDatabase.rememberedEmail.isNotEmpty) {
+      _emailController.text = MockDatabase.rememberedEmail;
+    }
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showForgotPasswordDialog(BuildContext context) {
+    final emailCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_reset, color: Color(0xFF00897B)),
+            SizedBox(width: 8),
+            Text('Lupa Kata Sandi', style: TextStyle(fontSize: 17)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Masukkan email atau nomor HP terdaftar Anda. Kami akan mengirimkan informasi pemulihan kata sandi.',
+              style: TextStyle(fontSize: 13, color: Colors.black54, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: 'Email atau No. HP',
+                hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
+                prefixIcon: const Icon(Icons.person_outline, color: Colors.black38, size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.black54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final email = emailCtrl.text.trim();
+              Navigator.pop(ctx);
+              if (email.isEmpty) return;
+              if (MockDatabase.registeredUsers.containsKey(email)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Informasi pemulihan kata sandi telah dikirim ke email/HP Anda.'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Email/HP tidak ditemukan. Silakan daftar terlebih dahulu.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00897B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Kirim'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -222,8 +312,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 24,
                     width: 24,
                     child: Checkbox(
-                      value: false,
-                      onChanged: (val) {},
+                      value: _rememberMe,
+                      onChanged: (val) {
+                        setState(() => _rememberMe = val ?? false);
+                      },
+                      activeColor: const Color(0xFFAED581),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                   ),
@@ -231,9 +324,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Text("Ingat saya", style: TextStyle(fontSize: 12, color: Colors.black54)),
                 ],
               ),
-              const Text(
-                "Lupa kata sandi?",
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CCC65), fontWeight: FontWeight.w600),
+              GestureDetector(
+                onTap: () => _showForgotPasswordDialog(context),
+                child: const Text(
+                  "Lupa kata sandi?",
+                  style: TextStyle(fontSize: 12, color: Color(0xFF9CCC65), fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -287,6 +383,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   tglLahir: "-", 
                   alamat: "-"
                 );
+                // Simpan email jika "Ingat Saya" diaktifkan
+                MockDatabase.rememberMe = _rememberMe;
+                MockDatabase.rememberedEmail = _rememberMe ? email : '';
               } else {
                 // Admin mode: hardcoded untuk demo
                 if (email != "admin@gmail.com" || password != "admin") {
