@@ -6,6 +6,7 @@ import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_tambah_jenis_pelayanan_screen.dart';
+import 'admin_edit_pelayanan_screen.dart';
 
 class AdminJenisPelayananScreen extends StatefulWidget {
   const AdminJenisPelayananScreen({super.key});
@@ -155,10 +156,20 @@ class _AdminJenisPelayananScreenState
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               Row(
-                children: const [
-                  Icon(Icons.edit, size: 16),
-                  SizedBox(width: 6),
-                  Icon(Icons.delete, size: 16),
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminEditPelayananScreen(),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.edit, size: 16),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.delete, size: 16),
                 ],
               )
             ],
