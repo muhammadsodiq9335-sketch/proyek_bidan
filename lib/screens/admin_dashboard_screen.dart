@@ -3,6 +3,7 @@ import 'login_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'chat_screen.dart';
 import '../mock_data.dart';
+import 'admin_pengaturan_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -15,7 +16,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE6BFC5),
+      backgroundColor: const Color(0xFFFCE4EC), // pink background
       bottomNavigationBar: _bottomNav(context),
       body: SafeArea(
         child: Column(
@@ -50,21 +51,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ================= HEADER =================
   Widget _header() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: const Color(0xFFE0E0E0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text("MORA", style: TextStyle(fontWeight: FontWeight.bold)),
-          CircleAvatar(
-            backgroundColor: Colors.grey,
-            child: Icon(Icons.person, color: Colors.white),
-          )
-        ],
-      ),
-    );
-  }
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    color: const Color(0xFFF8FAFC),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "MORA",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1B4F72),
+          ),
+        ),
+        CircleAvatar(
+          backgroundColor: Colors.grey,
+          child: const Icon(Icons.person, color: Colors.white),
+        )
+      ],
+    ),
+  );
+}
 
   // ================= RESERVATION =================
   Widget _reservationCard(BuildContext context) {
@@ -113,7 +120,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  MockDatabase.userReservations.first['status'] = 'Dikonfirmasi';
+                  first['status'] = 'Dikonfirmasi';
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -196,11 +203,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: Colors.black54,
           ),
         ),
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminJadwalScreen()),
-          ),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminJadwalScreen(),
+              ),
+            );
+          },
           child: const Text(
             "Cek Kalender →",
             style: TextStyle(fontSize: 12, color: Colors.blue),
@@ -288,6 +299,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ChatScreen(isAdmin: true)),
+          );
+        } else if (index == 4) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminPengaturanScreen()),
           );
         }
       },
