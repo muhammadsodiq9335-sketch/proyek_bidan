@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import '../mock_data.dart';
 
-import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
-import '../mock_data.dart';
+
+String _getFirstName(String fullName) {
+  final nameWithoutTitle = fullName.split(',')[0];
+  return nameWithoutTitle.split(' ')[0];
+}
 
 class AdminJadwalDetailReservasiScreen extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -26,8 +30,26 @@ class _AdminJadwalDetailReservasiScreenState
   int selectedBidan = -1;
 
   @override
+  void initState() {
+    super.initState();
+
+    /// 🔥 AUTO CHECKLIST JIKA SUDAH ADA BIDAN
+    final existingBidan = widget.data['bidan'];
+
+    if (existingBidan != null) {
+      final index = MockDatabase.bidanList
+          .indexWhere((b) => b.nama == existingBidan);
+
+      if (index != -1) {
+        selectedBidan = index;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    final isLocked = data['bidan'] != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFEECAD0),
@@ -67,56 +89,33 @@ class _AdminJadwalDetailReservasiScreenState
                   Text(
                     data['namaPasien'] ?? '-',
                     style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// 🔥 TAMPILKAN BIDAN
+                  Text(
+                    data['bidan'] ?? "Belum dipilih",
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      color: data['bidan'] == null
+                          ? Colors.grey
+                          : Colors.black,
                     ),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text("26 Tahun"),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.location_on, size: 16),
-                      SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          "Jl. Bandung, Kota Malang, Jawa Timur",
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Text("Umum"),
                 ],
               ),
             ),
 
             const SizedBox(height: 16),
 
-            /// ================= INFO =================
             _infoCard(Icons.calendar_today, "TANGGAL",
                 _displayDate(data['tanggal'])),
             const SizedBox(height: 10),
             _infoCard(Icons.access_time, "WAKTU", data['jam'] ?? '-'),
             const SizedBox(height: 10),
-            _infoCard(Icons.note, "JENIS RESERVASI",
-                data['layanan'] ?? '-'),
+            _infoCard(Icons.note, "LAYANAN", data['layanan'] ?? '-'),
 
             const SizedBox(height: 20),
 
@@ -131,25 +130,33 @@ class _AdminJadwalDetailReservasiScreenState
 
             const SizedBox(height: 10),
 
-            /// 🔥 DINAMIS DARI MOCK DATABASE
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: List.generate(
                 MockDatabase.bidanList.length,
                 (index) {
                   final bidan = MockDatabase.bidanList[index];
-                  return _bidanItem(bidan.nama, index);
+                  return _bidanItem(
+                      "Bidan ${_getFirstName(bidan.nama)}", index, isLocked);
                 },
               ),
             ),
 
             const SizedBox(height: 10),
 
-            /// 🔥 TAMPILKAN YANG DIPILIH
             if (selectedBidan != -1)
               Text(
-                "Dipilih: ${MockDatabase.bidanList[selectedBidan].nama}",
+                "Dipilih: Bidan ${_getFirstName(MockDatabase.bidanList[selectedBidan].nama)}",
                 style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+            if (isLocked)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                  "Bidan sudah ditentukan",
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
               ),
 
             const SizedBox(height: 20),
@@ -159,17 +166,19 @@ class _AdminJadwalDetailReservasiScreenState
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: selectedBidan == -1
+                    onPressed: isLocked
                         ? null
-                        : () {
-                            widget.data['status'] = 'Dikonfirmasi';
+                        : selectedBidan == -1
+                            ? null
+                            : () {
+                                widget.data['status'] = 'Dikonfirmasi';
+                                widget.data['statusPelayanan'] = 'Diproses';
 
-                            /// 🔥 SIMPAN BIDAN KE RESERVASI
-                            widget.data['bidan'] =
-                                MockDatabase.bidanList[selectedBidan].nama;
+                                widget.data['bidan'] =
+                                    MockDatabase.bidanList[selectedBidan].nama;
 
-                            Navigator.pop(context);
-                          },
+                                Navigator.pop(context);
+                              },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -183,10 +192,12 @@ class _AdminJadwalDetailReservasiScreenState
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      widget.data['status'] = 'Ditolak';
-                      Navigator.pop(context);
-                    },
+                    onPressed: isLocked
+                        ? null
+                        : () {
+                            widget.data['status'] = 'Ditolak';
+                            Navigator.pop(context);
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -207,15 +218,17 @@ class _AdminJadwalDetailReservasiScreenState
   }
 
   /// ================= BIDAN ITEM =================
-  Widget _bidanItem(String name, int index) {
+  Widget _bidanItem(String name, int index, bool isLocked) {
     final isSelected = selectedBidan == index;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedBidan = index;
-        });
-      },
+      onTap: isLocked
+          ? null
+          : () {
+              setState(() {
+                selectedBidan = index;
+              });
+            },
       child: Column(
         children: [
           Stack(
@@ -252,6 +265,7 @@ class _AdminJadwalDetailReservasiScreenState
               fontSize: 10,
               fontWeight:
                   isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isLocked ? Colors.grey : Colors.black,
             ),
           ),
         ],
@@ -275,10 +289,8 @@ class _AdminJadwalDetailReservasiScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontSize: 10)),
-              Text(
-                value,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(value,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -286,7 +298,6 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  /// ================= DATE =================
   String _displayDate(String iso) {
     final date = DateTime.parse(iso);
 
@@ -298,78 +309,37 @@ class _AdminJadwalDetailReservasiScreenState
     return "${date.day} ${bulan[date.month - 1]} ${date.year}";
   }
 
-  /// ================= NAV =================
   Widget _bottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-
-        /// 🔥 STYLE BARU
-        selectedItemColor: const Color(0xFF00897B),
-        unselectedItemColor: const Color(0xFFB0BEC5),
-
-        selectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          letterSpacing: 0.5,
-        ),
-
-        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-          }
-          if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-          }
-          if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-          }
-          if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
-          }
-        },
-
-        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Beranda",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: "Jadwal",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Pasien",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Pengaturan",
-          ),
-        ],
-      ),
+    return BottomNavigationBar(
+      currentIndex: 1,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
+      onTap: (index) {
+        if (index == 1) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+        }
+        if (index == 2) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+        }
+        if (index == 3) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+        }
+        if (index == 4) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+      ],
     );
   }
 }

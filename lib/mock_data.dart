@@ -107,27 +107,103 @@ class MockDatabase {
   ];
   // ================= USER RESERVATIONS =================
   static final List<Map<String, dynamic>> userReservations = [
+    /// ================= KEMARIN =================
     {
       'layanan': 'Pemeriksaan Kehamilan',
-      'jam': '10:00',
-      'tanggal': '2026-04-24', // 🔥 disamakan dengan kalender
-      'isHomeCare': false,
-      'status': 'Menunggu Persetujuan', // 👈 ini yang muncul di admin
+      'jam': '09:00',
+      'tanggal': '2026-05-01',
+
+      'status': 'Dikonfirmasi',
+      'statusPelayanan': 'Selesai & Pulang',
+
       'namaPasien': 'Sifa Harum',
       'emailPasien': 'sifa@example.com',
       'harga': 'Rp 150.000',
-      'timestamp': DateTime(2026, 4, 20),
+
+      'bidan': 'Siti Aminah, S.Tr.Keb',
+
+      'timestamp': DateTime(2026, 4, 30),
     },
+
+    /// ================= HARI INI =================
+
+    // 🔸 MENUNGGU KONFIRMASI
     {
-      'layanan': 'Imunisasi Bayi',
-      'jam': '14:00',
-      'tanggal': '2026-04-24',
-      'isHomeCare': true,
-      'status': 'Dikonfirmasi', // 🔥 sudah selesai
+      'layanan': 'USG Kehamilan',
+      'jam': '09:00',
+      'tanggal': '2026-05-02',
+
+      'status': 'Menunggu Persetujuan',
+      'statusPelayanan': 'Menunggu',
+
       'namaPasien': 'Anisa Melia',
       'emailPasien': 'anisa@example.com',
       'harga': 'Rp 200.000',
-      'timestamp': DateTime(2026, 4, 21),
+      'bidan': null,
+      'timestamp': DateTime(2026, 5, 1),
+    },
+
+    // 🔸 SUDAH DIKONFIRMASI (BELUM DATANG)
+    {
+      'layanan': 'Imunisasi Bayi',
+      'jam': '10:00',
+      'tanggal': '2026-05-02',
+
+      'status': 'Dikonfirmasi',
+      'statusPelayanan': 'Menunggu',
+
+      'namaPasien': 'Rani Putri',
+      'emailPasien': 'rani@example.com',
+      'harga': 'Rp 200.000',
+      'bidan': null,
+      'timestamp': DateTime(2026, 5, 1),
+    },
+
+    // 🔸 SEDANG DILAYANI
+    {
+      'layanan': 'Kunjungan Bidan',
+      'jam': '11:00',
+      'tanggal': '2026-05-02',
+
+      'status': 'Dikonfirmasi',
+      'statusPelayanan': 'Diproses',
+
+      'namaPasien': 'Dewi Lestari',
+      'emailPasien': 'dewi@example.com',
+      'harga': 'Rp 250.000',
+      'bidan': 'Dewi Lestari, S.Tr.Keb',
+      'timestamp': DateTime(2026, 5, 1),
+    },
+
+    // 🔸 SUDAH SELESAI & PULANG
+    {
+      'layanan': 'USG Kehamilan',
+      'jam': '08:00',
+      'tanggal': '2026-05-02',
+
+      'status': 'Dikonfirmasi',
+      'statusPelayanan': 'Selesai & Pulang',
+
+      'namaPasien': 'Putri Ayu',
+      'emailPasien': 'putri@example.com',
+      'harga': 'Rp 150.000',
+      'bidan': 'Siti Aminah, S.Tr.Keb',
+      'timestamp': DateTime(2026, 5, 1),
+    },
+
+    /// ================= BESOK =================
+    {
+      'layanan': 'Pemeriksaan Kehamilan',
+      'jam': '09:00',
+      'tanggal': '2026-05-03',
+
+      'status': 'Menunggu Persetujuan',
+      'statusPelayanan': 'Menunggu',
+
+      'namaPasien': 'Lina Sari',
+      'emailPasien': 'lina@example.com',
+      'harga': 'Rp 150.000',
+      'timestamp': DateTime(2026, 5, 2),
     },
   ];
   // ================= JENIS PELAYANAN =================

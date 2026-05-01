@@ -4,7 +4,7 @@ import 'admin_jadwal_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
-
+import 'admin_ringkasan_harian_screen.dart';
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -167,9 +167,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ================= SUMMARY =================
   Widget _summaryCard(BuildContext context) {
-    final total = MockDatabase.userReservations
-        .where((res) => res['status'] == 'Dikonfirmasi')
-        .length;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final total = MockDatabase.userReservations.where((res) {
+      final date = DateTime.parse(res['tanggal']);
+      final itemDate = DateTime(date.year, date.month, date.day);
+
+      return res['status'] == 'Dikonfirmasi' &&
+       itemDate.year == today.year &&
+       itemDate.month == today.month &&
+       itemDate.day == today.day;
+    }).length;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -213,7 +222,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AdminJadwalScreen(),
+                      builder: (_) => AdminRingkasanHarianScreen(),
                     ),
                   );
                 },
@@ -246,10 +255,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ================= DATA =================
   List<Map<String, dynamic>> _getSchedules() {
-    return MockDatabase.userReservations
-        .where((res) => res['status'] == 'Dikonfirmasi')
-        .take(3)
-        .toList();
+    final now = DateTime.now();
+
+    final today = DateTime(now.year, now.month, now.day);
+    final maxDate = today.add(const Duration(days: 1)); // 🔥 sampai BESOK
+
+    return MockDatabase.userReservations.where((res) {
+      final date = DateTime.parse(res['tanggal']);
+      final itemDate = DateTime(date.year, date.month, date.day);
+
+      return res['status'] == 'Dikonfirmasi' &&
+            !itemDate.isBefore(today) &&      // ✅ include hari ini
+            !itemDate.isAfter(maxDate);       // ✅ include besok
+    })
+    .toList()
+    ..sort((a, b) {
+      final dateA = DateTime.parse(a['tanggal']);
+      final dateB = DateTime.parse(b['tanggal']);
+
+      if (dateA != dateB) {
+        return dateA.compareTo(dateB);
+      }
+
+      return a['jam'].compareTo(b['jam']);
+    });
   }
 
   // ================= JADWAL =================

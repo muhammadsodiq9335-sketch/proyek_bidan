@@ -26,12 +26,10 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   void initState() {
     super.initState();
 
-    if (MockDatabase.userReservations.isNotEmpty) {
-      final first = MockDatabase.userReservations.first;
-      final date = DateTime.parse(first['tanggal']);
-      _selectedDate = date;
-      _displayMonth = date;
-    }
+    final now = DateTime.now();
+
+    _selectedDate = now;
+    _displayMonth = now;
   }
 
   @override
