@@ -152,6 +152,12 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         iconColor: const Color(0xFFAB47BC),
       ),
       MenuItemData(
+        icon: Icons.article_outlined,
+        title: 'Upload Artikel',
+        subtitle: 'Upload Artikel Terbaru',
+        iconColor: const Color(0xFF42A5F5),
+      ),
+      MenuItemData(
         icon: Icons.logout,
         title: 'Log Out',
         subtitle: 'Akhiri sesi',
@@ -306,7 +312,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

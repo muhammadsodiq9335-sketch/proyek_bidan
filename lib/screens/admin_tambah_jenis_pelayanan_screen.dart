@@ -278,7 +278,7 @@ class _AdminTambahJenisPelayananScreenState
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

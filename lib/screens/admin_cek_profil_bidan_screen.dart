@@ -302,8 +302,8 @@ class _AdminCekProfilBidanScreenState
             label: "Chat",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Pasien",
+            icon: Icon(Icons.payments),
+            label: "Pembayaran",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

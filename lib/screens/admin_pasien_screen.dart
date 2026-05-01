@@ -178,7 +178,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        "RIWAYAT REGISTRASI PASIEN",
+                        "RIWAYAT PEMBAYARAN PASIEN",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -307,8 +307,8 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
             label: "Chat",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "Pasien",
+            icon: Icon(Icons.payments),
+            label: "Pembayaran",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

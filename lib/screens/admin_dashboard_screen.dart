@@ -13,27 +13,32 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
-      bottomNavigationBar: _bottomNav(context,0),
+      bottomNavigationBar: _bottomNav(context, 0),
+
       body: SafeArea(
         child: Column(
           children: [
             _header(),
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+
                     _reservationCard(context),
                     const SizedBox(height: 20),
 
                     _sectionTitle("RINGKASAN HARIAN"),
                     const SizedBox(height: 10),
-                    _summaryCard(),
+
+                    _summaryCard(context),
 
                     const SizedBox(height: 20),
 
@@ -62,7 +67,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
-
+  
+  String _getMonthName(int month) {
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      return months[month];
+  }
+  
   // ================= HEADER =================
   Widget _header() {
     return Container(
@@ -105,6 +118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -121,8 +135,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           Text(
             hasPending ? "Reservasi Baru Masuk" : "Tidak Ada Antrian",
-            style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 8),
@@ -153,28 +166,79 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ================= SUMMARY =================
-  Widget _summaryCard() {
-    final total = MockDatabase.userReservations.where((res) {
-      return res['status'] == 'Dikonfirmasi';
-    }).length;
+  Widget _summaryCard(BuildContext context) {
+    final total = MockDatabase.userReservations
+        .where((res) => res['status'] == 'Dikonfirmasi')
+        .length;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFD8E6C3),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.calendar_today),
-          const SizedBox(width: 10),
+
+          const Icon(
+            Icons.calendar_today_outlined,
+            size: 22,
+            color: Color(0xFF1B4F72),
+          ),
+
+          const SizedBox(height: 10),
+
           Text(
             "$total",
             style: const TextStyle(
-                fontSize: 24, fontWeight: FontWeight.bold),
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(width: 8),
-          const Expanded(child: Text("Pasien Dikonfirmasi")),
+
+          const SizedBox(height: 6),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+
+              const Text(
+                "Pasien Dikonfirmasi Hari Ini",
+                style: TextStyle(fontSize: 12),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminJadwalScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD1DCE5),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  "Lihat Detail",
+                  style: TextStyle(
+                    color: Color(0xFF1B4F72),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -182,28 +246,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ================= DATA =================
   List<Map<String, dynamic>> _getSchedules() {
-    final data = MockDatabase.userReservations.where((res) {
-      return res['status'] == 'Dikonfirmasi';
-    }).toList();
-
-    data.sort((a, b) {
-      final dateA = DateTime.parse(a['tanggal']);
-      final dateB = DateTime.parse(b['tanggal']);
-      return dateA.compareTo(dateB);
-    });
-
-    return data.take(3).toList();
+    return MockDatabase.userReservations
+        .where((res) => res['status'] == 'Dikonfirmasi')
+        .take(3)
+        .toList();
   }
 
   // ================= JADWAL =================
   Widget _scheduleCard(
       String name, String service, String time, String tanggal) {
-    final date = DateTime.parse(tanggal);
 
-    const bulan = [
-      'JAN','FEB','MAR','APR','MEI','JUN',
-      'JUL','AGS','SEP','OKT','NOV','DES'
-    ];
+    final date = DateTime.parse(tanggal);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -213,6 +266,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Row(
         children: [
+
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -221,11 +275,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             child: Column(
               children: [
-                Text(bulan[date.month - 1],
-                    style: const TextStyle(fontSize: 9)),
+                Text(
+                  _getMonthName(date.month),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Text("${date.day}",
-                    style:
-                        const TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -271,8 +326,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         TextButton(
           onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AdminJadwalScreen()),
+            );
           },
           child: const Text("Lihat Semua"),
         )
@@ -282,61 +339,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // ================= NAV =================
   Widget _bottomNav(BuildContext context, int currentIndex) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
 
-        selectedItemColor: const Color(0xFF00897B),
-        unselectedItemColor: const Color(0xFFB0BEC5),
+      onTap: (index) {
+        if (index == currentIndex) return;
 
-        selectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
+        switch (index) {
+          case 1:
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => AdminJadwalScreen()));
+            break;
+          case 2:
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => AdminChatListScreen()));
+            break;
+          case 3:
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => AdminPasienScreen()));
+            break;
+          case 4:
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => AdminPengaturanScreen()));
+            break;
+        }
+      },
 
-        onTap: (index) {
-          if (index == currentIndex) return; // 🔥 biar ga reload
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-              break;
-            case 1:
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-              break;
-            case 2:
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AdminChatListScreen()));
-              break;
-            case 3:
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-              break;
-            case 4:
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
-              break;
-          }
-        },
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-        ],
-      ),
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+      ],
     );
   }
 }
