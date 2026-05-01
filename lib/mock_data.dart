@@ -20,7 +20,7 @@ class MockDatabase {
   static String rememberedEmail = '';
   static bool rememberMe = false;
 
-  // ================= CHAT FIX =================
+  // ================= CHAT =================
   static Map<String, List<Map<String, dynamic>>> chatRooms = {
     "Sifa Harum": [
       {
@@ -45,24 +45,24 @@ class MockDatabase {
     {
       'layanan': 'Pemeriksaan Kehamilan',
       'jam': '10:00',
-      'tanggal': '2024-05-15',
+      'tanggal': '2026-04-24', // 🔥 disamakan dengan kalender
       'isHomeCare': false,
-      'status': 'Menunggu Persetujuan',
+      'status': 'Menunggu Persetujuan', // 👈 ini yang muncul di admin
       'namaPasien': 'Sifa Harum',
       'emailPasien': 'sifa@example.com',
       'harga': 'Rp 150.000',
-      'timestamp': DateTime(2024, 5, 10),
+      'timestamp': DateTime(2026, 4, 20),
     },
     {
       'layanan': 'Imunisasi Bayi',
       'jam': '14:00',
-      'tanggal': '2024-05-20',
+      'tanggal': '2026-04-24',
       'isHomeCare': true,
-      'status': 'Disetujui',
+      'status': 'Dikonfirmasi', // 🔥 sudah selesai
       'namaPasien': 'Anisa Melia',
       'emailPasien': 'anisa@example.com',
       'harga': 'Rp 200.000',
-      'timestamp': DateTime(2024, 5, 12),
+      'timestamp': DateTime(2026, 4, 21),
     },
   ];
 
@@ -74,8 +74,8 @@ class MockDatabase {
       'timestamp': DateTime.now(),
     },
     {
-      'title': 'Pemeriksaan Dikonfirmasi',
-      'message': 'Bidan telah mengkonfirmasi jadwal Anda',
+      'title': 'Reservasi Dikonfirmasi',
+      'message': 'Jadwal Anda telah disetujui',
       'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
     },
   ];
