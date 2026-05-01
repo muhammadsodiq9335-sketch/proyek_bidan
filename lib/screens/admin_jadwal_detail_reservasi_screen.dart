@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
+import 'admin_chat_list_screen.dart';
+import 'admin_pasien_screen.dart';
 
 class AdminJadwalDetailReservasiScreen extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -20,25 +22,24 @@ class AdminJadwalDetailReservasiScreen extends StatefulWidget {
 class _AdminJadwalDetailReservasiScreenState
     extends State<AdminJadwalDetailReservasiScreen> {
 
+  int selectedBidan = -1; // 🔥 index bidan yg dipilih
+
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2C6CB),
+      backgroundColor: const Color(0xFFEECAD0),
 
       appBar: AppBar(
-        backgroundColor: const Color(0xFFDDE6CF),
+        title: const Text("Detail Reservasi"),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Detail Reservasi",
-          style: TextStyle(color: Colors.black),
-        ),
+        foregroundColor: Colors.black,
+        centerTitle: true,
       ),
+
+      bottomNavigationBar: _bottomNav(context),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -47,17 +48,17 @@ class _AdminJadwalDetailReservasiScreenState
 
             // ================= PROFILE =================
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: const Color(0xFFE99AA3),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.grey.shade300,
-                    child: const Icon(Icons.person, size: 40),
+                  const CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 40),
                   ),
 
                   const SizedBox(height: 12),
@@ -65,8 +66,8 @@ class _AdminJadwalDetailReservasiScreenState
                   Text(
                     data['namaPasien'] ?? '-',
                     style: const TextStyle(
-                      fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
 
@@ -74,110 +75,110 @@ class _AdminJadwalDetailReservasiScreenState
 
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                        horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text("Pasien"),
+                    child: const Text("26 Tahun"),
                   ),
 
                   const SizedBox(height: 10),
 
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.location_on, size: 16),
-                      const SizedBox(width: 4),
-                      const Flexible(
+                      Icon(Icons.location_on, size: 16),
+                      SizedBox(width: 4),
+                      Flexible(
                         child: Text(
-                          "Alamat belum tersedia",
+                          "Jl. Bandung, Kota Malang, Jawa Timur",
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12),
                         ),
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 10),
+
+                  const Text("Umum"),
                 ],
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // ================= DETAIL =================
-            _infoBox(
-              icon: Icons.calendar_today,
-              title: "TANGGAL",
-              value: _formatDate(data['tanggal']),
+            // ================= INFO =================
+            _infoCard(Icons.calendar_today, "TANGGAL",
+                _displayDate(data['tanggal'])),
+            const SizedBox(height: 10),
+            _infoCard(Icons.access_time, "WAKTU", data['jam'] ?? '-'),
+            const SizedBox(height: 10),
+            _infoCard(Icons.note, "JENIS RESERVASI",
+                data['layanan'] ?? '-'),
+
+            const SizedBox(height: 20),
+
+            // ================= PILIH BIDAN =================
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Pilih Bidan untuk ACC",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
-            _infoBox(
-              icon: Icons.access_time,
-              title: "WAKTU",
-              value: data['jam'] ?? '-',
-            ),
-
-            const SizedBox(height: 12),
-
-            _infoBox(
-              icon: Icons.note,
-              title: "JENIS RESERVASI",
-              value: data['layanan'] ?? '-',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _bidanItem("Siti", 0),
+                _bidanItem("Ana", 1),
+                _bidanItem("Maya", 2),
+                _bidanItem("Rani", 3),
+              ],
             ),
 
             const SizedBox(height: 20),
 
-            // ================= BUTTON TERIMA =================
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    data['status'] = 'Dikonfirmasi';
-                  });
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text("Terima Reservasi"),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ================= BUTTON LAIN =================
+            // ================= BUTTON =================
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.edit_calendar),
-                    label: const Text("Ganti Jadwal"),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade50,
-                      foregroundColor: Colors.blue,
+                  child: ElevatedButton(
+                    onPressed: selectedBidan == -1
+                        ? null
+                        : () {
+                            widget.data['status'] = 'Dikonfirmasi';
+                            Navigator.pop(context);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    child: const Text("✔ Terima"),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: ElevatedButton(
                     onPressed: () {
-                      setState(() {
-                        data['status'] = 'Ditolak';
-                      });
+                      widget.data['status'] = 'Ditolak';
                       Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.close),
-                    label: const Text("Tolak"),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade200,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
+                    child: const Text("✖ Tolak"),
                   ),
                 ),
               ],
@@ -185,22 +186,69 @@ class _AdminJadwalDetailReservasiScreenState
           ],
         ),
       ),
-
-      bottomNavigationBar: _bottomNav(context, 1),
     );
   }
 
-  // ================= INFO BOX =================
-  Widget _infoBox({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
+  // ================= BIDAN ITEM =================
+  Widget _bidanItem(String name, int index) {
+    final isSelected = selectedBidan == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedBidan = index;
+        });
+      },
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor:
+                    isSelected ? Colors.green : Colors.grey.shade300,
+                child: const Icon(Icons.person, color: Colors.white),
+              ),
+
+              if (isSelected)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(Icons.check,
+                        size: 14, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= INFO CARD =================
+  Widget _infoCard(IconData icon, String title, String value) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFD9E8C8),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFDFF5D8),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
@@ -210,7 +258,10 @@ class _AdminJadwalDetailReservasiScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontSize: 10)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ],
@@ -218,8 +269,8 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  // ================= FORMAT DATE =================
-  String _formatDate(String iso) {
+  // ================= DATE =================
+  String _displayDate(String iso) {
     final date = DateTime.parse(iso);
 
     const bulan = [
@@ -231,12 +282,12 @@ class _AdminJadwalDetailReservasiScreenState
   }
 
   // ================= NAV =================
-  Widget _bottomNav(BuildContext context, int index) {
+  Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: index,
-      selectedItemColor: const Color(0xFF1B5E20),
-      onTap: (i) {
-        switch (i) {
+      currentIndex: 1,
+      selectedItemColor: const Color(0xFF1F7A8C),
+      onTap: (index) {
+        switch (index) {
           case 0:
             Navigator.pushReplacement(
               context,
@@ -249,8 +300,20 @@ class _AdminJadwalDetailReservasiScreenState
               MaterialPageRoute(builder: (_) => const AdminJadwalScreen()),
             );
             break;
+          case 2:
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AdminChatListScreen()),
+            );
+            break;
           case 3:
-            Navigator.pushReplacement(
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminPasienScreen()),
+            );
+            break;
+          case 4:
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()),
             );
@@ -260,6 +323,7 @@ class _AdminJadwalDetailReservasiScreenState
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
