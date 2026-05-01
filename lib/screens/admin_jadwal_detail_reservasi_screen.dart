@@ -5,6 +5,7 @@ import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
+import '../mock_data.dart';
 
 class AdminJadwalDetailReservasiScreen extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -22,7 +23,7 @@ class AdminJadwalDetailReservasiScreen extends StatefulWidget {
 class _AdminJadwalDetailReservasiScreenState
     extends State<AdminJadwalDetailReservasiScreen> {
 
-  int selectedBidan = -1; // 🔥 index bidan yg dipilih
+  int selectedBidan = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class _AdminJadwalDetailReservasiScreenState
         child: Column(
           children: [
 
-            // ================= PROFILE =================
+            /// ================= PROFILE =================
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -108,7 +109,7 @@ class _AdminJadwalDetailReservasiScreenState
 
             const SizedBox(height: 16),
 
-            // ================= INFO =================
+            /// ================= INFO =================
             _infoCard(Icons.calendar_today, "TANGGAL",
                 _displayDate(data['tanggal'])),
             const SizedBox(height: 10),
@@ -119,30 +120,41 @@ class _AdminJadwalDetailReservasiScreenState
 
             const SizedBox(height: 20),
 
-            // ================= PILIH BIDAN =================
+            /// ================= PILIH BIDAN =================
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Pilih Bidan untuk ACC",
+                "Pilih Bidan Untuk Pelayanan",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
 
             const SizedBox(height: 10),
 
+            /// 🔥 DINAMIS DARI MOCK DATABASE
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _bidanItem("Siti", 0),
-                _bidanItem("Ana", 1),
-                _bidanItem("Maya", 2),
-                _bidanItem("Rani", 3),
-              ],
+              children: List.generate(
+                MockDatabase.bidanList.length,
+                (index) {
+                  final bidan = MockDatabase.bidanList[index];
+                  return _bidanItem(bidan.nama, index);
+                },
+              ),
             ),
+
+            const SizedBox(height: 10),
+
+            /// 🔥 TAMPILKAN YANG DIPILIH
+            if (selectedBidan != -1)
+              Text(
+                "Dipilih: ${MockDatabase.bidanList[selectedBidan].nama}",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
 
             const SizedBox(height: 20),
 
-            // ================= BUTTON =================
+            /// ================= BUTTON =================
             Row(
               children: [
                 Expanded(
@@ -151,6 +163,11 @@ class _AdminJadwalDetailReservasiScreenState
                         ? null
                         : () {
                             widget.data['status'] = 'Dikonfirmasi';
+
+                            /// 🔥 SIMPAN BIDAN KE RESERVASI
+                            widget.data['bidan'] =
+                                MockDatabase.bidanList[selectedBidan].nama;
+
                             Navigator.pop(context);
                           },
                     style: ElevatedButton.styleFrom(
@@ -189,7 +206,7 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  // ================= BIDAN ITEM =================
+  /// ================= BIDAN ITEM =================
   Widget _bidanItem(String name, int index) {
     final isSelected = selectedBidan == index;
 
@@ -242,7 +259,7 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  // ================= INFO CARD =================
+  /// ================= INFO CARD =================
   Widget _infoCard(IconData icon, String title, String value) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -269,7 +286,7 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  // ================= DATE =================
+  /// ================= DATE =================
   String _displayDate(String iso) {
     final date = DateTime.parse(iso);
 
@@ -281,7 +298,7 @@ class _AdminJadwalDetailReservasiScreenState
     return "${date.day} ${bulan[date.month - 1]} ${date.year}";
   }
 
-  // ================= NAV =================
+  /// ================= NAV =================
   Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
       currentIndex: 1,

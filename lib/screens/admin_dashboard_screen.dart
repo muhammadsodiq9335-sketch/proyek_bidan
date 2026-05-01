@@ -112,7 +112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              hasPending ? "PERLU TINDAKAN" : "AMAN",
+              hasPending ? "PERLU TINDAKAN" : "SEMUA SUDAH DIPROSES",
               style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),

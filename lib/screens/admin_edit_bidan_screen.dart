@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
 
-class AdminTambahBidanScreen extends StatefulWidget {
+class AdminEditBidanScreen extends StatefulWidget {
   final bool isEdit;
   final int? index;
   final Map<String, String>? data;
 
-  const AdminTambahBidanScreen({
+  const AdminEditBidanScreen({
     super.key,
     this.isEdit = false,
     this.index,
@@ -14,12 +14,12 @@ class AdminTambahBidanScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminTambahBidanScreen> createState() =>
-      _AdminTambahBidanScreenState();
+  State<AdminEditBidanScreen> createState() =>
+      _AdminEditBidanScreenState();
 }
 
-class _AdminTambahBidanScreenState
-    extends State<AdminTambahBidanScreen> {
+class _AdminEditBidanScreenState
+    extends State<AdminEditBidanScreen> {
 
   final namaC = TextEditingController();
   final nikC = TextEditingController();
@@ -62,10 +62,10 @@ class _AdminTambahBidanScreenState
     );
 
     if (widget.isEdit) {
-      /// ===== EDIT DATA =====
+      /// ===== EDIT =====
       MockDatabase.bidanList[widget.index!] = dataBaru;
     } else {
-      /// ===== TAMBAH DATA =====
+      /// ===== TAMBAH =====
       MockDatabase.bidanList.add(dataBaru);
     }
 
@@ -170,7 +170,7 @@ class _AdminTambahBidanScreenState
     );
   }
 
-  /// ===== INPUT FIELD =====
+  /// ===== INPUT WIDGET =====
   Widget _input(String label, String hint, TextEditingController c) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

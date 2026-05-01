@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-// SESUAIKAN DENGAN PROJECT KAMU
+// SESUAIKAN IMPORT PROJECT KAMU
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_tambah_bidan_screen.dart';
-import 'bidan_data.dart';
+import 'admin_edit_bidan_screen.dart';
+import '../mock_data.dart';
 
 class AdminCekProfilBidanScreen extends StatefulWidget {
   const AdminCekProfilBidanScreen({super.key});
@@ -94,7 +95,7 @@ class _AdminCekProfilBidanScreenState
               const SizedBox(height: 16),
 
               /// ===== LIST BIDAN =====
-              if (BidanData.bidanList.isEmpty)
+              if (MockDatabase.bidanList.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20),
@@ -104,9 +105,9 @@ class _AdminCekProfilBidanScreenState
               else
                 Column(
                   children: List.generate(
-                    BidanData.bidanList.length,
+                    MockDatabase.bidanList.length,
                     (index) {
-                      final bidan = BidanData.bidanList[index];
+                      final bidan = MockDatabase.bidanList[index];
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -139,14 +140,14 @@ class _AdminCekProfilBidanScreenState
                                 children: [
 
                                   Text(
-                                    bidan["nama"] ?? "-",
+                                    bidan.nama,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
 
                                   Text(
-                                    bidan["str"] ?? "-",
+                                    bidan.str,
                                     style:
                                         const TextStyle(fontSize: 11),
                                   ),
@@ -163,10 +164,17 @@ class _AdminCekProfilBidanScreenState
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  AdminTambahBidanScreen(
+                                                  AdminEditBidanScreen(
                                                 isEdit: true,
                                                 index: index,
-                                                data: bidan,
+                                                data: {
+                                                  "nama": bidan.nama,
+                                                  "nik": bidan.nik,
+                                                  "nip": bidan.nip,
+                                                  "str": bidan.str,
+                                                  "hp": bidan.hp,
+                                                  "alamat": bidan.alamat,
+                                                },
                                               ),
                                             ),
                                           );
@@ -189,7 +197,7 @@ class _AdminCekProfilBidanScreenState
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            BidanData.bidanList
+                                            MockDatabase.bidanList
                                                 .removeAt(index);
                                           });
                                         },
@@ -225,7 +233,7 @@ class _AdminCekProfilBidanScreenState
         ),
       ),
 
-      /// ===== BOTTOM NAV =====
+      /// ===== BOTTOM NAV (JANGAN DIUBAH) =====
       bottomNavigationBar: _bottomNav(context, 3),
     );
   }
