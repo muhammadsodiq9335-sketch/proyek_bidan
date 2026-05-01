@@ -17,7 +17,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
-      bottomNavigationBar: _bottomNav(context),
+      bottomNavigationBar: _bottomNav(context,0),
       body: SafeArea(
         child: Column(
           children: [
@@ -281,34 +281,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ================= NAV =================
-  Widget _bottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      onTap: (index) {
-        if (index == 1) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-        }
-        if (index == 2) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-        }
-        if (index == 3) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-        }
-        if (index == 4) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
+  Widget _bottomNav(BuildContext context, int currentIndex) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: currentIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+
+        selectedItemColor: const Color(0xFF00897B),
+        unselectedItemColor: const Color(0xFFB0BEC5),
+
+        selectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+
+        onTap: (index) {
+          if (index == currentIndex) return; // 🔥 biar ga reload
+
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+              break;
+            case 1:
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+              break;
+            case 2:
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => AdminChatListScreen()));
+              break;
+            case 3:
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+              break;
+            case 4:
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+              break;
+          }
+        },
+
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+        ],
+      ),
     );
   }
 }

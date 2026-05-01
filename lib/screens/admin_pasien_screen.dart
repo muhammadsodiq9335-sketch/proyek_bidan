@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
+import 'admin_chat_list_screen.dart';
 
 class AdminPasienScreen extends StatefulWidget {
   const AdminPasienScreen({super.key});
@@ -233,55 +234,88 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
       ),
 
       /// ===== BOTTOM NAV =====
-      bottomNavigationBar: _bottomNav(context, 2),
+      bottomNavigationBar: _bottomNav(context),
     );
   }
 
   /// ===== BOTTOM NAV =====
-  Widget _bottomNav(BuildContext context, int currentIndex) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      selectedItemColor: const Color(0xFF1B5E20),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      onTap: (index) {
-        if (index == currentIndex) return;
+  Widget _bottomNav(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: 3,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
 
-        switch (index) {
-          case 0:
+        /// 🔥 STYLE BARU
+        selectedItemColor: const Color(0xFF00897B),
+        unselectedItemColor: const Color(0xFFB0BEC5),
+
+        selectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+
+        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
+        onTap: (index) {
+          if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const AdminDashboardScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
             );
-            break;
+          }
+          if (index == 1) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+          }
+          if (index == 2) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+          }
+          if (index == 3) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+          }
+          if (index == 4) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+          }
+        },
 
-          case 1:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdminJadwalScreen(),
-              ),
-            );
-            break;
-
-          case 3:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdminPengaturanScreen(),
-              ),
-            );
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
+        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Beranda",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: "Jadwal",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "Chat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: "Pasien",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: "Pengaturan",
+          ),
+        ],
+      ),
     );
   }
 }

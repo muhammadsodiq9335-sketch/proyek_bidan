@@ -326,45 +326,83 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   }
 
   // ================= NAV =================
-  Widget _bottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 1,
-      selectedItemColor: const Color(0xFF1F7A8C),
-      onTap: (index) {
-        switch (index) {
-          case 0:
+ Widget _bottomNav(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: 1,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+
+        /// 🔥 STYLE BARU
+        selectedItemColor: const Color(0xFF00897B),
+        unselectedItemColor: const Color(0xFFB0BEC5),
+
+        selectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+
+        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
+        onTap: (index) {
+          if (index == 0) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
             );
-            break;
-          case 2:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminChatListScreen()),
-            );
-            break;
-          case 3:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminPasienScreen()),
-            );
-            break;
-          case 4:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()),
-            );
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "Pasien"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
+          }
+          if (index == 1) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+          }
+          if (index == 2) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+          }
+          if (index == 3) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+          }
+          if (index == 4) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+          }
+        },
+
+        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Beranda",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: "Jadwal",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "Chat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: "Pasien",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: "Pengaturan",
+          ),
+        ],
+      ),
     );
   }
 }
