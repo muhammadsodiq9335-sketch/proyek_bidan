@@ -35,6 +35,7 @@ class _AdminTambahJenisPelayananScreenState
     super.dispose();
   }
 
+  /// 🔥 FIX UTAMA DI SINI
   void _simpanData() {
     if (jenisPelayananController.text.isEmpty ||
         deskripsiController.text.isEmpty ||
@@ -46,6 +47,16 @@ class _AdminTambahJenisPelayananScreenState
       );
       return;
     }
+
+    /// ✅ TAMBAH KE MOCK DATABASE
+    MockDatabase.layananList.add(
+      JenisPelayanan(
+        nama: jenisPelayananController.text,
+        deskripsi: deskripsiController.text,
+        harga: "Rp ${hargaController.text}",
+        kategori: selectedCategory!,
+      ),
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Data berhasil disimpan!")),
@@ -141,7 +152,6 @@ class _AdminTambahJenisPelayananScreenState
         ),
       ),
 
-      /// 🔥 FIX DI SINI
       bottomNavigationBar: _bottomNav(context),
     );
   }

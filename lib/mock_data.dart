@@ -29,6 +29,19 @@ class BidanProfile {
     required this.alamat,
   });
 }
+class JenisPelayanan {
+  String nama;
+  String deskripsi;
+  String harga;
+  String kategori;
+
+  JenisPelayanan({
+    required this.nama,
+    required this.deskripsi,
+    required this.harga,
+    required this.kategori,
+  });
+}
 
 class MockDatabase {
   static final Map<String, String> registeredUsers = {};
@@ -117,7 +130,36 @@ class MockDatabase {
       'timestamp': DateTime(2026, 4, 21),
     },
   ];
+  // ================= JENIS PELAYANAN =================
+  static List<JenisPelayanan> layananList = [
+    // 🔥 KLINIK
+    JenisPelayanan(
+      nama: "USG Kehamilan",
+      deskripsi: "Pemeriksaan kandungan menggunakan USG",
+      harga: "Rp 150.000",
+      kategori: "Klinik",
+    ),
+    JenisPelayanan(
+      nama: "Pemeriksaan Kehamilan",
+      deskripsi: "Pemeriksaan rutin ibu hamil",
+      harga: "Rp 100.000",
+      kategori: "Klinik",
+    ),
 
+    // 🔥 HOME CARE
+    JenisPelayanan(
+      nama: "Imunisasi Bayi",
+      deskripsi: "Layanan imunisasi ke rumah",
+      harga: "Rp 200.000",
+      kategori: "Home Care",
+    ),
+    JenisPelayanan(
+      nama: "Kunjungan Bidan",
+      deskripsi: "Pemeriksaan langsung ke rumah pasien",
+      harga: "Rp 250.000",
+      kategori: "Home Care",
+    ),
+  ];
   // ================= NOTIFICATIONS =================
   static List<Map<String, dynamic>> notifications = [
     {
