@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../mock_data.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -223,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     final email = _emailController.text.trim();
                     final password = _passwordController.text.trim();
                     final confirmPassword = _confirmPasswordController.text.trim();
@@ -261,36 +262,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return;
                     }
 
-                    if (MockDatabase.registeredUsers.containsKey(email)) {
+                    final authService = AuthService();
+
+                    try {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(child: CircularProgressIndicator()),
+                      );
+
+                      await authService.signUp(
+                        email: email,
+                        password: password,
+                        nama: nama.isNotEmpty ? nama : "Pengguna Baru",
+                        tglLahir: tglLahir,
+                        alamat: alamat,
+                      );
+
+                      if (!mounted) return;
+                      Navigator.pop(context); // close loading
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text("Email/HP sudah terdaftar!"),
+                          content: Text("Pendaftaran berhasil! Silakan login."),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+
+                      Future.delayed(const Duration(seconds: 2), () {
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                      });
+                    } catch (e) {
+                      if (!mounted) return;
+                      Navigator.pop(context); // close loading
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Gagal mendaftar: ${e.toString()}"),
                           backgroundColor: Colors.redAccent,
                         ),
                       );
-                      return;
                     }
-
-                    MockDatabase.registeredUsers[email] = password;
-                    MockDatabase.userProfiles[email] = UserProfile(
-                      email: email,
-                      nama: nama.isNotEmpty ? nama : "Pengguna Baru",
-                      tglLahir: tglLahir,
-                      alamat: alamat,
-                    );
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Pendaftaran berhasil! Silakan login."),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-
-                    Future.delayed(const Duration(seconds: 2), () {
-                      if (!mounted) return;
-                      Navigator.pop(context);
-                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFAED581),

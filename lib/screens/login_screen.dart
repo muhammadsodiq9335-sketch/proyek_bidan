@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
 import '../mock_data.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,10 +23,18 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _rememberMe = MockDatabase.rememberMe;
-    if (_rememberMe && MockDatabase.rememberedEmail.isNotEmpty) {
-      _emailController.text = MockDatabase.rememberedEmail;
-    }
+    _loadRememberMe();
+  }
+
+  Future<void> _loadRememberMe() async {
+    final authService = AuthService();
+    final data = await authService.getRememberMe();
+    setState(() {
+      _rememberMe = data['isRemembered'];
+      if (_rememberMe && data['email'].isNotEmpty) {
+        _emailController.text = data['email'];
+      }
+    });
   }
 
   @override
@@ -85,22 +94,15 @@ class _LoginScreenState extends State<LoginScreen> {
               final email = emailCtrl.text.trim();
               Navigator.pop(ctx);
               if (email.isEmpty) return;
-              if (MockDatabase.registeredUsers.containsKey(email)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Informasi pemulihan kata sandi telah dikirim ke email/HP Anda.'),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Email/HP tidak ditemukan. Silakan daftar terlebih dahulu.'),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-              }
+              
+              // TODO: Implement Supabase Password Reset
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Fungsi Lupa Sandi belum diintegrasikan dengan Supabase.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00897B),
@@ -325,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 24),
 
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final email = _emailController.text.trim();
               final password = _passwordController.text.trim();
 
@@ -340,34 +342,46 @@ class _LoginScreenState extends State<LoginScreen> {
               }
 
               if (isPatientMode) {
-                if (!MockDatabase.registeredUsers.containsKey(email)) {
+                final authService = AuthService();
+
+                try {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(child: CircularProgressIndicator()),
+                  );
+
+                  await authService.signIn(email: email, password: password);
+                  await authService.saveRememberMe(email, _rememberMe);
+
+                  if (!mounted) return;
+                  Navigator.pop(context); // close loading
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("Akun belum terdaftar. Silakan daftar terlebih dahulu!"),
+                      content: Text("Login berhasil!"),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    );
+                  });
+                } catch (e) {
+                  if (!mounted) return;
+                  Navigator.pop(context); // close loading
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Email atau Kata Sandi salah!"),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
-                  return;
                 }
-
-                if (MockDatabase.registeredUsers[email] != password) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Kata Sandi salah!"),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                  return;
-                }
-
-                MockDatabase.currentUser = MockDatabase.userProfiles[email] ?? UserProfile(
-                  email: email, 
-                  nama: "Pengguna", 
-                  tglLahir: "-", 
-                  alamat: "-"
-                );
-                MockDatabase.rememberMe = _rememberMe;
-                MockDatabase.rememberedEmail = _rememberMe ? email : '';
               } else {
                 if (email != "admin@gmail.com" || password != "admin") {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -378,30 +392,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                   return;
                 }
-              }
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Login berhasil!"),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 1),
-                ),
-              );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Login Admin berhasil!"),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
 
-              Future.delayed(const Duration(seconds: 1), () {
-                if (!mounted) return;
-                if (isPatientMode) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                  );
-                } else {
+                Future.delayed(const Duration(seconds: 1), () {
+                  if (!mounted) return;
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
                   );
-                }
-              });
+                });
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFAED581),
