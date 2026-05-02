@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../mock_data.dart';
 import 'admin_review_pasien_screen.dart';
 
 class AdminBalasReviewScreen extends StatefulWidget {
-  final Review review;
+  final ReviewPasien review;
 
   const AdminBalasReviewScreen({super.key, required this.review});
 

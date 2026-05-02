@@ -211,11 +211,17 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          _buildDetailRow(Icons.medical_services_outlined, 'Layanan Dipilih', 
-              "\n()"),
+          _buildDetailRow(
+            Icons.medical_services_outlined,
+            'Layanan Dipilih',
+            layananNames,
+          ),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.access_time_outlined, 'Jadwal Kunjungan',
-              '\nPukul  -  WIB'),
+          _buildDetailRow(
+            Icons.access_time_outlined,
+            'Jadwal Kunjungan',
+            '$tanggal\nPukul $jam WIB',
+          ),
         ],
       ),
     );

@@ -43,6 +43,24 @@ class JenisPelayanan {
   });
 }
 
+class ReviewPasien {
+  final String name;
+  final int rating;
+  final String date;
+  final String content;
+  final int avatarColor;
+  String? adminReply;
+
+  ReviewPasien({
+    required this.name,
+    required this.rating,
+    required this.date,
+    required this.content,
+    required this.avatarColor,
+    this.adminReply,
+  });
+}
+
 class MockDatabase {
   static final Map<String, String> registeredUsers = {};
   static final Map<String, UserProfile> userProfiles = {};
@@ -242,11 +260,27 @@ class MockDatabase {
       'title': 'Reservasi Terkirim',
       'message': 'Reservasi Anda sedang diproses',
       'timestamp': DateTime.now(),
+      'time': 'Baru saja',
+      'icon': 0xe356, // Icons.info_outline.codePoint
     },
     {
       'title': 'Reservasi Dikonfirmasi',
       'message': 'Jadwal Anda telah disetujui',
       'timestamp': DateTime.now().subtract(const Duration(hours: 2)),
+      'time': '2 jam yang lalu',
+      'icon': 0xe156, // Icons.check_circle_outline.codePoint
     },
+  ];
+
+  // ================= REVIEWS =================
+  static List<ReviewPasien> reviews = [
+    ReviewPasien(
+      name: 'SYIFA HADJU',
+      rating: 5,
+      date: '12 Jan 2026',
+      content:
+          'Bidan X sangat ramah dan penjelasannya sangat menenangkan. Fasilitasnya sangat bersih, membuat pengalaman USG pertama saya jadi sangat berkesan.',
+      avatarColor: 0xFFE8D5E0,
+    ),
   ];
 }

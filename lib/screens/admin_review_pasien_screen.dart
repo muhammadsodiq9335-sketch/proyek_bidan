@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../mock_data.dart';
 import 'admin_balas_review_screen.dart';
 
 class AdminReviewPasienScreen extends StatefulWidget {
@@ -10,16 +11,6 @@ class AdminReviewPasienScreen extends StatefulWidget {
 }
 
 class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
-  final List<Review> reviews = [
-    Review(
-      name: 'SYIFA HADJU',
-      rating: 5,
-      date: '12 Jan 2026',
-      content:
-          'Bidan X sangat ramah dan penjelasannya sangat menenangkan. Fasilitasnya sangat bersih, membuat pengalaman USG pertama saya jadi sangat berkesan.',
-      avatarColor: const Color(0xFFE8D5E0),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,12 +23,12 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: reviews.map((r) => _buildReviewCard(r)).toList(),
+        children: MockDatabase.reviews.map((r) => _buildReviewCard(r)).toList(),
       ),
     );
   }
 
-  Widget _buildReviewCard(Review review) {
+  Widget _buildReviewCard(ReviewPasien review) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -155,24 +146,4 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
       ),
     );
   }
-}
-
-/// MODEL
-class Review {
-  final String name;
-  final int rating;
-  final String date;
-  final String content;
-  final Color avatarColor;
-
-  String? adminReply;
-
-  Review({
-    required this.name,
-    required this.rating,
-    required this.date,
-    required this.content,
-    required this.avatarColor,
-    this.adminReply,
-  });
-}
+}

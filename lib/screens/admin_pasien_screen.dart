@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../mock_data.dart';
 
 // SESUAIKAN DENGAN PROJECT KAMU
 import 'admin_dashboard_screen.dart';
@@ -17,11 +18,25 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
   int selectedDateIndex = 2;
   DateTime startDate = DateTime.now();
 
-  final List<Map<String, String>> pasienList = [
-    {"nama": "Maryam EW", "tgl": "12 Jan 2000", "alamat": "Jl. Kapten"},
-    {"nama": "Fuji Furaba", "tgl": "24 Mei 1997", "alamat": "Jl. Sukuni"},
-    {"nama": "Mayya MT", "tgl": "17 Juni 1996", "alamat": "Jl. Saguni"},
-  ];
+  List<Map<String, String>> get pasienList {
+    final Map<String, Map<String, String>> uniquePatients = {};
+    for (var res in MockDatabase.userReservations) {
+      final email = res['emailPasien'] as String? ?? '';
+      if (!uniquePatients.containsKey(email)) {
+        uniquePatients[email] = {
+          "nama": res['namaPasien'] as String? ?? 'Unknown',
+          "tgl": "-", // tgl lahir might need to come from userProfiles, but we don't have direct mapping without email. Let's lookup userProfiles
+          "alamat": "-",
+        };
+        // If we have profile data, use it
+        if (MockDatabase.userProfiles.containsKey(email)) {
+          uniquePatients[email]!["tgl"] = MockDatabase.userProfiles[email]!.tglLahir;
+          uniquePatients[email]!["alamat"] = MockDatabase.userProfiles[email]!.alamat;
+        }
+      }
+    }
+    return uniquePatients.values.toList();
+  }
 
   final List<String> hari = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 

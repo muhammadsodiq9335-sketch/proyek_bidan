@@ -42,7 +42,16 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
           TextButton(
             onPressed: () {
               if (MockDatabase.currentUser != null) {
-                // Simulasi simpan data
+                // Simpan data
+                setState(() {
+                  MockDatabase.currentUser = UserProfile(
+                    email: MockDatabase.currentUser!.email,
+                    nama: _namaController.text,
+                    tglLahir: MockDatabase.currentUser!.tglLahir,
+                    alamat: _alamatController.text,
+                  );
+                });
+                
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Profil berhasil diperbarui')),
                 );
