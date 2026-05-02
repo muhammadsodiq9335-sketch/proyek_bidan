@@ -45,6 +45,7 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
                 // Simpan data
                 setState(() {
                   MockDatabase.currentUser = UserProfile(
+                    id: MockDatabase.currentUser!.id,
                     email: MockDatabase.currentUser!.email,
                     nama: _namaController.text,
                     tglLahir: MockDatabase.currentUser!.tglLahir,
