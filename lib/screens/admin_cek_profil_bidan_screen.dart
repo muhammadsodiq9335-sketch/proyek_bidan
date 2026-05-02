@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-// SESUAIKAN DENGAN PROJECT KAMU
+// SESUAIKAN IMPORT PROJECT KAMU
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_tambah_bidan_screen.dart';
-import 'bidan_data.dart';
+import 'admin_edit_bidan_screen.dart';
+import '../mock_data.dart';
+import 'admin_chat_list_screen.dart';
 
 class AdminCekProfilBidanScreen extends StatefulWidget {
   const AdminCekProfilBidanScreen({super.key});
@@ -94,7 +96,7 @@ class _AdminCekProfilBidanScreenState
               const SizedBox(height: 16),
 
               /// ===== LIST BIDAN =====
-              if (BidanData.bidanList.isEmpty)
+              if (MockDatabase.bidanList.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20),
@@ -104,9 +106,9 @@ class _AdminCekProfilBidanScreenState
               else
                 Column(
                   children: List.generate(
-                    BidanData.bidanList.length,
+                    MockDatabase.bidanList.length,
                     (index) {
-                      final bidan = BidanData.bidanList[index];
+                      final bidan = MockDatabase.bidanList[index];
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -139,14 +141,14 @@ class _AdminCekProfilBidanScreenState
                                 children: [
 
                                   Text(
-                                    bidan["nama"] ?? "-",
+                                    bidan.nama,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
 
                                   Text(
-                                    bidan["str"] ?? "-",
+                                    bidan.str,
                                     style:
                                         const TextStyle(fontSize: 11),
                                   ),
@@ -163,10 +165,17 @@ class _AdminCekProfilBidanScreenState
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  AdminTambahBidanScreen(
+                                                  AdminEditBidanScreen(
                                                 isEdit: true,
                                                 index: index,
-                                                data: bidan,
+                                                data: {
+                                                  "nama": bidan.nama,
+                                                  "nik": bidan.nik,
+                                                  "nip": bidan.nip,
+                                                  "str": bidan.str,
+                                                  "hp": bidan.hp,
+                                                  "alamat": bidan.alamat,
+                                                },
                                               ),
                                             ),
                                           );
@@ -189,7 +198,7 @@ class _AdminCekProfilBidanScreenState
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            BidanData.bidanList
+                                            MockDatabase.bidanList
                                                 .removeAt(index);
                                           });
                                         },
@@ -225,73 +234,83 @@ class _AdminCekProfilBidanScreenState
         ),
       ),
 
-      /// ===== BOTTOM NAV =====
-      bottomNavigationBar: _bottomNav(context, 3),
+      /// ===== BOTTOM NAV (JANGAN DIUBAH) =====
+      bottomNavigationBar: _bottomNav(context),
     );
   }
 
   /// ===== BOTTOM NAV =====
-  Widget _bottomNav(BuildContext context, int currentIndex) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      selectedItemColor: const Color(0xFF1B5E20),
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      onTap: (index) {
-        if (index == currentIndex) return;
+  Widget _bottomNav(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+        ),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: 4,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
 
-        switch (index) {
-          case 0:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const AdminDashboardScreen(),
-              ),
-            );
-            break;
+        /// 🔥 STYLE BARU
+        selectedItemColor: const Color(0xFF00897B),
+        unselectedItemColor: const Color(0xFFB0BEC5),
 
-          case 1:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const AdminJadwalScreen(),
-              ),
-            );
-            break;
+        selectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
 
-          case 2:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const AdminPasienScreen(),
-              ),
-            );
-            break;
+        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+          }
+          if (index == 2) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+          }
+          if (index == 3) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+          }
+          if (index == 4) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+          }
+        },
 
-          case 3:
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const AdminPengaturanScreen(),
-              ),
-            );
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-            icon: Icon(Icons.home), label: "Beranda"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.people), label: "Pasien"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
+        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Beranda",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: "Jadwal",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: "Chat",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.payments),
+            label: "Pembayaran",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: "Pengaturan",
+          ),
+        ],
+      ),
     );
   }
 }
