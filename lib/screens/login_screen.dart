@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
@@ -12,10 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Toggle state: true for Pasien, false for Admin
   bool isPatientMode = true;
   
-  // Controllers for text fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -24,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill email jika "Ingat Saya" pernah diaktifkan
     _rememberMe = MockDatabase.rememberMe;
     if (_rememberMe && MockDatabase.rememberedEmail.isNotEmpty) {
       _emailController.text = MockDatabase.rememberedEmail;
@@ -120,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Soft pink background requested in the design
       backgroundColor: const Color(0xFFFCE4EC),
       body: SafeArea(
         child: Center(
@@ -130,13 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Toggle Role (Segmented Control)
                   _buildRoleToggle(),
                   const SizedBox(height: 20),
-                  // The main Login Card
                   _buildLoginCard(context),
                   const SizedBox(height: 20),
-                  // Waiting Room Image / Footer banner
                   _buildFooterBanner(),
                   const SizedBox(height: 20),
                   _buildCopyright()
@@ -200,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(30.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F8E9), // Pale Background Green
+        color: const Color(0xFFF1F8E9),
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
@@ -213,7 +206,6 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Logo & Title
           Center(
             child: Container(
               padding: const EdgeInsets.all(12),
@@ -253,7 +245,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 30),
 
-          // Email Field
           const Text("Email atau No. HP", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 13)),
           const SizedBox(height: 8),
           TextField(
@@ -271,7 +262,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Password Field
           const Text("Kata Sandi", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87, fontSize: 13)),
           const SizedBox(height: 8),
           TextField(
@@ -302,7 +292,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Remember Me & Forgot Password
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -335,13 +324,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Login Button
           ElevatedButton(
             onPressed: () {
               final email = _emailController.text.trim();
               final password = _passwordController.text.trim();
 
-              // Validasi field kosong
               if (email.isEmpty || password.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -352,9 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 return;
               }
 
-              // Validasi role mode
               if (isPatientMode) {
-                // Cek apakan email/hp sudah terdaftar di MockDatabase
                 if (!MockDatabase.registeredUsers.containsKey(email)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -365,7 +350,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   return;
                 }
 
-                // Cek kecocokan password
                 if (MockDatabase.registeredUsers[email] != password) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -376,22 +360,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   return;
                 }
 
-                // Login sukses, set pengguna aktif
                 MockDatabase.currentUser = MockDatabase.userProfiles[email] ?? UserProfile(
                   email: email, 
                   nama: "Pengguna", 
                   tglLahir: "-", 
                   alamat: "-"
                 );
-                // Simpan email jika "Ingat Saya" diaktifkan
                 MockDatabase.rememberMe = _rememberMe;
                 MockDatabase.rememberedEmail = _rememberMe ? email : '';
               } else {
-                // Admin mode: hardcoded untuk demo
                 if (email != "admin@gmail.com" || password != "admin") {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("Kredensial Admin tidak valid! (Gunakan admin / admin)"),
+                      content: Text("Kredensial Admin tidak valid! (Gunakan admin@gmail.com / admin)"),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -399,7 +380,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
               }
 
-              // Jika lolos semua validasi
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Login berhasil!"),
@@ -439,7 +419,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Register
           if (isPatientMode)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

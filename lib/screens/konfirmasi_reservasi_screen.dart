@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
 import '../mock_data.dart';
 
@@ -53,7 +53,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 8),
-            // Header title
             const Text(
               'Ringkasan Reservasi',
               style: TextStyle(
@@ -69,17 +68,14 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Detail Profil Card (Read Only)
             if (MockDatabase.currentUser != null) ...[
               _buildProfilCard(),
               const SizedBox(height: 16),
             ],
 
-            // Detail Layanan Card
             _buildLayananCard(),
             const SizedBox(height: 16),
 
-            // Info note
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -102,30 +98,29 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Kirim Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Simpan ke riwayat reservasi
+                  final namaPasien = MockDatabase.currentUser?.nama ?? 'Pasien';
+                  final emailPasien = MockDatabase.currentUser?.email ?? '';
+
                   MockDatabase.userReservations.insert(0, {
                     'layanan': layananNames,
                     'jam': jam,
                     'tanggal': tanggal,
                     'isHomeCare': isHomeCare,
                     'status': 'Menunggu Persetujuan',
-                    'namaPasien': MockDatabase.currentUser?.nama ?? 'Pasien',
-                    'emailPasien': MockDatabase.currentUser?.email ?? '',
+                    'namaPasien': namaPasien,
+                    'emailPasien': emailPasien,
                     'harga': hargaTotal,
                     'timestamp': DateTime.now(),
                   });
 
-                  // Tambah notifikasi otomatis
                   MockDatabase.notifications.insert(0, {
                     'title': 'Reservasi Terkirim',
-                    'message': 'Reservasi $layananNames Anda sedang menunggu persetujuan admin.',
-                    'time': 'Baru saja',
-                    'icon': 0xe0e5, // Icons.access_time
+                    'message': 'Reservasi ${''} Anda sedang menunggu persetujuan admin.',
+                    'timestamp': DateTime.now(),
                   });
 
                   Navigator.pushAndRemoveUntil(
@@ -161,8 +156,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
       ),
     );
   }
-
-
 
   Widget _buildProfilCard() {
     return Container(
@@ -219,10 +212,10 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _buildDetailRow(Icons.medical_services_outlined, 'Layanan Dipilih', 
-              "$layananNames\n(${isHomeCare ? 'Kunjungan Rumah' : 'Klinik'})"),
+              "\n()"),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
           _buildDetailRow(Icons.access_time_outlined, 'Jadwal Kunjungan',
-              '$tanggal\nPukul $jam - ${_endTime(jam)} WIB'),
+              '\nPukul  -  WIB'),
         ],
       ),
     );
@@ -264,6 +257,6 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
   String _endTime(String jam) {
     final parts = jam.split(':');
     final hour = int.parse(parts[0]) + 1;
-    return '${hour.toString().padLeft(2, '0')}:00';
+    return ':00';
   }
 }

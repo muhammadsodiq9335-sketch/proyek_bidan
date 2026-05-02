@@ -595,9 +595,8 @@ class _LayananScreenState extends State<LayananScreen>
           context,
           MaterialPageRoute(
             builder: (context) => FormulirReservasiScreen(
-              layanan: service['title'],
+              selectedServices: [service],
               isHomeCare: isHomeCare,
-              harga: service['price'] ?? '-',
             ),
           ),
         );

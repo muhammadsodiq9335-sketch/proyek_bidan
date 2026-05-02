@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../mock_data.dart';
 
@@ -12,6 +12,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _tglLahirController = TextEditingController();
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
@@ -24,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _tglLahirController.dispose();
     _namaController.dispose();
     _alamatController.dispose();
@@ -39,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (picked != null) {
       setState(() {
-        _tglLahirController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _tglLahirController.text = "//";
       });
     }
   }
@@ -163,9 +165,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _buildLabel("Konfirmasi Kata Sandi"),
               _buildTextField(
                 hint: "Konfirmasi kata sandi", 
-                icon: Icons.verified_outlined, // Icon centang untuk konfirmasi
+                icon: Icons.verified_outlined,
                 isPassword: true,
                 isObscure: !isConfirmPasswordVisible,
+                controller: _confirmPasswordController,
                 keyboardType: TextInputType.visiblePassword,
                 onVisibilityToggle: () {
                   setState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible);
@@ -173,7 +176,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24),
               
-              // Checkbox row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -217,13 +219,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 32),
               
-              // Register Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     final email = _emailController.text.trim();
                     final password = _passwordController.text.trim();
+                    final confirmPassword = _confirmPasswordController.text.trim();
+                    final nama = _namaController.text.trim();
+                    final tglLahir = _tglLahirController.text.trim();
+                    final alamat = _alamatController.text.trim();
 
                     if (email.isEmpty || password.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +240,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return;
                     }
 
-                    // Validasi checkbox syarat dan ketentuan
+                    if (password != confirmPassword) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Kata sandi tidak cocok!"),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
                     if (!isChecked) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -246,27 +260,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return;
                     }
 
-                    // Simpan ke mock database
+                    if (MockDatabase.registeredUsers.containsKey(email)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Email/HP sudah terdaftar!"),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
                     MockDatabase.registeredUsers[email] = password;
                     MockDatabase.userProfiles[email] = UserProfile(
                       email: email,
-                      nama: _namaController.text.trim().isNotEmpty ? _namaController.text.trim() : "Pengguna Baru",
-                      tglLahir: _tglLahirController.text.trim(),
-                      alamat: _alamatController.text.trim(),
+                      nama: nama.isNotEmpty ? nama : "Pengguna Baru",
+                      tglLahir: tglLahir,
+                      alamat: alamat,
                     );
 
-                    // Pendaftaran sukses (mock)
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text("Pendaftaran berhasil! Silakan masuk."),
+                        content: Text("Pendaftaran berhasil! Silakan login."),
                         backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
+                        duration: Duration(seconds: 3),
                       ),
                     );
 
-                    Future.delayed(const Duration(seconds: 1), () {
+                    Future.delayed(const Duration(seconds: 2), () {
                       if (!mounted) return;
-                      Navigator.pop(context); // Kembali ke halaman login
+                      Navigator.pop(context);
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -292,7 +314,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 24),
               
-              // Login Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
 
@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFCE4EC)),
         useMaterial3: true,
-        // Gunakan font default jika google_fonts gagal, tapi kita atur styling agar modern
         fontFamily: 'Segoe UI',
       ),
       home: const LoginScreen(),

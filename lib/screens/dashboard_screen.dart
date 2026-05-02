@@ -8,6 +8,8 @@ import 'pengaturan_akun_screen.dart';
 import 'chat_screen.dart';
 
 import '../mock_data.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -92,9 +94,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // BERANDA PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _BerandaPage extends StatelessWidget {
   final Function(int) onTabChange;
   const _BerandaPage({required this.onTabChange});
@@ -119,7 +121,7 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  // ── Top Bar ──
+  // â”€â”€ Top Bar â”€â”€
   Widget _buildTopBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -170,7 +172,7 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  // ── Welcome ──
+  // â”€â”€ Welcome â”€â”€
   Widget _buildWelcomeSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -187,9 +189,7 @@ class _BerandaPage extends StatelessWidget {
             ),
           ),
           Text(
-            MockDatabase.currentUser != null
-                ? "${MockDatabase.currentUser!.nama.split(' ')[0]} 👋"
-                : "Mama 👋",
+            "${MockDatabase.currentUser?.nama.split(' ')[0] ?? 'Bunda'} ðŸ‘‹",
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -199,7 +199,7 @@ class _BerandaPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "Jaga kesehatanmu hari ini ya, Bunda ❤️",
+            "Jaga kesehatanmu hari ini ya, Bunda â¤ï¸",
             style: TextStyle(
               fontSize: 13,
               color: Colors.black.withOpacity(0.5),
@@ -212,7 +212,7 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  // ── Hero Banner CTA ──
+  // â”€â”€ Hero Banner CTA â”€â”€
   Widget _buildHeroBanner(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -249,7 +249,7 @@ class _BerandaPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        "✨ Tersedia Layanan Klinik & Home Care",
+                        "âœ¨ Tersedia Layanan Klinik & Home Care",
                         style: TextStyle(
                           fontSize: 9,
                           color: Colors.white,
@@ -276,7 +276,7 @@ class _BerandaPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        "Pilih Layanan →",
+                        "Pilih Layanan â†’",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -298,7 +298,7 @@ class _BerandaPage extends StatelessWidget {
   }
 
 
-  // ── Reservasi Terakhir ──
+  // â”€â”€ Reservasi Terakhir â”€â”€
   Widget _buildReservasiTerakhir(BuildContext context) {
     final reservations = MockDatabase.userReservations;
     final bool hasReservasi = reservations.isNotEmpty;
@@ -328,7 +328,7 @@ class _BerandaPage extends StatelessWidget {
                         builder: (_) => const RiwayatReservasiScreen()),
                   ),
                   child: const Text(
-                    "Lihat Semua →",
+                    "Lihat Semua â†’",
                     style: TextStyle(
                       fontSize: 12,
                       color: Color(0xFF00897B),
@@ -499,7 +499,7 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  // ── Bidan Kami ──
+  // â”€â”€ Bidan Kami â”€â”€
   Widget _buildBidanSection() {
     final List<Map<String, String>> bidanList = [
       {
@@ -664,7 +664,7 @@ class _BerandaPage extends StatelessWidget {
     );
   }
 
-  // ── Tips Kesehatan ──
+  // â”€â”€ Tips Kesehatan â”€â”€
   Widget _buildTipsSection() {
     final List<Map<String, String>> articles = [
       {
@@ -795,9 +795,9 @@ class _BerandaPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // RESERVASI PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ReservasiPage extends StatelessWidget {
   const _ReservasiPage();
 
@@ -888,7 +888,7 @@ class _ReservasiPage extends StatelessWidget {
                                     const RiwayatReservasiScreen()),
                           ),
                           child: const Text(
-                            "Lihat Semua →",
+                            "Lihat Semua â†’",
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF00897B),
@@ -970,9 +970,7 @@ class _ReservasiPage extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                MockDatabase.currentUser != null
-                    ? "Halo, ${MockDatabase.currentUser!.nama.split(' ')[0]}! Mau layanan apa hari ini?"
-                    : "Pilih layanan yang Bunda butuhkan",
+                "Halo, ${MockDatabase.currentUser?.nama.split(' ')[0] ?? 'Bunda'}! Mau layanan apa hari ini?",
                 style: const TextStyle(fontSize: 12, color: Colors.black45),
               ),
             ],
@@ -1072,7 +1070,7 @@ class _ReservasiPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            "$badgeText tersedia →",
+                            "$badgeText tersedia â†’",
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -1143,7 +1141,7 @@ class _ReservasiPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "${r['tanggal'] ?? '-'} • ${r['jam'] ?? '-'}",
+                  "${r['tanggal'] ?? '-'} â€¢ ${r['jam'] ?? '-'}",
                   style: const TextStyle(fontSize: 11, color: Colors.black45),
                 ),
               ],
@@ -1171,9 +1169,9 @@ class _ReservasiPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ARTIKEL PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ArtikelPage extends StatelessWidget {
   const _ArtikelPage();
 
@@ -1356,9 +1354,9 @@ class _ArtikelPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PROFIL PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ProfilPage extends StatelessWidget {
   const _ProfilPage();
 
@@ -1400,18 +1398,22 @@ class _ProfilPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              MockDatabase.currentUser?.nama ?? "Mama",
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2E35),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              MockDatabase.currentUser?.email ?? "+62 812-3456-7890",
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            Column(
+              children: [
+                Text(
+                  MockDatabase.currentUser?.nama ?? 'Mama',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1B2E35),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  MockDatabase.currentUser?.email ?? "+62 812-3456-7890",
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+              ]
             ),
             const SizedBox(height: 30),
 
@@ -1488,6 +1490,7 @@ class _ProfilPage extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     MockDatabase.currentUser = null;
+                    if (!context.mounted) return;
                     Navigator.of(context, rootNavigator: true)
                         .pushAndRemoveUntil(
                       MaterialPageRoute(
