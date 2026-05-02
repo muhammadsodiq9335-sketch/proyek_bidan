@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
 import '../mock_data.dart';
 
@@ -252,11 +252,5 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _endTime(String jam) {
-    final parts = jam.split(':');
-    final hour = int.parse(parts[0]) + 1;
-    return ':00';
   }
 }

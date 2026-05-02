@@ -17,7 +17,6 @@ class AdminPengaturanScreen extends StatefulWidget {
 }
 
 class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
-  int _currentIndex = 4; // ✅ index pengaturan
 
   @override
   Widget build(BuildContext context) {

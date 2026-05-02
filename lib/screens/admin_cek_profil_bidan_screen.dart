@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 // SESUAIKAN IMPORT PROJECT KAMU
-import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';

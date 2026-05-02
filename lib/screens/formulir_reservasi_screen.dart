@@ -182,9 +182,12 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                   runSpacing: 8,
                   children: jamList.map((jam) {
                     // Cek apakah sudah ada reservasi pada tanggal & jam tersebut
-                    final isFull = MockDatabase.userReservations.any((res) =>
+                    final isoDate = _selectedDate != null
+                        ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}"
+                        : '';
+                    final isFull = _selectedDate != null && MockDatabase.userReservations.any((res) =>
                         res['jam'] == jam &&
-                        res['tanggal'] == _dateController.text &&
+                        res['tanggal'] == isoDate &&
                         res['status'] != 'Dibatalkan' &&
                         res['status'] != 'Selesai');
                     
@@ -319,42 +322,6 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
           ...children,
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField(String label, String hint, TextEditingController controller,
-      {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF546E7A))),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          style: const TextStyle(fontSize: 13),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Colors.black26, fontSize: 13),
-            filled: true,
-            fillColor: const Color(0xFFFAFAFA),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Color(0xFF00897B)),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          ),
-        ),
-      ],
     );
   }
 

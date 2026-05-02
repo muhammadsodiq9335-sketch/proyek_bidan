@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../mock_data.dart';
-
 class AdminDetailPelayananScreen extends StatefulWidget {
   final Map<String, dynamic> pasien;
 

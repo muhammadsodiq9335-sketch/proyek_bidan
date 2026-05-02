@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'admin_dashboard_screen.dart';
-import 'admin_jadwal_screen.dart';
-import 'admin_pasien_screen.dart';
-import 'admin_pengaturan_screen.dart';
 import '../mock_data.dart';
 
 class AdminEditPelayananScreen extends StatefulWidget {
