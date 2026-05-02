@@ -1,17 +1,5 @@
-class UserProfile {
-  final String email;
-  final String nama;
-  final String tglLahir;
-  final String alamat;
-
-  UserProfile({
-    required this.email,
-    required this.nama,
-    required this.tglLahir,
-    required this.alamat,
-  });
-}
-
+import 'models/user_profile.dart';
+export 'models/user_profile.dart';
 class BidanProfile {
   final String nama;
   final String nik;

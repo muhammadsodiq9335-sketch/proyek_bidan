@@ -23,11 +23,11 @@ class SupabaseService {
   // ================= RESERVASI =================
   Future<List<Map<String, dynamic>>> getReservasi({String? emailPasien}) async {
     try {
-      var query = _supabase.from('reservasi').select().order('created_at', ascending: false);
+      var query = _supabase.from('reservasi').select();
       if (emailPasien != null) {
         query = query.eq('email_pasien', emailPasien);
       }
-      final data = await query;
+      final data = await query.order('created_at', ascending: false);
       return List<Map<String, dynamic>>.from(data);
     } catch (e) {
       print('Error getReservasi: $e');

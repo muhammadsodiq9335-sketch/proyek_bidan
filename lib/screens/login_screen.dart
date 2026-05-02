@@ -4,6 +4,7 @@ import 'dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
 import '../mock_data.dart';
 import '../services/auth_service.dart';
+import '../services/supabase_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -353,6 +354,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   await authService.signIn(email: email, password: password);
                   await authService.saveRememberMe(email, _rememberMe);
+                  
+                  // Fetch profile from Supabase
+                  final currentUserId = authService.getCurrentUser()?.id;
+                  if (currentUserId != null) {
+                    final supabaseService = SupabaseService();
+                    final profile = await supabaseService.getUserProfile(currentUserId);
+                    if (profile != null) {
+                      MockDatabase.currentUser = profile;
+                    }
+                  }
 
                   if (!mounted) return;
                   Navigator.pop(context); // close loading
