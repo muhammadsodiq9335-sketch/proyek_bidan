@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 import 'admin_jadwal_detail_reservasi_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
@@ -16,18 +17,17 @@ class AdminJadwalScreen extends StatefulWidget {
 class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   DateTime _displayMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
+  final SupabaseService _supabaseService = SupabaseService();
 
   static const List<String> _monthNames = [
-    'JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI',
-    'JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'
+    'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+    'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
   ];
 
   @override
   void initState() {
     super.initState();
-
     final now = DateTime.now();
-
     _selectedDate = now;
     _displayMonth = now;
   }
@@ -36,13 +36,8 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   Widget build(BuildContext context) {
     final selectedIso = _toIso(_selectedDate);
 
-    final filtered = MockDatabase.userReservations.where((res) {
-      return res['tanggal'] == selectedIso;
-    }).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFEECAD0),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFDDE6CF),
         elevation: 0,
@@ -58,26 +53,40 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
           style: TextStyle(color: Colors.black),
         ),
       ),
-
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _calendarUI(),
-              const SizedBox(height: 16),
-              _header(),
-              const SizedBox(height: 12),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _supabaseService.getReservasi(),
+          builder: (context, snapshot) {
+            final allReservations = snapshot.data ?? [];
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-              if (filtered.isEmpty)
-                const Text("Belum ada reservasi"),
+            final filtered = allReservations.where((res) {
+              return res['tanggal'] == selectedIso;
+            }).toList();
 
-              ...filtered.map((res) => _card(res)),
-            ],
-          ),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _calendarUI(),
+                  const SizedBox(height: 16),
+                  _header(),
+                  const SizedBox(height: 12),
+                  if (isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (filtered.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Text("Belum ada reservasi", style: TextStyle(color: Colors.black45)),
+                    )
+                  else
+                    ...filtered.map((res) => _card(res)),
+                ],
+              ),
+            );
+          },
         ),
       ),
-
       bottomNavigationBar: _bottomNav(context),
     );
   }
@@ -130,9 +139,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               )
             ],
           ),
-
           const SizedBox(height: 6),
-
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -145,9 +152,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               _Day("MIN"),
             ],
           ),
-
           const SizedBox(height: 8),
-
           _calendarGrid(),
         ],
       ),
@@ -233,13 +238,12 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         children: [
           const CircleAvatar(child: Icon(Icons.person)),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  res['namaPasien'],
+                  res['nama_pasien'] ?? res['namaPasien'] ?? 'Pasien',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
@@ -247,9 +251,6 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               ],
             ),
           ),
-
-          const Spacer(),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -271,7 +272,6 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -304,11 +304,12 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
 
   // ================= HELPER =================
   String _toIso(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}";
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
-  String _displayDate(String iso) {
-    final date = DateTime.parse(iso);
+  String _displayDate(String? iso) {
+    if (iso == null || iso.isEmpty) return "-";
+    final date = DateTime.tryParse(iso) ?? DateTime.now();
     return "${date.day} ${_monthNames[date.month - 1]} ${date.year}";
   }
 

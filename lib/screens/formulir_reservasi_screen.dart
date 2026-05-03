@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'konfirmasi_reservasi_screen.dart';
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 
 class FormulirReservasiScreen extends StatefulWidget {
   final List<Map<String, dynamic>> selectedServices;
@@ -15,7 +16,6 @@ class FormulirReservasiScreen extends StatefulWidget {
   State<FormulirReservasiScreen> createState() =>
       _FormulirReservasiScreenState();
 }
-
 class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
   String? _selectedJam;
   DateTime? _selectedDate;
@@ -24,6 +24,17 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
   final List<String> jamList = [
     '08:00', '09:00', '10:00', '11:00', '13:00', '14:00'
   ];
+
+  List<Map<String, dynamic>> _existingReservations = [];
+  final SupabaseService _supabaseService = SupabaseService();
+
+  Future<void> _fetchExistingReservations(DateTime date) async {
+    final isoDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+    final data = await _supabaseService.getReservasi();
+    setState(() {
+      _existingReservations = data.where((res) => res['tanggal'] == isoDate).toList();
+    });
+  }
 
   @override
   void initState() {
@@ -155,6 +166,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                         _selectedDate = picked;
                         _dateController.text = "${picked.day} ${_getMonthName(picked.month)} ${picked.year}";
                       });
+                      _fetchExistingReservations(picked);
                     }
                   },
                   child: AbsorbPointer(
@@ -181,13 +193,8 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: jamList.map((jam) {
-                    // Cek apakah sudah ada reservasi pada tanggal & jam tersebut
-                    final isoDate = _selectedDate != null
-                        ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}"
-                        : '';
-                    final isFull = _selectedDate != null && MockDatabase.userReservations.any((res) =>
+                    final isFull = _selectedDate != null && _existingReservations.any((res) =>
                         res['jam'] == jam &&
-                        res['tanggal'] == isoDate &&
                         res['status'] != 'Dibatalkan' &&
                         res['status'] != 'Selesai');
                     

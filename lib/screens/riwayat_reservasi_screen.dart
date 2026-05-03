@@ -1,12 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 
 class RiwayatReservasiScreen extends StatelessWidget {
   const RiwayatReservasiScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final reservations = MockDatabase.userReservations;
+    final supabaseService = SupabaseService();
+    final currentUserEmail = MockDatabase.currentUser?.email;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
@@ -26,16 +28,30 @@ class RiwayatReservasiScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: reservations.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: reservations.length,
-              itemBuilder: (context, index) {
-                final res = reservations[index];
-                return _buildReservationCard(res);
-              },
-            ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: supabaseService.getReservasi(emailPasien: currentUserEmail),
+        builder: (context, snapshot) {
+          final reservations = snapshot.data ?? [];
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (reservations.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: reservations.length,
+            itemBuilder: (context, index) {
+              final res = reservations[index];
+              return _buildReservationCard(res);
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -75,6 +91,8 @@ class RiwayatReservasiScreen extends StatelessWidget {
             ? const Color(0xFF00796B)
             : const Color(0xFF9E9E9E);
 
+    final bool isHomeCare = res['is_home_care'] == true || res['isHomeCare'] == true;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -101,14 +119,14 @@ class RiwayatReservasiScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                res['tanggal'],
+                res['tanggal'] ?? '-',
                 style: const TextStyle(fontSize: 11, color: Colors.black45),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            res['layanan'],
+            res['layanan'] ?? '-',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1B2E35)),
           ),
           const SizedBox(height: 4),
@@ -117,16 +135,16 @@ class RiwayatReservasiScreen extends StatelessWidget {
             children: [
               const Icon(Icons.access_time, size: 14, color: Colors.black38),
               const SizedBox(width: 4),
-              Text(res['jam'], style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              Text(res['jam'] ?? '-', style: const TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(width: 16),
               Icon(
-                res['isHomeCare'] ? Icons.home_outlined : Icons.local_hospital_outlined,
+                isHomeCare ? Icons.home_outlined : Icons.local_hospital_outlined,
                 size: 14,
                 color: Colors.black38,
               ),
               const SizedBox(width: 4),
               Text(
-                res['isHomeCare'] ? 'Kunjungan Rumah' : 'Klinik',
+                isHomeCare ? 'Kunjungan Rumah' : 'Klinik',
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],

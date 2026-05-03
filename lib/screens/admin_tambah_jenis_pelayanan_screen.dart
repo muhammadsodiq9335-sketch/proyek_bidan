@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_chat_list_screen.dart';
-import '../mock_data.dart';
 
 class AdminTambahJenisPelayananScreen extends StatefulWidget {
   const AdminTambahJenisPelayananScreen({super.key});
@@ -16,15 +16,14 @@ class AdminTambahJenisPelayananScreen extends StatefulWidget {
 
 class _AdminTambahJenisPelayananScreenState
     extends State<AdminTambahJenisPelayananScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
+  final TextEditingController jenisPelayananController = TextEditingController();
+  final TextEditingController deskripsiController = TextEditingController();
+  final TextEditingController hargaController = TextEditingController();
 
-  final TextEditingController jenisPelayananController =
-      TextEditingController();
-  final TextEditingController deskripsiController =
-      TextEditingController();
-  final TextEditingController hargaController =
-      TextEditingController();
-
-  String? selectedCategory;
+  String? selectedCategory; // Klinik / Home Care
+  String? selectedTarget;   // Ibu / Anak
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,43 +33,49 @@ class _AdminTambahJenisPelayananScreenState
     super.dispose();
   }
 
-  /// 🔥 FIX UTAMA DI SINI
-  void _simpanData() {
+  Future<void> _simpanData() async {
     if (jenisPelayananController.text.isEmpty ||
         deskripsiController.text.isEmpty ||
         hargaController.text.isEmpty ||
-        selectedCategory == null) {
-
+        selectedCategory == null ||
+        selectedTarget == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Isi semua data yang diperlukan!")),
       );
       return;
     }
 
-    /// ✅ TAMBAH KE MOCK DATABASE
-    MockDatabase.layananList.add(
-      JenisPelayanan(
-        nama: jenisPelayananController.text,
-        deskripsi: deskripsiController.text,
-        harga: "Rp ${hargaController.text}",
-        kategori: selectedCategory!,
-      ),
-    );
+    setState(() => _isLoading = true);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Data berhasil disimpan!")),
-    );
+    try {
+      final data = {
+        'nama': jenisPelayananController.text,
+        'deskripsi': deskripsiController.text,
+        'harga': "Rp ${hargaController.text}",
+        'kategori': selectedTarget == "Ibu" ? "Layanan Kesehatan Ibu" : "Layanan Kesehatan Anak",
+        'is_home_care': selectedCategory == "Home Care",
+      };
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+      await _supabaseService.tambahJenisPelayanan(data);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Data berhasil disimpan ke database!")),
+      );
+
       Navigator.pop(context);
-    });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal menyimpan: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFFCE4EC),
         elevation: 0,
@@ -83,36 +88,32 @@ class _AdminTambahJenisPelayananScreenState
           style: TextStyle(color: Colors.black),
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             _buildSectionHeader(
               "Detail Layanan Baru",
               "Isi form untuk menambahkan layanan baru",
             ),
-
             const SizedBox(height: 16),
-
-            _buildSectionTitle("KATEGORI"),
+            _buildSectionTitle("KATEGORI TEMPAT"),
             const SizedBox(height: 10),
             _buildCategoryButtons(),
-
             const SizedBox(height: 20),
-
-            _buildSectionTitle("JENIS"),
+            _buildSectionTitle("TARGET PASIEN"),
+            const SizedBox(height: 10),
+            _buildTargetButtons(),
+            const SizedBox(height: 20),
+            _buildSectionTitle("JENIS PEMERIKSAAN"),
             const SizedBox(height: 10),
             _buildTextInput(
               controller: jenisPelayananController,
-              hintText: "Contoh: USG",
+              hintText: "Contoh: USG, Imunisasi, dll",
               icon: Icons.healing_outlined,
             ),
-
             const SizedBox(height: 20),
-
             _buildSectionTitle("DESKRIPSI"),
             const SizedBox(height: 10),
             _buildTextInput(
@@ -121,28 +122,26 @@ class _AdminTambahJenisPelayananScreenState
               icon: Icons.description,
               maxLines: 3,
             ),
-
             const SizedBox(height: 20),
-
             _buildSectionTitle("HARGA"),
             const SizedBox(height: 10),
             _buildPriceInput(),
-
             const SizedBox(height: 30),
-
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
                     child: const Text("Batal"),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _simpanData,
-                    child: const Text("Simpan"),
+                    onPressed: _isLoading ? null : _simpanData,
+                    child: _isLoading 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text("Simpan"),
                   ),
                 ),
               ],
@@ -150,8 +149,35 @@ class _AdminTambahJenisPelayananScreenState
           ],
         ),
       ),
-
       bottomNavigationBar: _bottomNav(context),
+    );
+  }
+
+  Widget _buildTargetButtons() {
+    return Wrap(
+      spacing: 10,
+      children: [
+        _chipTarget("Ibu"),
+        _chipTarget("Anak"),
+      ],
+    );
+  }
+
+  Widget _chipTarget(String text) {
+    final selected = selectedTarget == text;
+    return GestureDetector(
+      onTap: () => setState(() => selectedTarget = text),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.pinkAccent : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? Colors.pinkAccent : Colors.black12),
+        ),
+        child: Text(text,
+            style: TextStyle(
+                color: selected ? Colors.white : Colors.black)),
+      ),
     );
   }
 

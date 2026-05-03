@@ -9,6 +9,7 @@ import 'chat_screen.dart';
 import 'pdf_viewer_screen.dart';
 
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -96,25 +97,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // BERANDA PAGE
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-class _BerandaPage extends StatelessWidget {
+class _BerandaPage extends StatefulWidget {
   final Function(int) onTabChange;
   const _BerandaPage({required this.onTabChange});
 
   @override
+  State<_BerandaPage> createState() => _BerandaPageState();
+}
+
+class _BerandaPageState extends State<_BerandaPage> {
+  final SupabaseService _supabaseService = SupabaseService();
+  List<Map<String, dynamic>> _lastReservations = [];
+  List<Map<String, dynamic>> _bidanList = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final email = MockDatabase.currentUser?.email ?? '';
+      final res = await _supabaseService.getReservasi(emailPasien: email);
+      final bidan = await _supabaseService.getBidan();
+      if (mounted) {
+        setState(() {
+          _lastReservations = res;
+          _bidanList = bidan;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTopBar(context),
-            _buildWelcomeSection(),
-            _buildHeroBanner(context),
-            _buildBidanSection(),
-            _buildReservasiTerakhir(context),
-            _buildTipsSection(),
-            const SizedBox(height: 24),
-          ],
+      child: RefreshIndicator(
+        onRefresh: _loadData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopBar(context),
+              _buildWelcomeSection(),
+              _buildHeroBanner(context),
+              _buildBidanSection(),
+              _buildReservasiTerakhir(context),
+              _buildTipsSection(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -146,7 +184,7 @@ class _BerandaPage extends StatelessWidget {
               const SizedBox(width: 8),
               _iconCircle(
                 Icons.person_outline,
-                onTap: () => onTabChange(4),
+                onTap: () => widget.onTabChange(4),
               ),
             ],
           )
@@ -198,7 +236,7 @@ class _BerandaPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "Jaga kesehatanmu hari ini ya, Bunda â¤ï¸",
+            "Jaga kesehatanmu hari ini ya, Bunda â ¤ï¸ ",
             style: TextStyle(
               fontSize: 13,
               color: Colors.black.withOpacity(0.5),
@@ -216,7 +254,7 @@ class _BerandaPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
-        onTap: () => onTabChange(1),
+        onTap: () => widget.onTabChange(1),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -299,9 +337,8 @@ class _BerandaPage extends StatelessWidget {
 
   // â”€â”€ Reservasi Terakhir â”€â”€
   Widget _buildReservasiTerakhir(BuildContext context) {
-    final reservations = MockDatabase.userReservations;
-    final bool hasReservasi = reservations.isNotEmpty;
-    final last = hasReservasi ? reservations.first : null;
+    final bool hasReservasi = _lastReservations.isNotEmpty;
+    final last = hasReservasi ? _lastReservations.first : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -338,7 +375,9 @@ class _BerandaPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          if (!hasReservasi)
+          if (_isLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+          else if (!hasReservasi)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -393,7 +432,7 @@ class _BerandaPage extends StatelessWidget {
         : isConfirmed
             ? Icons.check_circle_outline
             : Icons.info_outline;
-    final bool isHomeCare = r['isHomeCare'] == true;
+    final bool isHomeCare = r['is_home_care'] == true || r['isHomeCare'] == true;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -500,37 +539,6 @@ class _BerandaPage extends StatelessWidget {
 
   // â”€â”€ Bidan Kami â”€â”€
   Widget _buildBidanSection() {
-    final List<Map<String, String>> bidanList = [
-      {
-        'nama': 'Bidan Siti',
-        'spesialis': 'Persalinan & Nifas',
-        'pengalaman': '8 Tahun',
-        'avatar': 'https://i.pravatar.cc/150?img=47',
-        'status': 'Tersedia',
-      },
-      {
-        'nama': 'Bidan Maya',
-        'spesialis': 'Imunisasi & Bayi',
-        'pengalaman': '6 Tahun',
-        'avatar': 'https://i.pravatar.cc/150?img=48',
-        'status': 'Tersedia',
-      },
-      {
-        'nama': 'Bidan Ani',
-        'spesialis': 'Kehamilan & KB',
-        'pengalaman': '10 Tahun',
-        'avatar': 'https://i.pravatar.cc/150?img=45',
-        'status': 'Tersedia',
-      },
-      {
-        'nama': 'Bidan Nur Aeni',
-        'spesialis': 'Home Care & Pijat',
-        'pengalaman': '5 Tahun',
-        'avatar': 'https://i.pravatar.cc/150?img=44',
-        'status': 'Tersedia',
-      },
-    ];
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 0, 0),
       child: Column(
@@ -550,7 +558,7 @@ class _BerandaPage extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${bidanList.length} Bidan Aktif',
+                  '${_bidanList.length} Bidan Aktif',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF00897B),
@@ -569,25 +577,30 @@ class _BerandaPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            height: 190,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 20),
-              itemCount: bidanList.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final bidan = bidanList[index];
-                return _buildBidanCard(bidan);
-              },
+          if (_isLoading)
+            const SizedBox(height: 190, child: Center(child: CircularProgressIndicator()))
+          else if (_bidanList.isEmpty)
+             const SizedBox(height: 100, child: Center(child: Text("Bidan belum tersedia", style: TextStyle(fontSize: 12, color: Colors.black26))))
+          else
+            SizedBox(
+              height: 190,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 20),
+                itemCount: _bidanList.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final bidan = _bidanList[index];
+                  return _buildBidanCard(bidan);
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildBidanCard(Map<String, String> bidan) {
+  Widget _buildBidanCard(Map<String, dynamic> bidan) {
     return Container(
       width: 145,
       decoration: BoxDecoration(
@@ -618,7 +631,7 @@ class _BerandaPage extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: Image.network(
-                      bidan['avatar']!,
+                      bidan['avatar_url'] ?? bidan['avatar'] ?? 'https://i.pravatar.cc/150?img=index',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: const Color(0xFFE0F2F1),
@@ -645,7 +658,7 @@ class _BerandaPage extends StatelessWidget {
             const SizedBox(height: 10),
             // Nama
             Text(
-              bidan['nama']!,
+              bidan['nama'] ?? '-',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -655,8 +668,14 @@ class _BerandaPage extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-
-
+            const SizedBox(height: 4),
+            Text(
+              bidan['spesialis'] ?? '-',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10, color: Colors.black45),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -802,146 +821,157 @@ class _ReservasiPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reservations = MockDatabase.userReservations;
+    final supabaseService = SupabaseService();
+    final currentUserEmail = MockDatabase.currentUser?.email;
 
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            _buildHeader(context),
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: supabaseService.getReservasi(emailPasien: currentUserEmail),
+        builder: (context, snapshot) {
+          final reservations = snapshot.data ?? [];
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-            // Pilih Jenis Layanan
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Pilih Jenis Layanan",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B2E35),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Pilih cara bidan merawat Bunda",
-                    style: TextStyle(fontSize: 12, color: Colors.black45),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildLayananCard(
-                    context: context,
-                    icon: Icons.home_work_outlined,
-                    title: "Home Care",
-                    subtitle:
-                        "Bidan datang ke rumah Bunda. Tersedia layanan pijat, konseling, perawatan bayi & lebih.",
-                    badgeText: "8 Layanan",
-                    gradientColors: const [Color(0xFF26A69A), Color(0xFF80CBC4)],
-                    badgeColor: const Color(0xFF00897B),
-                    tab: 1,
-                  ),
-                  const SizedBox(height: 14),
-                  _buildLayananCard(
-                    context: context,
-                    icon: Icons.local_hospital_outlined,
-                    title: "Datang ke Klinik",
-                    subtitle:
-                        "Kunjungi klinik kami. Tersedia periksa hamil, imunisasi, KB, persalinan & lebih.",
-                    badgeText: "11 Layanan",
-                    gradientColors: const [Color(0xFFF48FB1), Color(0xFFF8BBD0)],
-                    badgeColor: const Color(0xFFF06292),
-                    tab: 0,
-                  ),
-                ],
-              ),
-            ),
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context),
 
-            const SizedBox(height: 24),
-
-            // Riwayat Reservasi
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Pilih Jenis Layanan
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Riwayat Reservasi",
+                        "Pilih Jenis Layanan",
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1B2E35),
                         ),
                       ),
-                      if (reservations.isNotEmpty)
-                        GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) =>
-                                    const RiwayatReservasiScreen()),
-                          ),
-                          child: const Text(
-                            "Lihat Semua â†’",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF00897B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Pilih cara bidan merawat Bunda",
+                        style: TextStyle(fontSize: 12, color: Colors.black45),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLayananCard(
+                        context: context,
+                        icon: Icons.home_work_outlined,
+                        title: "Home Care",
+                        subtitle:
+                            "Bidan datang ke rumah Bunda. Tersedia layanan pijat, konseling, perawatan bayi & lebih.",
+                        badgeText: "8 Layanan",
+                        gradientColors: const [Color(0xFF26A69A), Color(0xFF80CBC4)],
+                        badgeColor: const Color(0xFF00897B),
+                        tab: 1,
+                      ),
+                      const SizedBox(height: 14),
+                      _buildLayananCard(
+                        context: context,
+                        icon: Icons.local_hospital_outlined,
+                        title: "Datang ke Klinik",
+                        subtitle:
+                            "Kunjungi klinik kami. Tersedia periksa hamil, imunisasi, KB, persalinan & lebih.",
+                        badgeText: "11 Layanan",
+                        gradientColors: const [Color(0xFFF48FB1), Color(0xFFF8BBD0)],
+                        badgeColor: const Color(0xFFF06292),
+                        tab: 0,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  if (reservations.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 28, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFEEEEEE)),
-                      ),
-                      child: Column(
+                ),
+
+                const SizedBox(height: 24),
+
+                // Riwayat Reservasi
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.inbox_outlined,
-                              size: 44, color: Colors.grey.shade300),
-                          const SizedBox(height: 10),
                           const Text(
-                            "Belum ada reservasi",
+                            "Riwayat Reservasi",
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black38,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1B2E35),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            "Pilih layanan di atas untuk mulai",
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.black26),
-                          ),
+                          if (reservations.isNotEmpty)
+                            GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const RiwayatReservasiScreen()),
+                              ),
+                              child: const Text(
+                                "Lihat Semua â†’",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF00897B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                    )
-                  else
-                    ...reservations.reversed
-                        .take(3)
-                        .map((r) => _buildReservasiItem(r))
-                        .toList(),
-                ],
-              ),
-            ),
+                      const SizedBox(height: 12),
+                      if (isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else if (reservations.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 28, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFEEEEEE)),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.inbox_outlined,
+                                  size: 44, color: Colors.grey.shade300),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "Belum ada reservasi",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black38,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "Pilih layanan di atas untuk mulai",
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black26),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ...reservations
+                            .take(3)
+                            .map((r) => _buildReservasiItem(r))
+                            .toList(),
+                    ],
+                  ),
+                ),
 
-            const SizedBox(height: 24),
-          ],
-        ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -1181,7 +1211,7 @@ class _ArtikelPage extends StatefulWidget {
 class _ArtikelPageState extends State<_ArtikelPage> {
   @override
   Widget build(BuildContext context) {
-    final articles = MockDatabase.artikelPdfList;
+    final supabaseService = SupabaseService();
 
     return SafeArea(
       child: Column(
@@ -1204,8 +1234,18 @@ class _ArtikelPageState extends State<_ArtikelPage> {
             ),
           ),
           Expanded(
-            child: articles.isEmpty
-                ? const Center(
+            child: FutureBuilder<List<ArtikelPdf>>(
+              future: supabaseService.getArtikelPdf(),
+              builder: (context, snapshot) {
+                final articles = snapshot.data ?? [];
+                final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
+                if (isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (articles.isEmpty) {
+                  return const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1214,115 +1254,119 @@ class _ArtikelPageState extends State<_ArtikelPage> {
                         Text("Belum ada artikel edukasi.", style: TextStyle(color: Colors.black45)),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: articles.length,
-                    itemBuilder: (context, index) {
-                      final article = articles[index];
-                      final date = article.tanggalUpload;
-                      final dateString = "${date.day}/${date.month}/${date.year}";
+                  );
+                }
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PdfViewerScreen(
-                                filePath: article.urlPdf,
-                                fileName: article.namaFile,
-                              ),
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: articles.length,
+                  itemBuilder: (context, index) {
+                    final article = articles[index];
+                    final date = article.tanggalUpload;
+                    final dateString = "${date.day}/${date.month}/${date.year}";
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PdfViewerScreen(
+                              filePath: article.urlPdf,
+                              fileName: article.namaFile,
                             ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4))
-                            ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                height: 120,
-                                width: double.infinity,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFE0F2F1),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    topRight: Radius.circular(16),
-                                  ),
-                                ),
-                                child: const Icon(Icons.picture_as_pdf, color: Color(0xFF00897B), size: 48),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFE0F2F1),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Text(
-                                            "EDUKASI",
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF00897B),
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          dateString,
-                                          style: const TextStyle(
-                                              fontSize: 10, color: Colors.black45),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      article.namaFile,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1B2E35),
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    const Text(
-                                      "Ketuk untuk membaca dokumen PDF ini.",
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black54,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [
+                            BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 8,
+                                offset: Offset(0, 4))
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 120,
+                              width: double.infinity,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE0F2F1),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(16),
+                                  topRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: const Icon(Icons.picture_as_pdf, color: Color(0xFF00897B), size: 48),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE0F2F1),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text(
+                                          "EDUKASI",
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF00897B),
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        dateString,
+                                        style: const TextStyle(
+                                            fontSize: 10, color: Colors.black45),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    article.namaFile,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1B2E35),
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    "Ketuk untuk membaca dokumen PDF ini.",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black54,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

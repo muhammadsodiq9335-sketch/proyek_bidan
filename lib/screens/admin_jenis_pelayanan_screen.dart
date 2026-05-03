@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
@@ -18,14 +18,13 @@ class AdminJenisPelayananScreen extends StatefulWidget {
 
 class _AdminJenisPelayananScreenState
     extends State<AdminJenisPelayananScreen> {
-
+  final SupabaseService _supabaseService = SupabaseService();
   int selectedTab = 0; // 0 = Klinik, 1 = Home Care
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDDE6CF),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFDDE6CF),
         elevation: 0,
@@ -38,82 +37,86 @@ class _AdminJenisPelayananScreenState
           style: TextStyle(color: Colors.black),
         ),
       ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _supabaseService.getJenisPelayanan(),
+        builder: (context, snapshot) {
+          final allData = snapshot.data ?? [];
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-      body: Container(
-        color: const Color(0xFFE6B8BE),
-        child: Column(
-          children: [
-
-            /// ===== TAB =====
-            Row(
+          return Container(
+            color: const Color(0xFFE6B8BE),
+            child: Column(
               children: [
-                _tabItem("Layanan Klinik", 0),
-                _tabItem("Layanan Home Care", 1),
+                Row(
+                  children: [
+                    _tabItem("Layanan Klinik", 0),
+                    _tabItem("Layanan Home Care", 1),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (isLoading)
+                  const Expanded(child: Center(child: CircularProgressIndicator()))
+                else
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: _filteredList(allData),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminTambahJenisPelayananScreen(),
+                          ),
+                        ).then((_) => setState(() {}));
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text("Tambah Jenis Pemeriksaan"),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F5F5F)),
+                    ),
+                  ),
+                )
               ],
             ),
-
-            const SizedBox(height: 10),
-
-            /// ===== LIST DARI MOCK DATA =====
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: _filteredList(),
-              ),
-            ),
-
-            /// ===== BUTTON TAMBAH =====
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const AdminTambahJenisPelayananScreen(),
-                      ),
-                    ).then((_) => setState(() {}));
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text("Tambah Jenis Pemeriksaan"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F5F5F),
-                  ),
-                ),
-              ),
-            )
-          ],
-        ),
+          );
+        },
       ),
-
       bottomNavigationBar: _bottomNav(context),
     );
   }
 
   /// ===== FILTER DATA =====
-  List<Widget> _filteredList() {
-    final kategori = selectedTab == 0 ? "Klinik" : "Home Care";
+  List<Widget> _filteredList(List<Map<String, dynamic>> allData) {
+    final bool isHomeCareTab = selectedTab == 1;
 
-    final data = MockDatabase.layananList
-        .where((e) => e.kategori == kategori)
-        .toList();
+    final data = allData.where((e) {
+      final isHomeCare = e['is_home_care'] == true;
+      return isHomeCare == isHomeCareTab;
+    }).toList();
 
     if (data.isEmpty) {
-      return [
-        const Center(child: Text("Belum ada data")),
-      ];
+      return [const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Belum ada data")))];
     }
 
-    return data.map((layanan) {
-      return _card(layanan);
+    return data.map((json) {
+      final layanan = JenisPelayanan(
+        nama: json['nama'] ?? '-',
+        deskripsi: json['deskripsi'] ?? '-',
+        harga: json['harga'] ?? '-',
+        kategori: json['kategori'] ?? '-',
+      );
+      return _card(layanan, json['id']?.toString());
     }).toList();
   }
 
   /// ===== CARD =====
-  Widget _card(JenisPelayanan layanan) {
+  Widget _card(JenisPelayanan layanan, String? id) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -124,7 +127,6 @@ class _AdminJenisPelayananScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -132,10 +134,8 @@ class _AdminJenisPelayananScreenState
                 layanan.nama,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-
               Row(
                 children: [
-
                   /// EDIT
                   GestureDetector(
                     onTap: () {
@@ -144,21 +144,30 @@ class _AdminJenisPelayananScreenState
                         MaterialPageRoute(
                           builder: (_) => AdminEditPelayananScreen(
                             layanan: layanan,
+                            serviceId: id, // Pass the ID
                           ),
                         ),
                       ).then((_) => setState(() {}));
                     },
                     child: const Icon(Icons.edit, size: 16),
                   ),
-
                   const SizedBox(width: 8),
-
                   /// DELETE
                   GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        MockDatabase.layananList.remove(layanan);
-                      });
+                    onTap: () async {
+                      if (id != null) {
+                        try {
+                          await _supabaseService.deleteJenisPelayanan(id);
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Layanan berhasil dihapus')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal menghapus: $e')),
+                          );
+                        }
+                      }
                     },
                     child: const Icon(Icons.delete, size: 16),
                   ),

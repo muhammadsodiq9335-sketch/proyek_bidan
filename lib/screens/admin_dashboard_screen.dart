@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_ringkasan_harian_screen.dart';
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -13,69 +15,82 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
+
+  DateTime _safeParseDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return DateTime.now();
+    return DateTime.tryParse(dateStr) ?? DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
       bottomNavigationBar: _bottomNav(context, 0),
-
       body: SafeArea(
-        child: Column(
-          children: [
-            _header(),
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _supabaseService.getReservasi(), // Ambil semua reservasi untuk admin
+          builder: (context, snapshot) {
+            final allReservations = snapshot.data ?? [];
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+            if (isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                    _reservationCard(context),
-                    const SizedBox(height: 20),
-
-                    _sectionTitle("RINGKASAN HARIAN"),
-                    const SizedBox(height: 10),
-
-                    _summaryCard(context),
-
-                    const SizedBox(height: 20),
-
-                    _jadwalHeader(context),
-                    const SizedBox(height: 10),
-
-                    ..._getSchedules().map((res) {
-                      return Column(
+            return Column(
+              children: [
+                _header(),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async => setState(() {}),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _scheduleCard(
-                            res['namaPasien'],
-                            res['layanan'],
-                            res['jam'],
-                            res['tanggal'],
-                          ),
-                          const SizedBox(height: 12),
+                          _reservationCard(context, allReservations),
+                          const SizedBox(height: 20),
+                          _sectionTitle("RINGKASAN HARIAN"),
+                          const SizedBox(height: 10),
+                          _summaryCard(context, allReservations),
+                          const SizedBox(height: 20),
+                          _jadwalHeader(context),
+                          const SizedBox(height: 10),
+                          ..._getSchedules(allReservations).map((res) {
+                            return Column(
+                              children: [
+                                _scheduleCard(
+                                  res['nama_pasien'] ?? res['namaPasien'] ?? 'Pasien',
+                                  res['layanan'] ?? '-',
+                                  res['jam'] ?? '-',
+                                  res['tanggal'] ?? '',
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            );
+                          }),
                         ],
-                      );
-                    }),
-                  ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
   }
-  
+
   String _getMonthName(int month) {
-      const months = [
-        '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-      ];
-      return months[month];
+    const months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    return (month >= 1 && month <= 12) ? months[month] : '';
   }
-  
+
   // ================= HEADER =================
   Widget _header() {
     return Container(
@@ -109,8 +124,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ================= RESERVATION =================
-  Widget _reservationCard(BuildContext context) {
-    final pending = MockDatabase.userReservations
+  Widget _reservationCard(BuildContext context, List<Map<String, dynamic>> reservations) {
+    final pending = reservations
         .where((r) => r['status'] == 'Menunggu Persetujuan')
         .toList();
 
@@ -126,7 +141,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -138,35 +152,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),
-
           const SizedBox(height: 10),
-
           Text(
             hasPending ? "Reservasi Baru Masuk" : "Tidak Ada Antrian",
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             hasPending
-                ? "${first!['namaPasien']} • ${first['layanan']} • ${first['jam']}"
+                ? "${first!['nama_pasien'] ?? first['namaPasien'] ?? 'Pasien'} • ${first['layanan']} • ${first['jam']}"
                 : "Semua reservasi sudah ditangani.",
           ),
-
           const SizedBox(height: 12),
-
           if (hasPending)
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  first?['status'] = 'Dikonfirmasi';
-                });
+              onPressed: () async {
+                // Implementasi konfirmasi langsung ke Supabase bisa ditambahkan nanti
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Buka menu Jadwal untuk konfirmasi")),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFAED581),
               ),
-              child: const Text("Konfirmasi"),
+              child: const Text("Lihat Detail"),
             ),
         ],
       ),
@@ -174,18 +183,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ================= SUMMARY =================
-  Widget _summaryCard(BuildContext context) {
+  Widget _summaryCard(BuildContext context, List<Map<String, dynamic>> reservations) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final total = MockDatabase.userReservations.where((res) {
-      final date = DateTime.parse(res['tanggal']);
+    final total = reservations.where((res) {
+      final date = _safeParseDate(res['tanggal']);
       final itemDate = DateTime(date.year, date.month, date.day);
 
       return res['status'] == 'Dikonfirmasi' &&
-       itemDate.year == today.year &&
-       itemDate.month == today.month &&
-       itemDate.day == today.day;
+          itemDate.year == today.year &&
+          itemDate.month == today.month &&
+          itemDate.day == today.day;
     }).length;
 
     return Container(
@@ -197,15 +206,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           const Icon(
             Icons.calendar_today_outlined,
             size: 22,
             color: Color(0xFF1B4F72),
           ),
-
           const SizedBox(height: 10),
-
           Text(
             "$total",
             style: const TextStyle(
@@ -213,18 +219,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 6),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-
               const Text(
                 "Pasien Dikonfirmasi Hari Ini",
                 style: TextStyle(fontSize: 12),
               ),
-
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -262,38 +264,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ================= DATA =================
-  List<Map<String, dynamic>> _getSchedules() {
+  List<Map<String, dynamic>> _getSchedules(List<Map<String, dynamic>> reservations) {
     final now = DateTime.now();
-
     final today = DateTime(now.year, now.month, now.day);
-    final maxDate = today.add(const Duration(days: 1)); // 🔥 sampai BESOK
+    final maxDate = today.add(const Duration(days: 1));
 
-    return MockDatabase.userReservations.where((res) {
-      final date = DateTime.parse(res['tanggal']);
+    return reservations.where((res) {
+      final date = _safeParseDate(res['tanggal']);
       final itemDate = DateTime(date.year, date.month, date.day);
 
       return res['status'] == 'Dikonfirmasi' &&
-            !itemDate.isBefore(today) &&      // ✅ include hari ini
-            !itemDate.isAfter(maxDate);       // ✅ include besok
-    })
-    .toList()
-    ..sort((a, b) {
-      final dateA = DateTime.parse(a['tanggal']);
-      final dateB = DateTime.parse(b['tanggal']);
+          !itemDate.isBefore(today) &&
+          !itemDate.isAfter(maxDate);
+    }).toList()
+      ..sort((a, b) {
+        final dateA = _safeParseDate(a['tanggal']);
+        final dateB = _safeParseDate(b['tanggal']);
 
-      if (dateA != dateB) {
-        return dateA.compareTo(dateB);
-      }
+        if (dateA != dateB) {
+          return dateA.compareTo(dateB);
+        }
 
-      return a['jam'].compareTo(b['jam']);
-    });
+        return (a['jam'] ?? '').compareTo(b['jam'] ?? '');
+      });
   }
 
   // ================= JADWAL =================
-  Widget _scheduleCard(
-      String name, String service, String time, String tanggal) {
-
-    final date = DateTime.parse(tanggal);
+  Widget _scheduleCard(String name, String service, String time, String tanggal) {
+    final date = _safeParseDate(tanggal);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -303,7 +301,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Row(
         children: [
-
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -316,20 +313,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   _getMonthName(date.month),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text("${date.day}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("${date.day}", style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text(service),
                 const SizedBox(height: 4),
                 Text("🕒 $time"),
@@ -381,30 +374,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       type: BottomNavigationBarType.fixed,
       selectedItemColor: const Color(0xFF00897B),
       unselectedItemColor: Colors.grey,
-
       onTap: (index) {
         if (index == currentIndex) return;
-
         switch (index) {
           case 1:
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => AdminJadwalScreen()));
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminJadwalScreen()));
             break;
           case 2:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => AdminChatListScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminChatListScreen()));
             break;
           case 3:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => AdminPasienScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminPasienScreen()));
             break;
           case 4:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => AdminPengaturanScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminPengaturanScreen()));
             break;
         }
       },
-
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),

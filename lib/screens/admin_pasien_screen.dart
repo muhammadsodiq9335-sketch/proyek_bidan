@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
-
+import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
@@ -14,29 +13,22 @@ class AdminPasienScreen extends StatefulWidget {
 }
 
 class _AdminPasienScreenState extends State<AdminPasienScreen> {
-
+  final SupabaseService _supabaseService = SupabaseService();
   int selectedDateIndex = 2;
   DateTime startDate = DateTime.now();
 
   final List<String> hari = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
-  List<Map<String, String>> get pasienList {
+  List<Map<String, String>> _processPasienList(List<Map<String, dynamic>> reservations) {
     final Map<String, Map<String, String>> uniquePatients = {};
-    for (var res in MockDatabase.userReservations) {
-      final email = res['emailPasien'] as String? ?? '';
+    for (var res in reservations) {
+      final email = res['email_pasien'] ?? res['emailPasien'] ?? '';
       if (!uniquePatients.containsKey(email)) {
         uniquePatients[email] = {
-          "nama": res['namaPasien'] ?? '-',
-          "tgl": "-",
-          "alamat": "-",
+          "nama": res['nama_pasien'] ?? res['namaPasien'] ?? '-',
+          "tgl": res['tanggal'] ?? '-',
+          "alamat": res['alamat'] ?? '-', // Jika ada di tabel reservasi
         };
-
-        if (MockDatabase.userProfiles.containsKey(email)) {
-          uniquePatients[email]!["tgl"] =
-              MockDatabase.userProfiles[email]!.tglLahir;
-          uniquePatients[email]!["alamat"] =
-              MockDatabase.userProfiles[email]!.alamat;
-        }
       }
     }
     return uniquePatients.values.toList();
@@ -46,8 +38,6 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDDE6CF),
-
-      /// ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: const Color(0xFFDDE6CF),
         elevation: 0,
@@ -62,238 +52,173 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
           )
         ],
       ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _supabaseService.getReservasi(),
+        builder: (context, snapshot) {
+          final rawData = snapshot.data ?? [];
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
+          final filteredList = _processPasienList(rawData);
 
-      /// ================= BODY =================
-      body: Container(
-        color: const Color(0xFFE6B8BE),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-
-              /// ================= SEARCH =================
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const TextField(
-                  decoration: InputDecoration(
-                    icon: Icon(Icons.search),
-                    hintText: "Cari pasien berdasarkan nama atau ID",
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              /// ================= DATE PICKER =================
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE99AA3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  children: [
-
-                    /// HEADER
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.calendar_today, size: 16),
-                            SizedBox(width: 6),
-                            Text("Cek Tanggal",
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.chevron_left),
-                              onPressed: () {
-                                setState(() {
-                                  startDate =
-                                      startDate.subtract(const Duration(days: 1));
-                                });
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right),
-                              onPressed: () {
-                                setState(() {
-                                  startDate =
-                                      startDate.add(const Duration(days: 1));
-                                });
-                              },
-                            ),
-                          ],
-                        )
-                      ],
+          return Container(
+            color: const Color(0xFFE6B8BE),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    const SizedBox(height: 10),
-
-                    /// DATE LIST
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(5, (index) {
-                        DateTime date =
-                            startDate.add(Duration(days: index));
-
-                        bool isSelected = selectedDateIndex == index;
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => selectedDateIndex = index);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 52,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? const Color(0xFFB7E4A1)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  hari[date.weekday % 7],
-                                  style: const TextStyle(fontSize: 10),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  date.day.toString(),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    )
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              /// ================= TABLE =================
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1DCE5),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  children: [
-
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "RIWAYAT PEMBAYARAN PASIEN",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    child: const TextField(
+                      decoration: InputDecoration(
+                        icon: Icon(Icons.search),
+                        hintText: "Cari pasien berdasarkan nama atau ID",
+                        border: InputBorder.none,
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    /// HEADER TABLE
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("NAMA PASIEN", style: TextStyle(fontSize: 10)),
-                        Text("TANGGAL", style: TextStyle(fontSize: 10)),
-                        Text("ALAMAT", style: TextStyle(fontSize: 10)),
-                      ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE99AA3),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-
-                    const Divider(),
-
-                    /// DATA LIST
-                    ...pasienList.map((p) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Row(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-
-                            /// AVATAR
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: Colors.grey.shade400,
-                              child: Text(
-                                p["nama"]!.substring(0, 1),
-                                style: const TextStyle(fontSize: 10),
-                              ),
+                            const Row(
+                              children: [
+                                Icon(Icons.calendar_today, size: 16),
+                                SizedBox(width: 6),
+                                Text("Cek Tanggal",
+                                    style: TextStyle(fontWeight: FontWeight.bold)),
+                              ],
                             ),
-
-                            const SizedBox(width: 10),
-
-                            /// NAMA
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                p["nama"]!,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-
-                            /// TGL
-                            Expanded(
-                              flex: 2,
-                              child: Text(p["tgl"]!),
-                            ),
-
-                            /// ALAMAT
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                p["alamat"]!,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left),
+                                  onPressed: () {
+                                    setState(() {
+                                      startDate = startDate.subtract(const Duration(days: 1));
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_right),
+                                  onPressed: () {
+                                    setState(() {
+                                      startDate = startDate.add(const Duration(days: 1));
+                                    });
+                                  },
+                                ),
+                              ],
+                            )
                           ],
                         ),
-                      );
-                    }),
-
-                    const SizedBox(height: 10),
-
-                    /// PAGINATION
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("1/2", style: TextStyle(fontSize: 10)),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF66BB6A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text("Selanjutnya"),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(5, (index) {
+                            DateTime date = startDate.add(Duration(days: index));
+                            bool isSelected = selectedDateIndex == index;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() => selectedDateIndex = index);
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 52,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFFB7E4A1) : Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(hari[date.weekday % 7], style: const TextStyle(fontSize: 10)),
+                                    const SizedBox(height: 2),
+                                    Text(date.day.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
                         )
                       ],
-                    )
-                  ],
-                ),
-              )
-            ],
-          ),
-        ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1DCE5),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text("RIWAYAT PEMBAYARAN PASIEN", style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 12),
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("NAMA PASIEN", style: TextStyle(fontSize: 10)),
+                            Text("TANGGAL", style: TextStyle(fontSize: 10)),
+                            Text("ALAMAT", style: TextStyle(fontSize: 10)),
+                          ],
+                        ),
+                        const Divider(),
+                        if (isLoading)
+                          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
+                        if (!isLoading && filteredList.isEmpty)
+                          const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Belum ada data pasien"))),
+                        ...filteredList.map((p) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: Colors.grey.shade400,
+                                  child: Text(p["nama"]!.isNotEmpty ? p["nama"]!.substring(0, 1) : "?", style: const TextStyle(fontSize: 10)),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(flex: 3, child: Text(p["nama"]!, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                Expanded(flex: 2, child: Text(p["tgl"]!)),
+                                Expanded(flex: 3, child: Text(p["alamat"]!, overflow: TextOverflow.ellipsis)),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("1/2", style: TextStyle(fontSize: 10)),
+                            ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF66BB6A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              child: const Text("Selanjutnya"),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        },
       ),
-
       bottomNavigationBar: _bottomNav(context),
     );
   }

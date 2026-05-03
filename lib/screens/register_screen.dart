@@ -252,6 +252,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return;
                     }
 
+                    if (password.length < 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Kata sandi harus terdiri dari minimal 6 karakter!"),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
                     if (!isChecked) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

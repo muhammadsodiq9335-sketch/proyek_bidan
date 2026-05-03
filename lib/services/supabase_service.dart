@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
+import '../mock_data.dart';
 
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -79,6 +80,33 @@ class SupabaseService {
     }
   }
 
+  Future<void> tambahJenisPelayanan(Map<String, dynamic> data) async {
+    try {
+      await _supabase.from('jenis_pelayanan').insert(data);
+    } catch (e) {
+      print('Error tambahJenisPelayanan: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateJenisPelayanan(String id, Map<String, dynamic> data) async {
+    try {
+      await _supabase.from('jenis_pelayanan').update(data).eq('id', id);
+    } catch (e) {
+      print('Error updateJenisPelayanan: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteJenisPelayanan(String id) async {
+    try {
+      await _supabase.from('jenis_pelayanan').delete().eq('id', id);
+    } catch (e) {
+      print('Error deleteJenisPelayanan: $e');
+      rethrow;
+    }
+  }
+
   // ================= NOTIFIKASI =================
   Future<List<Map<String, dynamic>>> getNotifikasi(String email) async {
     try {
@@ -132,6 +160,28 @@ class SupabaseService {
     } catch (e) {
       print('Error balasReview: $e');
       rethrow;
+    }
+  }
+
+  // ================= ARTIKEL PDF =================
+  Future<List<ArtikelPdf>> getArtikelPdf() async {
+    try {
+      final data = await _supabase.from('artikel_pdf').select().order('tanggal_upload', ascending: false);
+      return (data as List).map((e) {
+        // Gunakan tryParse agar tidak crash jika format tanggal di DB salah
+        final rawDate = e['tanggal_upload']?.toString() ?? '';
+        DateTime parsedDate = DateTime.tryParse(rawDate) ?? DateTime.now();
+        
+        return ArtikelPdf(
+          id: e['id']?.toString() ?? '',
+          namaFile: e['nama_file'] ?? 'Tanpa Nama',
+          urlPdf: e['url_pdf'] ?? '',
+          tanggalUpload: parsedDate,
+        );
+      }).toList();
+    } catch (e) {
+      print('Error getArtikelPdf: $e');
+      return [];
     }
   }
 }

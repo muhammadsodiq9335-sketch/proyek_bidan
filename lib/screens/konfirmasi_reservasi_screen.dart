@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
 import '../mock_data.dart';
+import '../services/supabase_service.dart';
 
 class KonfirmasiReservasiScreen extends StatelessWidget {
   final List<Map<String, dynamic>> selectedServices;
@@ -101,41 +102,54 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  final supabaseService = SupabaseService();
                   final namaPasien = MockDatabase.currentUser?.nama ?? 'Pasien';
                   final emailPasien = MockDatabase.currentUser?.email ?? '';
 
-                  MockDatabase.userReservations.insert(0, {
-                    'layanan': layananNames,
-                    'jam': jam,
-                    'tanggal': tanggal,
-                    'isHomeCare': isHomeCare,
-                    'status': 'Menunggu Persetujuan',
-                    'namaPasien': namaPasien,
-                    'emailPasien': emailPasien,
-                    'harga': hargaTotal,
-                    'timestamp': DateTime.now(),
-                  });
-
-                  MockDatabase.notifications.insert(0, {
-                    'title': 'Reservasi Terkirim',
-                    'message': 'Reservasi ${''} Anda sedang menunggu persetujuan admin.',
-                    'timestamp': DateTime.now(),
-                  });
-
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => KonfirmasiBidanScreen(
-                        layanan: layananNames,
-                        jam: jam,
-                        tanggal: tanggal,
-                        isHomeCare: isHomeCare,
-                        harga: hargaTotal,
-                      ),
-                    ),
-                    (route) => route.isFirst,
+                  // Tampilkan loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(child: CircularProgressIndicator()),
                   );
+
+                  try {
+                    // 1. Simpan ke Supabase
+                    await supabaseService.tambahReservasi({
+                      'layanan': layananNames,
+                      'jam': jam,
+                      'tanggal': tanggal,
+                      'is_home_care': isHomeCare,
+                      'status': 'Menunggu Persetujuan',
+                      'nama_pasien': namaPasien,
+                      'email_pasien': emailPasien,
+                      'harga': hargaTotal,
+                    });
+
+                    // 2. Tutup loading
+                    Navigator.pop(context);
+
+                    // 3. Pindah ke halaman sukses
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => KonfirmasiBidanScreen(
+                          layanan: layananNames,
+                          jam: jam,
+                          tanggal: tanggal,
+                          isHomeCare: isHomeCare,
+                          harga: hargaTotal,
+                        ),
+                      ),
+                      (route) => route.isFirst,
+                    );
+                  } catch (e) {
+                    Navigator.pop(context); // Tutup loading
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal membuat reservasi: $e')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFAED581),

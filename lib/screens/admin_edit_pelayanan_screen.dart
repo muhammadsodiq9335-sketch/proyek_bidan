@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_service.dart';
 import '../mock_data.dart';
 
 class AdminEditPelayananScreen extends StatefulWidget {
   final JenisPelayanan layanan;
+  final String? serviceId;
 
   const AdminEditPelayananScreen({
     super.key,
     required this.layanan,
+    this.serviceId,
   });
 
   @override
@@ -15,25 +18,31 @@ class AdminEditPelayananScreen extends StatefulWidget {
 }
 
 class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
-
+  final SupabaseService _supabaseService = SupabaseService();
   String selectedCategory = 'Klinik';
+  String selectedTarget = 'Ibu';
   late TextEditingController jenisController;
   late TextEditingController deskripsiController;
   late TextEditingController hargaController;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-
-    /// 🔥 ISI DATA DARI MOCK
-    jenisController =
-        TextEditingController(text: widget.layanan.nama);
-    deskripsiController =
-        TextEditingController(text: widget.layanan.deskripsi);
+    jenisController = TextEditingController(text: widget.layanan.nama);
+    deskripsiController = TextEditingController(text: widget.layanan.deskripsi);
     hargaController = TextEditingController(
         text: widget.layanan.harga.replaceAll("Rp ", ""));
 
-    selectedCategory = widget.layanan.kategori;
+    // Deteksi kategori dari string kategori database
+    if (widget.layanan.kategori.contains('Anak')) {
+      selectedTarget = 'Anak';
+    } else {
+      selectedTarget = 'Ibu';
+    }
+    
+    // Asumsikan kita tahu is_home_care dari konteks sebelumnya atau string
+    // Untuk amannya kita biarkan default atau jika ada data tambahan bisa diatur
   }
 
   @override
@@ -44,37 +53,55 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
     super.dispose();
   }
 
-  void _updatePelayanan() {
+  Future<void> _updatePelayanan() async {
     if (jenisController.text.isEmpty ||
         deskripsiController.text.isEmpty ||
         hargaController.text.isEmpty) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lengkapi data layanan terlebih dahulu')),
       );
       return;
     }
 
-    /// 🔥 UPDATE DATA (TANPA UBAH UI)
-    widget.layanan.nama = jenisController.text;
-    widget.layanan.deskripsi = deskripsiController.text;
-    widget.layanan.harga = "Rp ${hargaController.text}";
-    widget.layanan.kategori = selectedCategory;
+    if (widget.serviceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID Layanan tidak ditemukan!')),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data layanan berhasil diperbarui')),
-    );
+    setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      final data = {
+        'nama': jenisController.text,
+        'deskripsi': deskripsiController.text,
+        'harga': "Rp ${hargaController.text}",
+        'kategori': selectedTarget == "Ibu" ? "Layanan Kesehatan Ibu" : "Layanan Kesehatan Anak",
+        // Catatan: is_home_care biasanya tidak diubah di sini jika mengikuti tab, 
+        // tapi kita bisa tambahkan selector jika perlu.
+      };
+
+      await _supabaseService.updateJenisPelayanan(widget.serviceId!, data);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data layanan berhasil diperbarui di database')),
+      );
+
       Navigator.pop(context);
-    });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memperbarui: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F8FB),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFF4F8FB),
         elevation: 0,
@@ -86,18 +113,7 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
           'Edit Jenis Layanan',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Color(0xFF1B5E20),
-              child: Icon(Icons.person, color: Colors.white),
-            ),
-          ),
-        ],
       ),
-
-      /// ⚠️ UI KAMU SAMA PERSIS (TIDAK DIUBAH)
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -128,18 +144,9 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'DETAIL DATA MASTER',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
                     const SizedBox(height: 18),
                     const Text(
-                      'KATEGORI LAYANAN',
+                      'TARGET PASIEN',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
@@ -149,9 +156,9 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _categoryButton('Klinik'),
+                        _targetButton('Ibu'),
                         const SizedBox(width: 12),
-                        _categoryButton('Home Care'),
+                        _targetButton('Anak'),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -199,32 +206,34 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
                   ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: _updatePelayanan,
-                child: const Text("Perbarui"),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _updatePelayanan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isLoading 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text("Perbarui Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
               ),
             ],
           ),
         ),
       ),
-
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  /// ===== SISANYA TIDAK DIUBAH =====
-  Widget _categoryButton(String label) {
-    final isSelected = selectedCategory == label;
+  Widget _targetButton(String label) {
+    final isSelected = selectedTarget == label;
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedCategory = label;
-          });
-        },
+        onTap: () => setState(() => selectedTarget = label),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
@@ -276,12 +285,18 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
     return TextFormField(
       controller: hargaController,
       keyboardType: TextInputType.number,
+      decoration: const InputDecoration(
+        prefixText: "Rp ",
+      ),
     );
   }
 
   Widget _buildBottomNavBar() {
     return BottomNavigationBar(
       currentIndex: 3,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
       onTap: (index) {},
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
