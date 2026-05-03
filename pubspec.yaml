@@ -20,6 +20,8 @@ dependencies:
   http: ^1.2.0
   supabase_flutter: ^2.8.4
   shared_preferences: ^2.5.3
+  file_picker: ^11.0.2
+  syncfusion_flutter_pdfviewer: ^33.2.4
 
 dev_dependencies:
   flutter_test:

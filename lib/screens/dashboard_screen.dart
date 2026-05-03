@@ -6,6 +6,7 @@ import 'notifikasi_screen.dart';
 import 'pusat_bantuan_screen.dart';
 import 'pengaturan_akun_screen.dart';
 import 'chat_screen.dart';
+import 'pdf_viewer_screen.dart';
 
 import '../mock_data.dart';
 
@@ -1170,58 +1171,17 @@ class _ReservasiPage extends StatelessWidget {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ARTIKEL PAGE
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-class _ArtikelPage extends StatelessWidget {
+class _ArtikelPage extends StatefulWidget {
   const _ArtikelPage();
 
   @override
+  State<_ArtikelPage> createState() => _ArtikelPageState();
+}
+
+class _ArtikelPageState extends State<_ArtikelPage> {
+  @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> articles = [
-      {
-        "category": "NUTRITION",
-        "title": "Optimal diet for the second trimester",
-        "desc":
-            "Fueling your baby's growth with the right nutrients. Cara menjaga keseimbangan gizi saat hamil trimester kedua agar bayi tumbuh sehat dan cerdas.",
-        "image":
-            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&q=80",
-        "date": "10 Apr 2026",
-      },
-      {
-        "category": "MENTAL WELLNESS",
-        "title": "The art of the Fourth Trimester transition",
-        "desc":
-            "Preparing your home and mind for the new baby. Memahami perubahan emosional pasca persalinan.",
-        "image":
-            "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400&q=80",
-        "date": "11 Apr 2026",
-      },
-      {
-        "category": "KESEHATAN",
-        "title": "Persiapan melahirkan yang perlu kamu tahu",
-        "desc":
-            "Panduan lengkap untuk persiapan mental dan fisik menghadapi hari-H persalinan di klinik kami.",
-        "image":
-            "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&q=80",
-        "date": "12 Apr 2026",
-      },
-      {
-        "category": "NEWBORN CARE",
-        "title": "Panduan menyusui eksklusif untuk ibu baru",
-        "desc":
-            "Tips sukses ASI eksklusif dan cara mengatasi masalah pelekatan pada bayi baru lahir.",
-        "image":
-            "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&q=80",
-        "date": "13 Apr 2026",
-      },
-      {
-        "category": "WELLNESS",
-        "title": "Pentingnya senam hamil secara rutin",
-        "desc":
-            "Olahraga ringan yang sangat dianjurkan untuk mempersiapkan otot panggul sebelum melahirkan.",
-        "image":
-            "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80",
-        "date": "14 Apr 2026",
-      },
-    ];
+    final articles = MockDatabase.artikelPdfList;
 
     return SafeArea(
       child: Column(
@@ -1244,107 +1204,125 @@ class _ArtikelPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: articles.length,
-              itemBuilder: (context, index) {
-                final article = articles[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 4))
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                        child: Image.network(
-                          article["image"]!,
-                          height: 160,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
+            child: articles.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.article_outlined, size: 64, color: Colors.black26),
+                        SizedBox(height: 16),
+                        Text("Belum ada artikel edukasi.", style: TextStyle(color: Colors.black45)),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: articles.length,
+                    itemBuilder: (context, index) {
+                      final article = articles[index];
+                      final date = article.tanggalUpload;
+                      final dateString = "${date.day}/${date.month}/${date.year}";
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PdfViewerScreen(
+                                filePath: article.urlPdf,
+                                fileName: article.namaFile,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4))
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Container(
-                            height: 160,
-                            color: const Color(0xFFEEEEEE),
-                            child: const Icon(Icons.image_outlined,
-                                color: Colors.black26, size: 40),
+                                height: 120,
+                                width: double.infinity,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE0F2F1),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: const Icon(Icons.picture_as_pdf, color: Color(0xFF00897B), size: 48),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE0F2F1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Text(
+                                            "EDUKASI",
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF00897B),
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          dateString,
+                                          style: const TextStyle(
+                                              fontSize: 10, color: Colors.black45),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      article.namaFile,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1B2E35),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      "Ketuk untuk membaca dokumen PDF ini.",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black54,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE0F2F1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    article["category"]!,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF00897B),
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  article["date"]!,
-                                  style: const TextStyle(
-                                      fontSize: 10, color: Colors.black45),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              article["title"]!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B2E35),
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              article["desc"]!,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.black54,
-                                height: 1.4,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

@@ -8,6 +8,7 @@ import 'admin_cek_profil_bidan_screen.dart';
 import 'admin_jenis_pelayanan_screen.dart';
 import 'admin_review_pasien_screen.dart';
 import 'admin_chat_list_screen.dart';
+import 'admin_artikel_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -204,6 +205,14 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
             MaterialPageRoute(
               builder: (context) =>
                   const AdminJenisPelayananScreen(),
+            ),
+          );
+        } else if (item.title == 'Upload Artikel') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  const AdminArtikelScreen(),
             ),
           );
         }

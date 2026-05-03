@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
 
-// SESUAIKAN DENGAN PROJECT KAMU
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
@@ -15,8 +14,11 @@ class AdminPasienScreen extends StatefulWidget {
 }
 
 class _AdminPasienScreenState extends State<AdminPasienScreen> {
+
   int selectedDateIndex = 2;
   DateTime startDate = DateTime.now();
+
+  final List<String> hari = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
   List<Map<String, String>> get pasienList {
     final Map<String, Map<String, String>> uniquePatients = {};
@@ -24,41 +26,44 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
       final email = res['emailPasien'] as String? ?? '';
       if (!uniquePatients.containsKey(email)) {
         uniquePatients[email] = {
-          "nama": res['namaPasien'] as String? ?? 'Unknown',
-          "tgl": "-", // tgl lahir might need to come from userProfiles, but we don't have direct mapping without email. Let's lookup userProfiles
+          "nama": res['namaPasien'] ?? '-',
+          "tgl": "-",
           "alamat": "-",
         };
-        // If we have profile data, use it
+
         if (MockDatabase.userProfiles.containsKey(email)) {
-          uniquePatients[email]!["tgl"] = MockDatabase.userProfiles[email]!.tglLahir;
-          uniquePatients[email]!["alamat"] = MockDatabase.userProfiles[email]!.alamat;
+          uniquePatients[email]!["tgl"] =
+              MockDatabase.userProfiles[email]!.tglLahir;
+          uniquePatients[email]!["alamat"] =
+              MockDatabase.userProfiles[email]!.alamat;
         }
       }
     }
     return uniquePatients.values.toList();
   }
 
-  final List<String> hari = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDDE6CF),
 
-      /// ===== APPBAR =====
+      /// ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: const Color(0xFFDDE6CF),
         elevation: 0,
-        title: const Text("Pasien", style: TextStyle(color: Colors.black)),
+        title: const Text(
+          "Riwayat Pembayaran Pasien",
+          style: TextStyle(color: Colors.black),
+        ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 12),
-            child: CircleAvatar(radius: 12, backgroundColor: Colors.grey),
+            child: CircleAvatar(radius: 14, backgroundColor: Colors.grey),
           )
         ],
       ),
 
-      /// ===== BODY =====
+      /// ================= BODY =================
       body: Container(
         color: const Color(0xFFE6B8BE),
         child: SingleChildScrollView(
@@ -66,12 +71,12 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
           child: Column(
             children: [
 
-              /// ===== SEARCH =====
+              /// ================= SEARCH =================
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const TextField(
                   decoration: InputDecoration(
@@ -84,17 +89,17 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
 
               const SizedBox(height: 16),
 
-              /// ===== CEK TANGGAL =====
+              /// ================= DATE PICKER =================
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE99AA3),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
                   children: [
 
-                    /// HEADER + BUTTON
+                    /// HEADER
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -102,7 +107,8 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                           children: [
                             Icon(Icons.calendar_today, size: 16),
                             SizedBox(width: 6),
-                            Text("Cek Tanggal"),
+                            Text("Cek Tanggal",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                           ],
                         ),
                         Row(
@@ -111,9 +117,8 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                               icon: const Icon(Icons.chevron_left),
                               onPressed: () {
                                 setState(() {
-                                  startDate = startDate.subtract(
-                                    const Duration(days: 1),
-                                  );
+                                  startDate =
+                                      startDate.subtract(const Duration(days: 1));
                                 });
                               },
                             ),
@@ -121,9 +126,8 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                               icon: const Icon(Icons.chevron_right),
                               onPressed: () {
                                 setState(() {
-                                  startDate = startDate.add(
-                                    const Duration(days: 1),
-                                  );
+                                  startDate =
+                                      startDate.add(const Duration(days: 1));
                                 });
                               },
                             ),
@@ -134,15 +138,12 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
 
                     const SizedBox(height: 10),
 
-                    /// TANGGAL DINAMIS
+                    /// DATE LIST
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(5, (index) {
                         DateTime date =
                             startDate.add(Duration(days: index));
-
-                        String dayName = hari[date.weekday % 7];
-                        String dateNumber = date.day.toString();
 
                         bool isSelected = selectedDateIndex == index;
 
@@ -150,21 +151,25 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                           onTap: () {
                             setState(() => selectedDateIndex = index);
                           },
-                          child: Container(
-                            width: 50,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 52,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? Colors.green.shade200
+                                  ? const Color(0xFFB7E4A1)
                                   : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Column(
                               children: [
-                                Text(dayName,
-                                    style: const TextStyle(fontSize: 10)),
                                 Text(
-                                  dateNumber,
+                                  hari[date.weekday % 7],
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  date.day.toString(),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold),
                                 ),
@@ -180,12 +185,12 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
 
               const SizedBox(height: 16),
 
-              /// ===== RIWAYAT PASIEN =====
+              /// ================= TABLE =================
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFD1DCE5),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
                   children: [
@@ -194,32 +199,69 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         "RIWAYAT PEMBAYARAN PASIEN",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
+                    /// HEADER TABLE
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("NAMA", style: TextStyle(fontSize: 10)),
-                        Text("TGL LAHIR", style: TextStyle(fontSize: 10)),
+                        Text("NAMA PASIEN", style: TextStyle(fontSize: 10)),
+                        Text("TANGGAL", style: TextStyle(fontSize: 10)),
                         Text("ALAMAT", style: TextStyle(fontSize: 10)),
                       ],
                     ),
 
                     const Divider(),
 
+                    /// DATA LIST
                     ...pasienList.map((p) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(p["nama"]!),
-                            Text(p["tgl"]!),
-                            Text(p["alamat"]!),
+
+                            /// AVATAR
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.grey.shade400,
+                              child: Text(
+                                p["nama"]!.substring(0, 1),
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ),
+
+                            const SizedBox(width: 10),
+
+                            /// NAMA
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                p["nama"]!,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+
+                            /// TGL
+                            Expanded(
+                              flex: 2,
+                              child: Text(p["tgl"]!),
+                            ),
+
+                            /// ALAMAT
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                p["alamat"]!,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -227,6 +269,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
 
                     const SizedBox(height: 10),
 
+                    /// PAGINATION
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -234,7 +277,10 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                         ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: const Color(0xFF66BB6A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           child: const Text("Selanjutnya"),
                         )
@@ -248,89 +294,44 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
         ),
       ),
 
-      /// ===== BOTTOM NAV =====
       bottomNavigationBar: _bottomNav(context),
     );
   }
 
-  /// ===== BOTTOM NAV =====
+  /// ================= BOTTOM NAV =================
   Widget _bottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 3,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+    return BottomNavigationBar(
+      currentIndex: 3,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
 
-        /// 🔥 STYLE BARU
-        selectedItemColor: const Color(0xFF00897B),
-        unselectedItemColor: const Color(0xFFB0BEC5),
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+        }
+        if (index == 1) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+        }
+        if (index == 2) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => AdminChatListScreen()));
+        }
+        if (index == 4) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+        }
+      },
 
-        selectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          letterSpacing: 0.5,
-        ),
-
-        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-            );
-          }
-          if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-          }
-          if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-          }
-          if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-          }
-          if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
-          }
-        },
-
-        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Beranda",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: "Jadwal",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payments),
-            label: "Pembayaran",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Pengaturan",
-          ),
-        ],
-      ),
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+      ],
     );
   }
 }

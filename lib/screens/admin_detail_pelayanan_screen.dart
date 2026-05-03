@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'admin_detail_pembayaran_screen.dart';
 
 class AdminDetailPelayananScreen extends StatefulWidget {
   final Map<String, dynamic> pasien;
@@ -13,15 +14,6 @@ class AdminDetailPelayananScreen extends StatefulWidget {
 class _AdminDetailPelayananScreenState
     extends State<AdminDetailPelayananScreen> {
 
-  void _updateStatus() {
-    if (widget.pasien['layananSelesai'] == true &&
-        widget.pasien['pembayaranSelesai'] == true) {
-      widget.pasien['statusPelayanan'] = 'Selesai';
-    } else {
-      widget.pasien['statusPelayanan'] = 'Diproses';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final pasien = widget.pasien;
@@ -29,6 +21,7 @@ class _AdminDetailPelayananScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
 
+      /// ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: const Color(0xFFFCE4EC),
         elevation: 0,
@@ -42,6 +35,7 @@ class _AdminDetailPelayananScreenState
         ),
       ),
 
+      /// ================= BODY =================
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -68,6 +62,7 @@ class _AdminDetailPelayananScreenState
 
                   const SizedBox(height: 16),
 
+                  /// FOTO + NAMA
                   Row(
                     children: [
                       const CircleAvatar(
@@ -85,7 +80,7 @@ class _AdminDetailPelayananScreenState
                             style: TextStyle(fontSize: 10),
                           ),
                           Text(
-                            pasien['namaPasien'],
+                            pasien['namaPasien'] ?? '-',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -104,6 +99,7 @@ class _AdminDetailPelayananScreenState
 
                   const SizedBox(height: 16),
 
+                  /// LAYANAN + JADWAL
                   Row(
                     children: [
 
@@ -123,7 +119,7 @@ class _AdminDetailPelayananScreenState
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                pasien['layanan'],
+                                pasien['layanan'] ?? '-',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold),
                               ),
@@ -150,7 +146,7 @@ class _AdminDetailPelayananScreenState
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "${pasien['tanggal']}, ${pasien['jam']}",
+                                "${pasien['tanggal'] ?? '-'}, ${pasien['jam'] ?? '-'}",
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold),
@@ -167,7 +163,7 @@ class _AdminDetailPelayananScreenState
 
             const SizedBox(height: 20),
 
-            /// ================= CHECKLIST =================
+            /// ================= VERIFIKASI =================
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -179,7 +175,7 @@ class _AdminDetailPelayananScreenState
                 children: [
 
                   const Text(
-                    "Verifikasi Checklist",
+                    "Verifikasi Layanan",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -187,75 +183,70 @@ class _AdminDetailPelayananScreenState
 
                   const SizedBox(height: 12),
 
-                  /// LAYANAN
-                  _checkItem(
-                    title: "Layanan telah selesai dilakukan",
-                    value: pasien['layananSelesai'] ?? false,
-                    onChanged: (val) {
-                      setState(() {
-                        pasien['layananSelesai'] = val;
-                        _updateStatus();
-                      });
-                    },
+                  /// CHECKBOX
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB7E4A1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: pasien['layananSelesai'] ?? false,
+                          onChanged: (val) {
+                            setState(() {
+                              pasien['layananSelesai'] = val!;
+                            });
+                          },
+                        ),
+                        const Expanded(
+                          child: Text("Layanan telah selesai dilakukan"),
+                        ),
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
 
-                  /// PEMBAYARAN
-                  _checkItem(
-                    title: "Pembayaran telah dikonfirmasi",
-                    value: pasien['pembayaranSelesai'] ?? false,
-                    onChanged: (val) {
-                      setState(() {
-                        pasien['pembayaranSelesai'] = val;
-                        _updateStatus();
-                      });
-                    },
+                  /// BUTTON LANJUT PEMBAYARAN
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: pasien['layananSelesai'] == true
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      AdminDetailPembayaranScreen(
+                                    pasien: pasien,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1565C0),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        "Lanjutkan ke Pembayaran",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            /// ================= STATUS =================
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                "Status: ${pasien['statusPelayanan']}",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            )
           ],
         ),
-      ),
-    );
-  }
-
-  /// ================= CHECK ITEM =================
-  Widget _checkItem({
-    required String title,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB7E4A1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Checkbox(
-            value: value,
-            onChanged: (val) => onChanged(val!),
-          ),
-          Expanded(child: Text(title)),
-        ],
       ),
     );
   }

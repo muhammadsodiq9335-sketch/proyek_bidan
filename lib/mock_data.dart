@@ -49,6 +49,20 @@ class ReviewPasien {
   });
 }
 
+class ArtikelPdf {
+  final String id;
+  final String namaFile;
+  final String urlPdf;
+  final DateTime tanggalUpload;
+
+  ArtikelPdf({
+    required this.id,
+    required this.namaFile,
+    required this.urlPdf,
+    required this.tanggalUpload,
+  });
+}
+
 class MockDatabase {
   static final Map<String, String> registeredUsers = {};
   static final Map<String, UserProfile> userProfiles = {};
@@ -271,4 +285,7 @@ class MockDatabase {
       avatarColor: 0xFFE8D5E0,
     ),
   ];
+
+  // ================= ARTIKEL PDF =================
+  static List<ArtikelPdf> artikelPdfList = [];
 }

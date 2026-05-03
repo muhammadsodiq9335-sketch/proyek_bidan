@@ -83,15 +83,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       color: const Color(0xFFF8FAFC),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text(
-            "MORA",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B4F72),
-            ),
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF1B4F72)),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Text(
+                "MORA",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B4F72),
+                ),
+              ),
+            ],
           ),
-          CircleAvatar(
+          const CircleAvatar(
             backgroundColor: Colors.grey,
             child: Icon(Icons.person, color: Colors.white),
           )
