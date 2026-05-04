@@ -19,6 +19,9 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedDate = now;
+    _displayMonth = now;
     _reservasiFuture = _supabaseService.getReservasi();
   }
 
@@ -32,14 +35,6 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
     'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
     'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _selectedDate = now;
-    _displayMonth = now;
-  }
 
   @override
   Widget build(BuildContext context) {
