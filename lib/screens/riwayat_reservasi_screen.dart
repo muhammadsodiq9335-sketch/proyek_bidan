@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 class RiwayatReservasiScreen extends StatelessWidget {
   const RiwayatReservasiScreen({super.key});
@@ -8,7 +9,7 @@ class RiwayatReservasiScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final supabaseService = SupabaseService();
-    final currentUserEmail = MockDatabase.currentUser?.email;
+    final currentUserEmail = AuthService.currentUserProfile?.email;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
@@ -29,7 +30,7 @@ class RiwayatReservasiScreen extends StatelessWidget {
         ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: supabaseService.getReservasi(emailPasien: currentUserEmail),
+        future: supabaseService.getReservasi(userId: AuthService.currentUserProfile?.id),
         builder: (context, snapshot) {
           final reservations = snapshot.data ?? [];
           final isLoading = snapshot.connectionState == ConnectionState.waiting;

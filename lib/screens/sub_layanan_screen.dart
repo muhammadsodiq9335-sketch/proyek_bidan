@@ -27,9 +27,9 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
 
   void _toggleService(Map<String, dynamic> service) {
     setState(() {
-      final exists = _selectedServices.any((s) => s['title'] == service['title']);
+      final exists = _selectedServices.any((s) => s['nama'] == service['nama']);
       if (exists) {
-        _selectedServices.removeWhere((s) => s['title'] == service['title']);
+        _selectedServices.removeWhere((s) => s['nama'] == service['nama']);
       } else {
         _selectedServices.add(service);
       }
@@ -189,7 +189,7 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
   }
 
   Widget _buildServiceCard(Map<String, dynamic> service) {
-    final bool isSelected = _selectedServices.any((s) => s['title'] == service['title']);
+    final bool isSelected = _selectedServices.any((s) => s['nama'] == service['nama']);
 
     return GestureDetector(
       onTap: () => _toggleService(service),
@@ -228,14 +228,14 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
                   : null,
             ),
             const SizedBox(width: 12),
-            // Ikon layanan
+            // Ikon layanan (Default icon if not in database)
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: widget.kategoriColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(service['icon'] as IconData,
+              child: Icon(Icons.healing_outlined,
                   color: widget.kategoriColor, size: 22),
             ),
             const SizedBox(width: 12),
@@ -245,7 +245,7 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    service['title'],
+                    service['nama'] ?? 'Tanpa Nama',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -254,7 +254,7 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    service['desc'],
+                    service['deskripsi'] ?? 'Tanpa Deskripsi',
                     style:
                         const TextStyle(fontSize: 11, color: Colors.black45),
                   ),
@@ -271,7 +271,7 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                service['price'],
+                "Rp ${service['harga']}",
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,

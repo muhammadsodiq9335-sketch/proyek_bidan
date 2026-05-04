@@ -1,60 +1,67 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
+import 'supabase_service.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  static UserProfile? currentUserProfile;
 
   // Cek apakah user sedang login
   User? getCurrentUser() {
     return _supabase.auth.currentUser;
   }
 
-  // Get current session
-  Session? getCurrentSession() {
-    return _supabase.auth.currentSession;
-  }
-
   // Login dengan Email & Password
-  Future<AuthResponse> signIn({required String email, required String password}) async {
-    return await _supabase.auth.signInWithPassword(
+  Future<void> signIn({required String email, required String password}) async {
+    final res = await _supabase.auth.signInWithPassword(
       email: email,
       password: password,
     );
+
+    if (res.user != null) {
+      final profile = await SupabaseService().getUserProfile(res.user!.id);
+      currentUserProfile = profile;
+    }
   }
 
   // Register dengan Email, Password, dan Data Profil
-  Future<AuthResponse> signUp({
+  Future<void> signUp({
     required String email,
     required String password,
     required String nama,
     required String tglLahir,
     required String alamat,
   }) async {
-    // 1. Sign up user ke Supabase Auth
     final response = await _supabase.auth.signUp(
       email: email,
       password: password,
     );
 
     final user = response.user;
-    if (user != null) {
-      // 2. Simpan profil user ke tabel user_profiles
-      await _supabase.from('user_profiles').insert({
-        'id': user.id,
-        'email': email,
-        'nama': nama,
-        'tgl_lahir': tglLahir,
-        'alamat': alamat,
-      });
-    }
+    if (user == null) throw Exception("User gagal dibuat");
 
-    return response;
+    final profileData = {
+      'id': user.id,
+      'email': email,
+      'nama': nama,
+      'tgl_lahir': tglLahir,
+      'alamat': alamat,
+      'role': 'pasien', // Default role untuk pendaftaran baru
+    };
+
+    await _supabase.from('user_profiles').insert(profileData);
+    
+    currentUserProfile = UserProfile.fromJson(profileData);
   }
 
   // Logout
   Future<void> signOut() async {
     await _supabase.auth.signOut();
+    currentUserProfile = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('remembered_email');
+    await prefs.remove('remember_me');
   }
 
   // Ingat Saya (Remember Me) - menggunakan SharedPreferences

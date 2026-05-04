@@ -5,6 +5,7 @@ import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_detail_pelayanan_screen.dart';
+import '../services/supabase_service.dart';
 
 class AdminRingkasanHarianScreen extends StatefulWidget {
   const AdminRingkasanHarianScreen({super.key});
@@ -16,31 +17,15 @@ class AdminRingkasanHarianScreen extends StatefulWidget {
 
 class _AdminRingkasanHarianScreenState
     extends State<AdminRingkasanHarianScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
 
-    /// ================= FILTER DATA =================
-    final confirmedToday = MockDatabase.userReservations.where((e) {
-      final date = DateTime.parse(e['tanggal']);
-      return e['status'] == 'Dikonfirmasi' &&
-          date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-    }).toList();
-
-    final allToday = MockDatabase.userReservations.where((e) {
-      final date = DateTime.parse(e['tanggal']);
-      return date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-    }).toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFFFCE4EC),
       bottomNavigationBar: _bottomNav(context, 0),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFFFCE4EC),
         elevation: 0,
@@ -49,208 +34,192 @@ class _AdminRingkasanHarianScreenState
           style: TextStyle(color: Colors.black),
         ),
       ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _supabaseService.getReservasi(),
+        builder: (context, snapshot) {
+          final allReservations = snapshot.data ?? [];
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            /// TITLE
-            const Text(
-              "Daftar Pasien Hari Ini",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+          final confirmedToday = allReservations.where((e) {
+            final date = DateTime.tryParse(e['tanggal'] ?? '') ?? DateTime.now();
+            return e['status'] == 'Dikonfirmasi' &&
+                date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day;
+          }).toList();
 
-            const SizedBox(height: 10),
+          final allToday = allReservations.where((e) {
+            final date = DateTime.tryParse(e['tanggal'] ?? '') ?? DateTime.now();
+            return date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day;
+          }).toList();
 
-            /// DATE
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 6),
-                  Text(_formatDate(now)),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            /// SUMMARY CARD
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD8E6C3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Icon(Icons.calendar_today_outlined),
-                      Text("HARI INI", style: TextStyle(fontSize: 10)),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Daftar Pasien Hari Ini",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F2FD),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16),
+                      const SizedBox(width: 6),
+                      Text(_formatDate(now)),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "${confirmedToday.length}",
-                    style: const TextStyle(
-                        fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text("Pasien Dikonfirmasi Hari Ini"),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// LIST TITLE
-            const Text(
-              "Jadwal Antrian Hari Ini",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// LIST
-            ...allToday.map((e) {
-
-              final status = e['statusPelayanan'] ?? 'Menunggu';
-
-              Color statusColor;
-              String statusText;
-
-              if (status == 'Selesai & Pulang') {
-                statusColor = Colors.green.shade200;
-                statusText = "Selesai";
-              } else if (status == 'Diproses') {
-                statusColor = Colors.orange.shade200;
-                statusText = "Diproses";
-              } else {
-                statusColor = Colors.blue.shade100;
-                statusText = "Menunggu";
-              }
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD8E6C3),
-                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(
-                  children: [
-
-                    /// AVATAR
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.grey,
-                      child: Icon(Icons.person, color: Colors.white),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    /// TEXT
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            e['namaPasien'],
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            e['layanan'].toUpperCase(),
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(Icons.access_time, size: 14),
-                              const SizedBox(width: 4),
-                              Text(e['jam']),
-                            ],
-                          ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD8E6C3),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Icon(Icons.calendar_today_outlined),
+                          Text("HARI INI", style: TextStyle(fontSize: 10)),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "${confirmedToday.length}",
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text("Pasien Dikonfirmasi Hari Ini"),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Jadwal Antrian Hari Ini",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                ...allToday.map((e) {
+                  final status = e['status_pelayanan'] ?? e['statusPelayanan'] ?? 'Menunggu';
+                  Color statusColor;
+                  String statusText;
+
+                  if (status == 'Selesai & Pulang') {
+                    statusColor = Colors.green.shade200;
+                    statusText = "Selesai";
+                  } else if (status == 'Diproses') {
+                    statusColor = Colors.orange.shade200;
+                    statusText = "Diproses";
+                  } else {
+                    statusColor = Colors.blue.shade100;
+                    statusText = "Menunggu";
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD8E6C3),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-
-                    /// RIGHT
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    child: Row(
                       children: [
-
-                        /// STATUS
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            statusText,
-                            style: const TextStyle(fontSize: 10),
+                        const CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.grey,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                e['nama_pasien'] ?? e['namaPasien'] ?? 'Pasien',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                (e['layanan'] ?? '-').toString().toUpperCase(),
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(Icons.access_time, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(e['jam'] ?? '-'),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-
-                        const SizedBox(height: 8),
-
-                        /// BUTTON
-                        ElevatedButton(
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    AdminDetailPelayananScreen(pasien: e),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            );
-
-                            /// 🔥 REFRESH FIX
-                            setState(() {});
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                status == 'Selesai & Pulang'
-                                    ? const Color(0xFF0D47A1)
-                                    : const Color(0xFFD1DCE5),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              child: Text(
+                                statusText,
+                                style: const TextStyle(fontSize: 10),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            "Lihat Detail",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: status == 'Selesai & Pulang'
-                                  ? Colors.white
-                                  : Colors.black,
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AdminDetailPelayananScreen(pasien: e),
+                                  ),
+                                );
+                                setState(() {});
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: status == 'Selesai & Pulang' ? const Color(0xFF0D47A1) : const Color(0xFFD1DCE5),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: Text(
+                                "Lihat Detail",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: status == 'Selesai & Pulang' ? Colors.white : Colors.black,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
+                  );
+                }),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
+import '../services/supabase_service.dart';
 import 'admin_balas_review_screen.dart';
 
 class AdminReviewPasienScreen extends StatefulWidget {
@@ -11,6 +11,7 @@ class AdminReviewPasienScreen extends StatefulWidget {
 }
 
 class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +22,29 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
         elevation: 0,
         title: const Text('Review Pasien', style: TextStyle(color: Colors.black)),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: MockDatabase.reviews.map((r) => _buildReviewCard(r)).toList(),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _supabaseService.getReviews(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final reviews = snapshot.data ?? [];
+          if (reviews.isEmpty) return const Center(child: Text("Belum ada review"));
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: reviews.length,
+            itemBuilder: (context, index) {
+              final r = reviews[index];
+              return _buildReviewCard(r);
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget _buildReviewCard(ReviewPasien review) {
+  Widget _buildReviewCard(Map<String, dynamic> review) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -39,7 +55,6 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// HEADER
           Row(
             children: [
               const CircleAvatar(
@@ -49,40 +64,31 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  review.name,
+                  review['nama_pasien'] ?? review['name'] ?? '-',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               Text(
-                review.date,
+                review['tanggal'] ?? review['date'] ?? '-',
                 style: const TextStyle(fontSize: 10),
               )
             ],
           ),
-
           const SizedBox(height: 6),
-
-          /// RATING
           Row(
             children: List.generate(
               5,
               (index) => Icon(
-                index < review.rating ? Icons.star : Icons.star_border,
+                index < (review['rating'] ?? 0) ? Icons.star : Icons.star_border,
                 color: Colors.orange,
                 size: 14,
               ),
             ),
           ),
-
           const SizedBox(height: 8),
-
-          /// REVIEW TEXT
-          Text(review.content),
-
+          Text(review['content'] ?? review['review_text'] ?? '-'),
           const SizedBox(height: 10),
-
-          /// BUTTON BALAS (kalau belum dibalas)
-          if (review.adminReply == null)
+          if (review['admin_reply'] == null)
             InkWell(
               onTap: () async {
                 await Navigator.push(
@@ -92,18 +98,15 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
                         AdminBalasReviewScreen(review: review),
                   ),
                 );
-                setState(() {}); // refresh UI
+                setState(() {});
               },
               child: const Text(
                 '↩ Balas',
                 style: TextStyle(color: Colors.black54),
               ),
             ),
-
-          /// ===== ADMIN REPLY =====
-          if (review.adminReply != null) ...[
+          if (review['admin_reply'] != null) ...[
             const SizedBox(height: 12),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -113,31 +116,26 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// HEADER ADMIN + DELETE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Admin',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            review.adminReply = null;
-                          });
+                        onTap: () async {
+                          if (review['id'] != null) {
+                            await _supabaseService.hapusBalasanReview(review['id'].toString());
+                            setState(() {});
+                          }
                         },
                         child: const Icon(Icons.delete, size: 16, color: Colors.red),
                       )
                     ],
                   ),
-
                   const SizedBox(height: 6),
-
-                  Text(review.adminReply!),
+                  Text(review['admin_reply']!),
                 ],
               ),
             ),
@@ -146,4 +144,4 @@ class _AdminReviewPasienScreenState extends State<AdminReviewPasienScreen> {
       ),
     );
   }
-}
+}

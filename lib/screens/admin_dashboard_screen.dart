@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
-import 'admin_jadwal_screen.dart';
-import 'admin_chat_list_screen.dart';
-import 'admin_pasien_screen.dart';
-import 'admin_pengaturan_screen.dart';
-import 'admin_ringkasan_harian_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -16,6 +11,19 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final SupabaseService _supabaseService = SupabaseService();
+  late Future<List<Map<String, dynamic>>> _reservasiFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reservasiFuture = _supabaseService.getReservasi();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _reservasiFuture = _supabaseService.getReservasi();
+    });
+  }
 
   DateTime _safeParseDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return DateTime.now();
@@ -29,7 +37,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       bottomNavigationBar: _bottomNav(context, 0),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _supabaseService.getReservasi(), // Ambil semua reservasi untuk admin
+          future: _reservasiFuture, // Ambil semua reservasi untuk admin
           builder: (context, snapshot) {
             final allReservations = snapshot.data ?? [];
             final isLoading = snapshot.connectionState == ConnectionState.waiting;
@@ -43,7 +51,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 _header(),
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: () async => setState(() {}),
+                    onRefresh: () async => _refreshData(),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -229,12 +237,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminRingkasanHarianScreen(),
-                    ),
-                  );
+                  Navigator.pushNamed(context, '/admin_ringkasan');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD1DCE5),
@@ -356,10 +359,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         TextButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => AdminJadwalScreen()),
-            );
+            Navigator.pushNamed(context, '/admin_jadwal');
           },
           child: const Text("Lihat Semua"),
         )
@@ -377,17 +377,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       onTap: (index) {
         if (index == currentIndex) return;
         switch (index) {
+          case 0:
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+            break;
           case 1:
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminJadwalScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_jadwal', (route) => false);
             break;
           case 2:
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminChatListScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_chat_list', (route) => false);
             break;
           case 3:
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminPasienScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_pasien', (route) => false);
             break;
           case 4:
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AdminPengaturanScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_pengaturan', (route) => false);
             break;
         }
       },

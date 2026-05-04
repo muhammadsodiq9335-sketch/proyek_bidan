@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
-
-import 'admin_jadwal_screen.dart';
-import 'admin_pengaturan_screen.dart';
-import 'admin_chat_list_screen.dart';
-import 'admin_pasien_screen.dart';
+import '../services/supabase_service.dart';
 
 String _getFirstName(String fullName) {
   final nameWithoutTitle = fullName.split(',')[0];
@@ -26,22 +22,61 @@ class AdminJadwalDetailReservasiScreen extends StatefulWidget {
 
 class _AdminJadwalDetailReservasiScreenState
     extends State<AdminJadwalDetailReservasiScreen> {
-
+  final SupabaseService _supabaseService = SupabaseService();
   int selectedBidan = -1;
+  List<Map<String, dynamic>> _bidanList = [];
+  bool _isLoadingBidan = true;
 
   @override
   void initState() {
     super.initState();
+    _loadBidan();
+  }
 
-    /// 🔥 AUTO CHECKLIST JIKA SUDAH ADA BIDAN
-    final existingBidan = widget.data['bidan'];
+  Future<void> _loadBidan() async {
+    try {
+      final list = await _supabaseService.getBidan();
+      setState(() {
+        _bidanList = list;
+        _isLoadingBidan = false;
 
-    if (existingBidan != null) {
-      final index = MockDatabase.bidanList
-          .indexWhere((b) => b.nama == existingBidan);
+        // Auto-select jika sudah ada bidan di data reservasi
+        final existingBidanId = widget.data['bidan_id'];
+        if (existingBidanId != null) {
+          final index = _bidanList.indexWhere((b) => b['id'] == existingBidanId);
+          if (index != -1) selectedBidan = index;
+        }
+      });
+    } catch (e) {
+      setState(() => _isLoadingBidan = false);
+    }
+  }
 
-      if (index != -1) {
-        selectedBidan = index;
+  Future<void> _updateStatus(String status) async {
+    try {
+      String? bidanId;
+      if (status == 'Dikonfirmasi' && selectedBidan != -1) {
+        bidanId = _bidanList[selectedBidan]['id'];
+      }
+
+      await _supabaseService.updateStatusReservasi(
+        widget.data['id'],
+        status,
+        statusPelayanan: status == 'Dikonfirmasi' ? 'Diproses' : null,
+        bidanId: bidanId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Reservasi berhasil $status')),
+        );
+        Navigator.pop(context, true); // Beri tahu halaman sebelumnya untuk refresh
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memperbarui status: $e')),
+        );
       }
     }
   }
@@ -49,7 +84,7 @@ class _AdminJadwalDetailReservasiScreenState
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
-    final isLocked = data['bidan'] != null;
+    final isLocked = data['bidan_id'] != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFEECAD0),
@@ -87,7 +122,7 @@ class _AdminJadwalDetailReservasiScreenState
                   const SizedBox(height: 12),
 
                   Text(
-                    data['namaPasien'] ?? '-',
+                    data['nama_pasien'] ?? data['namaPasien'] ?? '-',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 18),
                   ),
@@ -96,10 +131,10 @@ class _AdminJadwalDetailReservasiScreenState
 
                   /// 🔥 TAMPILKAN BIDAN
                   Text(
-                    data['bidan'] ?? "Belum dipilih",
+                    data['bidan_profiles']?['nama'] ?? data['bidan'] ?? "Belum dipilih",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: data['bidan'] == null
+                      color: (data['bidan_profiles']?['nama'] == null && data['bidan'] == null)
                           ? Colors.grey
                           : Colors.black,
                     ),
@@ -128,25 +163,34 @@ class _AdminJadwalDetailReservasiScreenState
               ),
             ),
 
-            const SizedBox(height: 10),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                MockDatabase.bidanList.length,
-                (index) {
-                  final bidan = MockDatabase.bidanList[index];
-                  return _bidanItem(
-                      "Bidan ${_getFirstName(bidan.nama)}", index, isLocked);
-                },
+            if (_isLoadingBidan)
+              const Center(child: CircularProgressIndicator())
+            else if (_bidanList.isEmpty)
+              const Text("Bidan tidak tersedia", style: TextStyle(color: Colors.grey))
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(
+                    _bidanList.length,
+                    (index) {
+                      final bidan = _bidanList[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: _bidanItem(
+                            "Bidan ${_getFirstName(bidan['nama'] ?? 'Bidan')}", index, isLocked),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
 
             const SizedBox(height: 10),
 
-            if (selectedBidan != -1)
+            if (selectedBidan != -1 && !_isLoadingBidan)
               Text(
-                "Dipilih: Bidan ${_getFirstName(MockDatabase.bidanList[selectedBidan].nama)}",
+                "Dipilih: Bidan ${_getFirstName(_bidanList[selectedBidan]['nama'] ?? '')}",
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
 
@@ -170,15 +214,7 @@ class _AdminJadwalDetailReservasiScreenState
                         ? null
                         : selectedBidan == -1
                             ? null
-                            : () {
-                                widget.data['status'] = 'Dikonfirmasi';
-                                widget.data['statusPelayanan'] = 'Diproses';
-
-                                widget.data['bidan'] =
-                                    MockDatabase.bidanList[selectedBidan].nama;
-
-                                Navigator.pop(context);
-                              },
+                            : () => _updateStatus('Dikonfirmasi'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -194,10 +230,7 @@ class _AdminJadwalDetailReservasiScreenState
                   child: ElevatedButton(
                     onPressed: isLocked
                         ? null
-                        : () {
-                            widget.data['status'] = 'Ditolak';
-                            Navigator.pop(context);
-                          },
+                        : () => _updateStatus('Ditolak'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -298,8 +331,9 @@ class _AdminJadwalDetailReservasiScreenState
     );
   }
 
-  String _displayDate(String iso) {
-    final date = DateTime.parse(iso);
+  String _displayDate(String? iso) {
+    if (iso == null || iso.toString().isEmpty) return "-";
+    final date = DateTime.tryParse(iso.toString()) ?? DateTime.now();
 
     const bulan = [
       'JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI',
@@ -316,21 +350,14 @@ class _AdminJadwalDetailReservasiScreenState
       selectedItemColor: const Color(0xFF00897B),
       unselectedItemColor: Colors.grey,
       onTap: (index) {
+        if (index == 0) {
+          Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+        }
         if (index == 1) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+          Navigator.pushNamedAndRemoveUntil(context, '/admin_jadwal', (route) => false);
         }
         if (index == 2) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-        }
-        if (index == 3) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-        }
-        if (index == 4) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+          // Navigator.pushNamed(context, '/admin_chat_list'); // Jika sudah ada rutenya
         }
       },
       items: const [

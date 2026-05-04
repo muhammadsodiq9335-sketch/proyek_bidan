@@ -19,30 +19,36 @@ class AdminEditPelayananScreen extends StatefulWidget {
 
 class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
   final SupabaseService _supabaseService = SupabaseService();
-  String selectedCategory = 'Klinik';
-  String selectedTarget = 'Ibu';
-  late TextEditingController jenisController;
-  late TextEditingController deskripsiController;
-  late TextEditingController hargaController;
+  final TextEditingController jenisController = TextEditingController();
+  final TextEditingController deskripsiController = TextEditingController();
+  final TextEditingController hargaController = TextEditingController();
+
+  String? selectedType; // Klinik / Home Care
+  String? selectedKategori; // 4 Categories
   bool _isLoading = false;
+
+  final List<String> categories = [
+    "Kesehatan Ibu",
+    "Kesehatan Anak",
+    "Komplementer Ibu",
+    "Komplementer Bayi"
+  ];
 
   @override
   void initState() {
     super.initState();
-    jenisController = TextEditingController(text: widget.layanan.nama);
-    deskripsiController = TextEditingController(text: widget.layanan.deskripsi);
-    hargaController = TextEditingController(
-        text: widget.layanan.harga.replaceAll("Rp ", ""));
-
-    // Deteksi kategori dari string kategori database
-    if (widget.layanan.kategori.contains('Anak')) {
-      selectedTarget = 'Anak';
-    } else {
-      selectedTarget = 'Ibu';
-    }
+    jenisController.text = widget.layanan.nama;
+    deskripsiController.text = widget.layanan.deskripsi;
+    hargaController.text = widget.layanan.harga.replaceAll(RegExp(r'[^0-9]'), '');
+    selectedKategori = widget.layanan.kategori;
     
-    // Asumsikan kita tahu is_home_care dari konteks sebelumnya atau string
-    // Untuk amannya kita biarkan default atau jika ada data tambahan bisa diatur
+    // Defaulting selectedType based on category or common sense if not provided
+    // Ideally is_home_care should be passed in but we can infer for now
+    if (selectedKategori?.contains("Komplementer") ?? false) {
+      selectedType = "Home Care";
+    } else {
+      selectedType = "Klinik";
+    }
   }
 
   @override
@@ -56,9 +62,11 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
   Future<void> _updatePelayanan() async {
     if (jenisController.text.isEmpty ||
         deskripsiController.text.isEmpty ||
-        hargaController.text.isEmpty) {
+        hargaController.text.isEmpty ||
+        selectedType == null ||
+        selectedKategori == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lengkapi data layanan terlebih dahulu')),
+        const SnackBar(content: Text('Lengkapi semua data layanan')),
       );
       return;
     }
@@ -76,16 +84,15 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
       final data = {
         'nama': jenisController.text,
         'deskripsi': deskripsiController.text,
-        'harga': "Rp ${hargaController.text}",
-        'kategori': selectedTarget == "Ibu" ? "Layanan Kesehatan Ibu" : "Layanan Kesehatan Anak",
-        // Catatan: is_home_care biasanya tidak diubah di sini jika mengikuti tab, 
-        // tapi kita bisa tambahkan selector jika perlu.
+        'harga': int.parse(hargaController.text.replaceAll(RegExp(r'[^0-9]'), '')),
+        'kategori': selectedKategori,
+        'is_home_care': selectedType == "Home Care",
       };
 
       await _supabaseService.updateJenisPelayanan(widget.serviceId!, data);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data layanan berhasil diperbarui di database')),
+        const SnackBar(content: Text('Data layanan berhasil diperbarui')),
       );
 
       Navigator.pop(context);
@@ -101,9 +108,9 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F8FB),
+      backgroundColor: const Color(0xFFFCE4EC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F8FB),
+        backgroundColor: const Color(0xFFFCE4EC),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -115,143 +122,115 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle("TIPE LAYANAN"),
+            const SizedBox(height: 10),
+            _buildTypeButtons(),
+            const SizedBox(height: 20),
+            _buildSectionTitle("KATEGORI LAYANAN"),
+            const SizedBox(height: 10),
+            _buildKategoriDropdown(),
+            const SizedBox(height: 20),
+            _buildSectionTitle("NAMA LAYANAN"),
+            const SizedBox(height: 10),
+            _buildTextField(
+              controller: jenisController,
+              hintText: 'Konsultasi KB',
+              icon: Icons.medical_services_outlined,
+            ),
+            const SizedBox(height: 18),
+            _buildSectionTitle("DESKRIPSI"),
+            const SizedBox(height: 10),
+            _buildTextField(
+              controller: deskripsiController,
+              hintText: 'Detail layanan',
+              icon: Icons.description_outlined,
+              maxLines: 5,
+            ),
+            const SizedBox(height: 18),
+            _buildSectionTitle("HARGA LAYANAN"),
+            const SizedBox(height: 10),
+            _buildPriceField(),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _updatePelayanan,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00897B),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Informasi Layanan',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'TARGET PASIEN',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _targetButton('Ibu'),
-                        const SizedBox(width: 12),
-                        _targetButton('Anak'),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'JENIS PELAYANAN',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: jenisController,
-                      hintText: 'Konsultasi KB',
-                      icon: Icons.medical_services_outlined,
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'DESKRIPSI',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: deskripsiController,
-                      hintText: 'Detail layanan',
-                      icon: Icons.description_outlined,
-                      maxLines: 5,
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'HARGA LAYANAN',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildPriceField(),
-                  ],
-                ),
+                child: _isLoading 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _updatePelayanan,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00897B),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isLoading 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("Perbarui Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  Widget _targetButton(String label) {
-    final isSelected = selectedTarget == label;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => selectedTarget = label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF00897B) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF00897B) : const Color(0xFFE0E0E0),
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
+  Widget _buildSectionTitle(String text) {
+    return Text(text,
+        style: const TextStyle(
+            fontSize: 12, color: Colors.black54, fontWeight: FontWeight.bold));
+  }
+
+  Widget _buildTypeButtons() {
+    return Wrap(
+      spacing: 10,
+      children: [
+        _chipType("Klinik"),
+        _chipType("Home Care"),
+      ],
+    );
+  }
+
+  Widget _chipType(String text) {
+    final selected = selectedType == text;
+    return GestureDetector(
+      onTap: () => setState(() => selectedType = text),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.teal : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? Colors.teal : Colors.black12),
+        ),
+        child: Text(text,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+                color: selected ? Colors.white : Colors.black)),
+      ),
+    );
+  }
+
+  Widget _buildKategoriDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedKategori,
+          hint: const Text("Pilih Kategori"),
+          isExpanded: true,
+          items: categories.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (val) {
+            setState(() => selectedKategori = val);
+          },
         ),
       ),
     );
@@ -263,19 +242,17 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
     required IconData icon,
     int maxLines = 1,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: const Color(0xFF00897B)),
-          hintText: hintText,
-          border: InputBorder.none,
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: const Color(0xFF00897B)),
+        hintText: hintText,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -285,25 +262,15 @@ class _AdminEditPelayananScreenState extends State<AdminEditPelayananScreen> {
     return TextFormField(
       controller: hargaController,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         prefixText: "Rp ",
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return BottomNavigationBar(
-      currentIndex: 3,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF00897B),
-      unselectedItemColor: Colors.grey,
-      onTap: (index) {},
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Jadwal'),
-        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Pengaturan'),
-      ],
     );
   }
 }

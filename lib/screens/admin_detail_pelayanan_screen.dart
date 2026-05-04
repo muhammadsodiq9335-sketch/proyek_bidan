@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'admin_detail_pembayaran_screen.dart';
+import '../services/supabase_service.dart';
 
 class AdminDetailPelayananScreen extends StatefulWidget {
   final Map<String, dynamic> pasien;
@@ -13,6 +14,15 @@ class AdminDetailPelayananScreen extends StatefulWidget {
 
 class _AdminDetailPelayananScreenState
     extends State<AdminDetailPelayananScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
+  late bool _layananSelesai;
+
+  @override
+  void initState() {
+    super.initState();
+    _layananSelesai = widget.pasien['status_pelayanan'] == 'Selesai & Pulang' || 
+                      widget.pasien['status'] == 'Selesai';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +90,7 @@ class _AdminDetailPelayananScreenState
                             style: TextStyle(fontSize: 10),
                           ),
                           Text(
-                            pasien['namaPasien'] ?? '-',
+                            pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -193,15 +203,27 @@ class _AdminDetailPelayananScreenState
                     child: Row(
                       children: [
                         Checkbox(
-                          value: pasien['layananSelesai'] ?? false,
-                          onChanged: (val) {
-                            setState(() {
-                              pasien['layananSelesai'] = val!;
-                            });
+                          value: _layananSelesai,
+                          onChanged: (val) async {
+                            if (val == true && widget.pasien['id'] != null) {
+                              try {
+                                await _supabaseService.updateReservasi(
+                                  widget.pasien['id'].toString(),
+                                  {'status_pelayanan': 'Diproses'}
+                                );
+                                setState(() {
+                                  _layananSelesai = val!;
+                                });
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Gagal update status: $e")),
+                                );
+                              }
+                            }
                           },
                         ),
                         const Expanded(
-                          child: Text("Layanan telah selesai dilakukan"),
+                          child: Text("Layanan sedang/telah dilakukan"),
                         ),
                       ],
                     ),
@@ -213,7 +235,7 @@ class _AdminDetailPelayananScreenState
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: pasien['layananSelesai'] == true
+                      onPressed: _layananSelesai
                           ? () {
                               Navigator.push(
                                 context,

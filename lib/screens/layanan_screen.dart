@@ -69,10 +69,11 @@ class _LayananScreenState extends State<LayananScreen>
           }
 
           // Filter data berdasarkan kategori
-          final klinikIbu = allServices.where((s) => s['kategori']?.toString().contains('Ibu') ?? false && !(s['is_home_care'] ?? false)).toList();
-          final klinikAnak = allServices.where((s) => s['kategori']?.toString().contains('Anak') ?? false && !(s['is_home_care'] ?? false)).toList();
-          final homeCareIbu = allServices.where((s) => s['kategori']?.toString().contains('Ibu') ?? false && (s['is_home_care'] ?? false)).toList();
-          final homeCareAnak = allServices.where((s) => s['kategori']?.toString().contains('Anak') ?? false && (s['is_home_care'] ?? false)).toList();
+          // Filter data berdasarkan kategori (Exact Match)
+          final klinikIbu = allServices.where((s) => s['kategori'] == 'Kesehatan Ibu' && (s['is_home_care'] == false)).toList();
+          final klinikAnak = allServices.where((s) => s['kategori'] == 'Kesehatan Anak' && (s['is_home_care'] == false)).toList();
+          final homeCareIbu = allServices.where((s) => s['kategori'] == 'Komplementer Ibu' && (s['is_home_care'] == true)).toList();
+          final homeCareAnak = allServices.where((s) => s['kategori'] == 'Komplementer Bayi' && (s['is_home_care'] == true)).toList();
 
           // Fallback if data is empty (use default categories for UI)
           return Column(

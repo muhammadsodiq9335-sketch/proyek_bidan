@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
 import 'admin_jadwal_detail_reservasi_screen.dart';
-import 'admin_chat_list_screen.dart';
-import 'admin_pasien_screen.dart';
-import 'admin_pengaturan_screen.dart';
-import 'admin_dashboard_screen.dart';
 
 class AdminJadwalScreen extends StatefulWidget {
   const AdminJadwalScreen({super.key});
@@ -18,6 +14,19 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   DateTime _displayMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
   final SupabaseService _supabaseService = SupabaseService();
+  late Future<List<Map<String, dynamic>>> _reservasiFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reservasiFuture = _supabaseService.getReservasi();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _reservasiFuture = _supabaseService.getReservasi();
+    });
+  }
 
   static const List<String> _monthNames = [
     'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
@@ -43,10 +52,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-          ),
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false),
         ),
         title: const Text(
           "JADWAL",
@@ -55,7 +61,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
       ),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _supabaseService.getReservasi(),
+          future: _reservasiFuture,
           builder: (context, snapshot) {
             final allReservations = snapshot.data ?? [];
             final isLoading = snapshot.connectionState == ConnectionState.waiting;
@@ -68,7 +74,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _calendarUI(),
+                  _calendarUI(allReservations),
                   const SizedBox(height: 16),
                   _header(),
                   const SizedBox(height: 12),
@@ -92,7 +98,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   }
 
   // ================= CALENDAR =================
-  Widget _calendarUI() {
+  Widget _calendarUI(List<Map<String, dynamic>> allReservations) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -153,13 +159,13 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          _calendarGrid(),
+          _calendarGrid(allReservations),
         ],
       ),
     );
   }
 
-  Widget _calendarGrid() {
+  Widget _calendarGrid(List<Map<String, dynamic>> allReservations) {
     final days = _buildMonthDays(_displayMonth);
 
     return GridView.builder(
@@ -175,10 +181,16 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         final date = days[i];
         if (date == null) return const SizedBox();
 
+        final dateIso = _toIso(date);
         final isSelected =
             _selectedDate.day == date.day &&
             _selectedDate.month == date.month &&
             _selectedDate.year == date.year;
+
+        // Cek apakah ada reservasi "Menunggu Persetujuan" di tanggal ini
+        final hasPending = allReservations.any((res) => 
+          res['tanggal'] == dateIso && res['status'] == 'Menunggu Persetujuan'
+        );
 
         return GestureDetector(
           onTap: () => setState(() => _selectedDate = date),
@@ -187,14 +199,27 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               color: isSelected ? const Color(0xFF1F7A8C) : Colors.transparent,
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Text(
-                '${date.day}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSelected ? Colors.white : Colors.black,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${date.day}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
                 ),
-              ),
+                if (hasPending)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 4,
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
             ),
           ),
         );
@@ -280,7 +305,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                       builder: (_) =>
                           AdminJadwalDetailReservasiScreen(data: res),
                     ),
-                  ).then((_) => setState(() {}));
+                  ).then((_) => _refreshData());
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -308,8 +333,8 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   }
 
   String _displayDate(String? iso) {
-    if (iso == null || iso.isEmpty) return "-";
-    final date = DateTime.tryParse(iso) ?? DateTime.now();
+    if (iso == null || iso.toString().isEmpty) return "-";
+    final date = DateTime.tryParse(iso.toString()) ?? DateTime.now();
     return "${date.day} ${_monthNames[date.month - 1]} ${date.year}";
   }
 
@@ -355,26 +380,19 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-            );
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
           }
           if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_jadwal', (route) => false);
           }
           if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_chat_list', (route) => false);
           }
           if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_pasien', (route) => false);
           }
           if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_pengaturan', (route) => false);
           }
         },
 

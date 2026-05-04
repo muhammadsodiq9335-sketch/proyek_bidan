@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-/// IMPORT SCREEN NAVBAR (PASTIKAN ADA)
+import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_pasien_screen.dart';
@@ -18,11 +17,51 @@ class AdminDetailPembayaranScreen extends StatefulWidget {
 
 class _AdminDetailPembayaranScreenState
     extends State<AdminDetailPembayaranScreen> {
-
+  final SupabaseService _supabaseService = SupabaseService();
+  bool _isLoading = false;
   int subtotal = 85000;
   int tambahan = 0;
 
   int get total => subtotal + tambahan;
+
+  @override
+  void initState() {
+    super.initState();
+    // Try to parse subtotal from string like "Rp 85.000"
+    String priceStr = widget.pasien['harga'] ?? "85000";
+    priceStr = priceStr.replaceAll(RegExp(r'[^0-9]'), '');
+    subtotal = int.tryParse(priceStr) ?? 85000;
+  }
+
+  Future<void> _selesaikanPembayaran() async {
+    setState(() => _isLoading = true);
+    try {
+      if (widget.pasien['id'] != null) {
+        await _supabaseService.updateReservasi(
+          widget.pasien['id'].toString(),
+          {
+            'status': 'Selesai',
+            'status_pelayanan': 'Selesai & Pulang',
+          }
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Pembayaran berhasil disimpan")),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal menyimpan pembayaran: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,12 +209,10 @@ class _AdminDetailPembayaranScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Pembayaran berhasil")),
-                  );
-                },
-                icon: const Icon(Icons.check),
+                onPressed: _isLoading ? null : _selesaikanPembayaran,
+                icon: _isLoading 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.check),
                 label: const Text("Pembayaran Selesai Dilakukan"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF66BB6A),

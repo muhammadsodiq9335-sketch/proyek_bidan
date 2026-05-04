@@ -21,9 +21,16 @@ class _AdminTambahJenisPelayananScreenState
   final TextEditingController deskripsiController = TextEditingController();
   final TextEditingController hargaController = TextEditingController();
 
-  String? selectedCategory; // Klinik / Home Care
-  String? selectedTarget;   // Ibu / Anak
+  String? selectedType; // Klinik / Home Care
+  String? selectedKategori; // 4 Categories
   bool _isLoading = false;
+
+  final List<String> categories = [
+    "Kesehatan Ibu",
+    "Kesehatan Anak",
+    "Komplementer Ibu",
+    "Komplementer Bayi"
+  ];
 
   @override
   void dispose() {
@@ -37,8 +44,8 @@ class _AdminTambahJenisPelayananScreenState
     if (jenisPelayananController.text.isEmpty ||
         deskripsiController.text.isEmpty ||
         hargaController.text.isEmpty ||
-        selectedCategory == null ||
-        selectedTarget == null) {
+        selectedType == null ||
+        selectedKategori == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Isi semua data yang diperlukan!")),
       );
@@ -51,9 +58,9 @@ class _AdminTambahJenisPelayananScreenState
       final data = {
         'nama': jenisPelayananController.text,
         'deskripsi': deskripsiController.text,
-        'harga': "Rp ${hargaController.text}",
-        'kategori': selectedTarget == "Ibu" ? "Layanan Kesehatan Ibu" : "Layanan Kesehatan Anak",
-        'is_home_care': selectedCategory == "Home Care",
+        'harga': int.parse(hargaController.text.replaceAll(RegExp(r'[^0-9]'), '')),
+        'kategori': selectedKategori,
+        'is_home_care': selectedType == "Home Care",
       };
 
       await _supabaseService.tambahJenisPelayanan(data);
@@ -98,15 +105,15 @@ class _AdminTambahJenisPelayananScreenState
               "Isi form untuk menambahkan layanan baru",
             ),
             const SizedBox(height: 16),
-            _buildSectionTitle("KATEGORI TEMPAT"),
+            _buildSectionTitle("TIPE LAYANAN"),
             const SizedBox(height: 10),
-            _buildCategoryButtons(),
+            _buildTypeButtons(),
             const SizedBox(height: 20),
-            _buildSectionTitle("TARGET PASIEN"),
+            _buildSectionTitle("KATEGORI LAYANAN"),
             const SizedBox(height: 10),
-            _buildTargetButtons(),
+            _buildKategoriDropdown(),
             const SizedBox(height: 20),
-            _buildSectionTitle("JENIS PEMERIKSAAN"),
+            _buildSectionTitle("NAMA LAYANAN"),
             const SizedBox(height: 10),
             _buildTextInput(
               controller: jenisPelayananController,
@@ -153,26 +160,53 @@ class _AdminTambahJenisPelayananScreenState
     );
   }
 
-  Widget _buildTargetButtons() {
+  Widget _buildKategoriDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selectedKategori,
+          hint: const Text("Pilih Kategori", style: TextStyle(fontSize: 14)),
+          isExpanded: true,
+          items: categories.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (val) {
+            setState(() => selectedKategori = val);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeButtons() {
     return Wrap(
       spacing: 10,
       children: [
-        _chipTarget("Ibu"),
-        _chipTarget("Anak"),
+        _chipType("Klinik"),
+        _chipType("Home Care"),
       ],
     );
   }
 
-  Widget _chipTarget(String text) {
-    final selected = selectedTarget == text;
+  Widget _chipType(String text) {
+    final selected = selectedType == text;
     return GestureDetector(
-      onTap: () => setState(() => selectedTarget = text),
+      onTap: () => setState(() => selectedType = text),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.pinkAccent : Colors.white,
+          color: selected ? Colors.teal : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? Colors.pinkAccent : Colors.black12),
+          border: Border.all(color: selected ? Colors.teal : Colors.black12),
         ),
         child: Text(text,
             style: TextStyle(
@@ -207,34 +241,6 @@ class _AdminTambahJenisPelayananScreenState
             fontSize: 12, fontWeight: FontWeight.bold));
   }
 
-  Widget _buildCategoryButtons() {
-    return Wrap(
-      spacing: 10,
-      children: [
-        _chip("Klinik"),
-        _chip("Home Care"),
-      ],
-    );
-  }
-
-  Widget _chip(String text) {
-    final selected = selectedCategory == text;
-
-    return GestureDetector(
-      onTap: () => setState(() => selectedCategory = text),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? Colors.teal : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(text,
-            style: TextStyle(
-                color: selected ? Colors.white : Colors.black)),
-      ),
-    );
-  }
-
   Widget _buildTextInput({
     required TextEditingController controller,
     required String hintText,
@@ -247,8 +253,11 @@ class _AdminTambahJenisPelayananScreenState
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -259,9 +268,13 @@ class _AdminTambahJenisPelayananScreenState
       controller: hargaController,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
+        hintText: "Contoh: 50000",
         prefixText: "Rp ",
+        filled: true,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -272,10 +285,8 @@ class _AdminTambahJenisPelayananScreenState
     return BottomNavigationBar(
       currentIndex: 1,
       type: BottomNavigationBarType.fixed,
-
       selectedItemColor: const Color(0xFF00897B),
       unselectedItemColor: Colors.grey,
-
       onTap: (index) {
         if (index == 0) {
           Navigator.pushReplacement(context,
@@ -298,7 +309,6 @@ class _AdminTambahJenisPelayananScreenState
               MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
         }
       },
-
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
@@ -308,4 +318,4 @@ class _AdminTambahJenisPelayananScreenState
       ],
     );
   }
-}
+}

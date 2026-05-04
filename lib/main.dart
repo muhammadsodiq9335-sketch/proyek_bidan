@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
+import 'screens/admin_jadwal_screen.dart';
+import 'screens/admin_ringkasan_harian_screen.dart';
+import 'screens/admin_chat_list_screen.dart';
+import 'screens/admin_pasien_screen.dart';
+import 'screens/admin_pengaturan_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +34,15 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Segoe UI',
       ),
       home: const LoginScreen(),
+      routes: {
+        '/dashboard': (context) => const DashboardScreen(),
+        '/admin_dashboard': (context) => const AdminDashboardScreen(),
+        '/admin_jadwal': (context) => AdminJadwalScreen(),
+        '/admin_ringkasan': (context) => const AdminRingkasanHarianScreen(),
+        '/admin_chat_list': (context) => const AdminChatListScreen(),
+        '/admin_pasien': (context) => const AdminPasienScreen(),
+        '/admin_pengaturan': (context) => const AdminPengaturanScreen(),
+      },
     );
   }
 }

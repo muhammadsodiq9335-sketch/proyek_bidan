@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
-import 'admin_review_pasien_screen.dart';
+import '../services/supabase_service.dart';
 
 class AdminBalasReviewScreen extends StatefulWidget {
-  final ReviewPasien review;
+  final Map<String, dynamic> review;
 
   const AdminBalasReviewScreen({super.key, required this.review});
 
@@ -15,11 +14,36 @@ class AdminBalasReviewScreen extends StatefulWidget {
 class _AdminBalasReviewScreenState
     extends State<AdminBalasReviewScreen> {
   final TextEditingController _controller = TextEditingController();
+  final SupabaseService _supabaseService = SupabaseService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _kirimBalasan() async {
+    if (_controller.text.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      if (widget.review['id'] != null) {
+        await _supabaseService.balasReview(
+          widget.review['id'].toString(),
+          _controller.text,
+        );
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal mengirim balasan: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -36,8 +60,6 @@ class _AdminBalasReviewScreenState
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
-            /// REVIEW ASLI
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -47,17 +69,16 @@ class _AdminBalasReviewScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.review.name,
+                  Text(widget.review['nama_pasien'] ?? widget.review['name'] ?? '-',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text(widget.review.content),
+                  Text(widget.review['content'] ?? widget.review['review_text'] ?? '-'),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            /// TEXTFIELD
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -76,19 +97,15 @@ class _AdminBalasReviewScreenState
 
             const Spacer(),
 
-            /// BUTTON
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
                 minimumSize: const Size(double.infinity, 50),
               ),
-              onPressed: () {
-                if (_controller.text.isNotEmpty) {
-                  widget.review.adminReply = _controller.text;
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Kirim Balasan'),
+              onPressed: _isLoading ? null : _kirimBalasan,
+              child: _isLoading 
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text('Kirim Balasan'),
             )
           ],
         ),

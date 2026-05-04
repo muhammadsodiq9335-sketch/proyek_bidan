@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../mock_data.dart';
+import '../services/auth_service.dart';
+import '../services/supabase_service.dart';
 
 class PengaturanAkunScreen extends StatefulWidget {
   const PengaturanAkunScreen({super.key});
@@ -15,9 +17,9 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
   @override
   void initState() {
     super.initState();
-    if (MockDatabase.currentUser != null) {
-      _namaController.text = MockDatabase.currentUser!.nama;
-      _alamatController.text = MockDatabase.currentUser!.alamat;
+    if (AuthService.currentUserProfile != null) {
+      _namaController.text = AuthService.currentUserProfile!.nama;
+      _alamatController.text = AuthService.currentUserProfile!.alamat;
     }
   }
 
@@ -40,23 +42,42 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
             onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
           ),
           TextButton(
-            onPressed: () {
-              if (MockDatabase.currentUser != null) {
-                // Simpan data
-                setState(() {
-                  MockDatabase.currentUser = UserProfile(
-                    id: MockDatabase.currentUser!.id,
-                    email: MockDatabase.currentUser!.email,
-                    nama: _namaController.text,
-                    tglLahir: MockDatabase.currentUser!.tglLahir,
-                    alamat: _alamatController.text,
+            onPressed: () async {
+              if (AuthService.currentUserProfile != null) {
+                try {
+                  final updatedData = {
+                    'nama': _namaController.text,
+                    'alamat': _alamatController.text,
+                  };
+                  
+                  await SupabaseService().updateUserProfile(
+                    AuthService.currentUserProfile!.id, 
+                    updatedData
                   );
-                });
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profil berhasil diperbarui')),
-                );
-                Navigator.pop(context);
+
+                  setState(() {
+                    AuthService.currentUserProfile = UserProfile(
+                      id: AuthService.currentUserProfile!.id,
+                      email: AuthService.currentUserProfile!.email,
+                      nama: _namaController.text,
+                      tglLahir: AuthService.currentUserProfile!.tglLahir,
+                      alamat: _alamatController.text,
+                    );
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profil berhasil diperbarui')),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal memperbarui profil: $e')),
+                    );
+                  }
+                }
               }
             },
             child: const Text('Simpan', style: TextStyle(color: Color(0xFF00897B), fontWeight: FontWeight.bold)),
@@ -92,7 +113,7 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
             _buildTextField(_namaController, 'Nama Anda'),
             const SizedBox(height: 16),
             _buildInputLabel('Email'),
-            _buildReadOnlyField(MockDatabase.currentUser?.email ?? '-'),
+            _buildReadOnlyField(AuthService.currentUserProfile?.email ?? '-'),
             const SizedBox(height: 16),
             _buildInputLabel('Alamat'),
             _buildTextField(_alamatController, 'Alamat Lengkap', maxLines: 3),

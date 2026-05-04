@@ -105,10 +105,13 @@ class _AdminJenisPelayananScreenState
     }
 
     return data.map((json) {
+      final hargaRaw = json['harga'];
+      final String hargaFormatted = (hargaRaw is int) ? "Rp $hargaRaw" : (hargaRaw?.toString() ?? "Rp 0");
+      
       final layanan = JenisPelayanan(
         nama: json['nama'] ?? '-',
         deskripsi: json['deskripsi'] ?? '-',
-        harga: json['harga'] ?? '-',
+        harga: hargaFormatted,
         kategori: json['kategori'] ?? '-',
       );
       return _card(layanan, json['id']?.toString());

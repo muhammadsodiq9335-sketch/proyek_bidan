@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-
-// SESUAIKAN IMPORT PROJECT KAMU
+import '../services/supabase_service.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_tambah_bidan_screen.dart';
-import 'admin_edit_bidan_screen.dart';
-import '../mock_data.dart';
 import 'admin_chat_list_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class AdminCekProfilBidanScreen extends StatefulWidget {
   const AdminCekProfilBidanScreen({super.key});
@@ -19,13 +17,12 @@ class AdminCekProfilBidanScreen extends StatefulWidget {
 
 class _AdminCekProfilBidanScreenState
     extends State<AdminCekProfilBidanScreen> {
+  final SupabaseService _supabaseService = SupabaseService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFDDE6CF),
-
-      /// ===== APPBAR =====
       appBar: AppBar(
         backgroundColor: const Color(0xFFDDE6CF),
         elevation: 0,
@@ -38,26 +35,20 @@ class _AdminCekProfilBidanScreenState
           style: TextStyle(color: Colors.black),
         ),
       ),
-
-      /// ===== BODY =====
       body: Container(
         color: const Color(0xFFE6B8BE),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              /// ===== BUTTON TAMBAH =====
-              SizedBox(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const AdminTambahBidanScreen(),
+                        builder: (context) => const AdminTambahBidanScreen(),
                       ),
                     );
                     setState(() {});
@@ -67,48 +58,25 @@ class _AdminCekProfilBidanScreenState
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
                   ),
                 ),
               ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _supabaseService.getBidan(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final listBidan = snapshot.data ?? [];
+                  if (listBidan.isEmpty) return const Center(child: Text("Belum ada data bidan"));
 
-              const SizedBox(height: 16),
-
-              /// ===== TITLE =====
-              const Text(
-                "Daftar Bidan Tersedia",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              const Text(
-                "Tim Kebidanan MommyCare",
-                style: TextStyle(fontSize: 12),
-              ),
-
-              const SizedBox(height: 16),
-
-              /// ===== LIST BIDAN =====
-              if (MockDatabase.bidanList.isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text("Belum ada data bidan"),
-                  ),
-                )
-              else
-                Column(
-                  children: List.generate(
-                    MockDatabase.bidanList.length,
-                    (index) {
-                      final bidan = MockDatabase.bidanList[index];
-
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: listBidan.length,
+                    itemBuilder: (context, index) {
+                      final bidan = listBidan[index];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
@@ -118,8 +86,6 @@ class _AdminCekProfilBidanScreenState
                         ),
                         child: Row(
                           children: [
-
-                            /// FOTO
                             Container(
                               width: 50,
                               height: 50,
@@ -129,52 +95,24 @@ class _AdminCekProfilBidanScreenState
                               ),
                               child: const Icon(Icons.person),
                             ),
-
                             const SizedBox(width: 12),
-
-                            /// INFO
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-
-                                  Text(
-                                    bidan.nama,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-
-                                  Text(
-                                    bidan.str,
-                                    style:
-                                        const TextStyle(fontSize: 11),
-                                  ),
-
+                                  Text(bidan['nama'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(bidan['str'] ?? '-', style: const TextStyle(fontSize: 11)),
                                   const SizedBox(height: 6),
-
                                   Row(
                                     children: [
-
-                                      /// ===== EDIT =====
                                       GestureDetector(
                                         onTap: () async {
                                           await Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) =>
-                                                  AdminEditBidanScreen(
+                                              builder: (context) => AdminTambahBidanScreen(
                                                 isEdit: true,
-                                                index: index,
-                                                data: {
-                                                  "nama": bidan.nama,
-                                                  "nik": bidan.nik,
-                                                  "nip": bidan.nip,
-                                                  "str": bidan.str,
-                                                  "hp": bidan.hp,
-                                                  "alamat": bidan.alamat,
-                                                },
+                                                data: Map<String, String>.from(bidan.map((k, v) => MapEntry(k, v?.toString() ?? ''))),
                                               ),
                                             ),
                                           );
@@ -184,36 +122,24 @@ class _AdminCekProfilBidanScreenState
                                           children: [
                                             Icon(Icons.edit, size: 14),
                                             SizedBox(width: 4),
-                                            Text("Edit",
-                                                style: TextStyle(
-                                                    fontSize: 12)),
+                                            Text("Edit", style: TextStyle(fontSize: 12)),
                                           ],
                                         ),
                                       ),
-
                                       const SizedBox(width: 16),
-
-                                      /// ===== HAPUS =====
                                       GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            MockDatabase.bidanList
-                                                .removeAt(index);
-                                          });
+                                        onTap: () async {
+                                          final id = bidan['id'];
+                                          if (id != null) {
+                                            await _supabaseService.deleteBidan(id.toString());
+                                            setState(() {});
+                                          }
                                         },
                                         child: const Row(
                                           children: [
-                                            Icon(Icons.delete,
-                                                size: 14,
-                                                color: Colors.red),
+                                            Icon(Icons.delete, size: 14, color: Colors.red),
                                             SizedBox(width: 4),
-                                            Text(
-                                              "Hapus",
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.red,
-                                              ),
-                                            ),
+                                            Text("Hapus", style: TextStyle(fontSize: 12, color: Colors.red)),
                                           ],
                                         ),
                                       ),
@@ -226,90 +152,37 @@ class _AdminCekProfilBidanScreenState
                         ),
                       );
                     },
-                  ),
-                ),
-            ],
-          ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
-
-      /// ===== BOTTOM NAV (JANGAN DIUBAH) =====
       bottomNavigationBar: _bottomNav(context),
     );
   }
 
-  /// ===== BOTTOM NAV =====
   Widget _bottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 4,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-
-        /// 🔥 STYLE BARU
-        selectedItemColor: const Color(0xFF00897B),
-        unselectedItemColor: const Color(0xFFB0BEC5),
-
-        selectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          letterSpacing: 0.5,
-        ),
-
-        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-          }
-          if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-          }
-          if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
-          }
-          if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
-          }
-        },
-
-        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Beranda",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: "Jadwal",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payments),
-            label: "Pembayaran",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Pengaturan",
-          ),
-        ],
-      ),
+    return BottomNavigationBar(
+      currentIndex: 4,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: const Color(0xFF00897B),
+      unselectedItemColor: Colors.grey,
+      onTap: (index) {
+        if (index == 0) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+        if (index == 1) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
+        if (index == 2) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
+        if (index == 3) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+        if (index == 4) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
+      ],
     );
   }
 }

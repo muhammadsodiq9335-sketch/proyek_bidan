@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'konfirmasi_reservasi_screen.dart';
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 class FormulirReservasiScreen extends StatefulWidget {
   final List<Map<String, dynamic>> selectedServices;
@@ -41,34 +42,24 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
     super.initState();
   }
 
-  String _calculateTotalHarga() {
+  int _calculateTotalHargaRaw() {
     int total = 0;
     for (var service in widget.selectedServices) {
-      String priceStr = service['price'] ?? '0';
-      // Hanya jumlahkan jika formatnya berawalan Rp
-      if (priceStr.startsWith('Rp')) {
-        String numericStr = priceStr.replaceAll(RegExp(r'[^0-9]'), '');
+      final priceRaw = service['harga'];
+      if (priceRaw is int) {
+        total += priceRaw;
+      } else if (priceRaw != null) {
+        String numericStr = priceRaw.toString().replaceAll(RegExp(r'[^0-9]'), '');
         if (numericStr.isNotEmpty) {
           total += int.parse(numericStr);
         }
       }
     }
-    
-    // Format kembali ke Rp
-    if (total == 0) return '0';
-    String result = total.toString();
-    String formatted = '';
-    for (int i = 0; i < result.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        formatted = '.$formatted';
-      }
-      formatted = result[result.length - 1 - i] + formatted;
-    }
-    return 'Rp $formatted';
+    return total;
   }
 
   String _getLayananNames() {
-    return widget.selectedServices.map((e) => e['title']).join(', ');
+    return widget.selectedServices.map((e) => e['nama'] ?? 'Layanan').join(', ');
   }
 
   @override
@@ -103,18 +94,18 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
         child: Column(
           children: [
             // DATA DIRI PASIEN (Read Only)
-            if (MockDatabase.currentUser != null)
+            if (AuthService.currentUserProfile != null)
               _buildSection(
                 title: 'PROFIL PASIEN',
                 children: [
-                  _buildReadOnlyRow(Icons.person_outline, 'Nama', MockDatabase.currentUser!.nama),
+                  _buildReadOnlyRow(Icons.person_outline, 'Nama', AuthService.currentUserProfile!.nama),
                   const SizedBox(height: 10),
-                  _buildReadOnlyRow(Icons.cake_outlined, 'Tanggal Lahir', MockDatabase.currentUser!.tglLahir),
+                  _buildReadOnlyRow(Icons.cake_outlined, 'Tanggal Lahir', AuthService.currentUserProfile!.tglLahir),
                   const SizedBox(height: 10),
-                  _buildReadOnlyRow(Icons.location_on_outlined, 'Alamat', MockDatabase.currentUser!.alamat),
+                  _buildReadOnlyRow(Icons.location_on_outlined, 'Alamat', AuthService.currentUserProfile!.alamat),
                 ],
               ),
-            if (MockDatabase.currentUser != null)
+            if (AuthService.currentUserProfile != null)
               const SizedBox(height: 16),
 
             // LAYANAN & JADWAL
@@ -140,7 +131,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                service['title'] ?? '',
+                                service['nama'] ?? 'Layanan',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1B2E35)),
                               ),
                             ),
@@ -267,9 +258,9 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                       builder: (context) => KonfirmasiReservasiScreen(
                         selectedServices: widget.selectedServices,
                         jam: _selectedJam!,
-                        tanggal: _dateController.text,
+                        tanggal: _selectedDate!, // Kirim DateTime asli
                         isHomeCare: widget.isHomeCare,
-                        hargaTotal: _calculateTotalHarga(),
+                        hargaTotal: _calculateTotalHargaRaw(), // Kirim int
                         layananNames: _getLayananNames(),
                       ),
                     ),

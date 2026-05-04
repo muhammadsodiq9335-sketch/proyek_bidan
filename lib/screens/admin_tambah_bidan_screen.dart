@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_service.dart';
 import '../mock_data.dart';
 
 class AdminTambahBidanScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _AdminTambahBidanScreenState
     }
   }
 
-  void simpanData() {
+  Future<void> simpanData() async {
     if (namaC.text.isEmpty || strC.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Nama & STR wajib diisi")),
@@ -52,24 +53,31 @@ class _AdminTambahBidanScreenState
       return;
     }
 
-    final dataBaru = BidanProfile(
-      nama: namaC.text,
-      nik: nikC.text,
-      nip: nipC.text,
-      str: "No. STR: ${strC.text}",
-      hp: hpC.text,
-      alamat: alamatC.text,
-    );
+    final dataBaru = {
+      "nama": namaC.text,
+      "nik": nikC.text,
+      "nip": nipC.text,
+      "str": "No. STR: ${strC.text}",
+      "hp": hpC.text,
+      "alamat": alamatC.text,
+    };
 
-    if (widget.isEdit) {
-      /// ===== EDIT DATA =====
-      MockDatabase.bidanList[widget.index!] = dataBaru;
-    } else {
-      /// ===== TAMBAH DATA =====
-      MockDatabase.bidanList.add(dataBaru);
+    final supabaseService = SupabaseService();
+
+    try {
+      if (widget.isEdit && widget.data != null && widget.data!['id'] != null) {
+        await supabaseService.updateBidan(widget.data!['id']!, dataBaru);
+      } else {
+        await supabaseService.tambahBidan(dataBaru);
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal menyimpan: $e")),
+        );
+      }
     }
-
-    Navigator.pop(context);
   }
 
   @override

@@ -342,32 +342,52 @@ class _LoginScreenState extends State<LoginScreen> {
                 return;
               }
 
-              if (isPatientMode) {
-                final authService = AuthService();
+              // Unified Login Logic using Supabase
+              final authService = AuthService();
+              final supabaseService = SupabaseService();
 
-                try {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => const Center(child: CircularProgressIndicator()),
+              try {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(child: CircularProgressIndicator()),
+                );
+
+                // Autentikasi via Supabase
+                await authService.signIn(email: email, password: password);
+                await authService.saveRememberMe(email, _rememberMe);
+                
+                // Ambil profil untuk mengecek Role
+                final currentUserId = authService.getCurrentUser()?.id;
+                if (currentUserId == null) throw Exception("User ID tidak ditemukan");
+
+                final profile = await supabaseService.getUserProfile(currentUserId);
+                if (profile == null) throw Exception("Profil tidak ditemukan");
+
+                AuthService.currentUserProfile = profile;
+
+                if (!mounted) return;
+                Navigator.pop(context); // close loading
+
+                // Cek Role dan Redirect
+                if (profile.role == 'admin') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Login Admin berhasil!"),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 1),
+                    ),
                   );
-
-                  await authService.signIn(email: email, password: password);
-                  await authService.saveRememberMe(email, _rememberMe);
-                  
-                  // Fetch profile from Supabase
-                  final currentUserId = authService.getCurrentUser()?.id;
-                  if (currentUserId != null) {
-                    final supabaseService = SupabaseService();
-                    final profile = await supabaseService.getUserProfile(currentUserId);
-                    if (profile != null) {
-                      MockDatabase.currentUser = profile;
-                    }
-                  }
-
-                  if (!mounted) return;
-                  Navigator.pop(context); // close loading
-
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                    );
+                  });
+                } else {
+                  // Jika mode login adalah Admin tapi user adalah Pasien, atau sebaliknya
+                  // Kita tetap izinkan masuk ke dashboard yang sesuai dengan ROLE-nya
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Login berhasil!"),
@@ -375,7 +395,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       duration: Duration(seconds: 1),
                     ),
                   );
-
                   Future.delayed(const Duration(seconds: 1), () {
                     if (!mounted) return;
                     Navigator.pushReplacement(
@@ -383,42 +402,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       MaterialPageRoute(builder: (context) => const DashboardScreen()),
                     );
                   });
-                } catch (e) {
-                  if (!mounted) return;
-                  Navigator.pop(context); // close loading
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Email atau Kata Sandi salah!"),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
                 }
-              } else {
-                if (email != "admin@gmail.com" || password != "admin") {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Kredensial Admin tidak valid! (Gunakan admin@gmail.com / admin)"),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                  return;
-                }
-
+              } catch (e) {
+                if (!mounted) return;
+                Navigator.pop(context); // close loading
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Login Admin berhasil!"),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 1),
+                  SnackBar(
+                    content: Text("Login gagal: ${e.toString().contains('Invalid login credentials') ? 'Email atau Kata Sandi salah' : 'Terjadi kesalahan'}"),
+                    backgroundColor: Colors.redAccent,
                   ),
                 );
-
-                Future.delayed(const Duration(seconds: 1), () {
-                  if (!mounted) return;
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-                  );
-                });
               }
             },
             style: ElevatedButton.styleFrom(

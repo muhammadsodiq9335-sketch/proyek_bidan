@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 class KonfirmasiReservasiScreen extends StatelessWidget {
   final List<Map<String, dynamic>> selectedServices;
   final String layananNames;
   final String jam;
-  final String tanggal;
+  final DateTime tanggal;
   final bool isHomeCare;
-  final String hargaTotal;
+  final int hargaTotal;
 
   const KonfirmasiReservasiScreen({
     super.key,
@@ -20,6 +21,14 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     required this.isHomeCare,
     required this.hargaTotal,
   });
+
+  String _getFormattedDate() {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return "${tanggal.day} ${months[tanggal.month - 1]} ${tanggal.year}";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +78,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            if (MockDatabase.currentUser != null) ...[
+            if (AuthService.currentUserProfile != null) ...[
               _buildProfilCard(),
               const SizedBox(height: 16),
             ],
@@ -104,8 +113,8 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () async {
                   final supabaseService = SupabaseService();
-                  final namaPasien = MockDatabase.currentUser?.nama ?? 'Pasien';
-                  final emailPasien = MockDatabase.currentUser?.email ?? '';
+                  final namaPasien = AuthService.currentUserProfile?.nama ?? 'Pasien';
+                  final emailPasien = AuthService.currentUserProfile?.email ?? '';
 
                   // Tampilkan loading dialog
                   showDialog(
@@ -115,11 +124,12 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   );
 
                   try {
-                    // 1. Simpan ke Supabase
+                    // 1. Simpan ke Supabase (ISO Format untuk Database)
                     await supabaseService.tambahReservasi({
+                      'user_id': AuthService.currentUserProfile?.id,
                       'layanan': layananNames,
                       'jam': jam,
-                      'tanggal': tanggal,
+                      'tanggal': "${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}",
                       'is_home_care': isHomeCare,
                       'status': 'Menunggu Persetujuan',
                       'nama_pasien': namaPasien,
@@ -137,9 +147,9 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                         builder: (context) => KonfirmasiBidanScreen(
                           layanan: layananNames,
                           jam: jam,
-                          tanggal: tanggal,
+                          tanggal: _getFormattedDate(),
                           isHomeCare: isHomeCare,
-                          harga: hargaTotal,
+                          harga: "Rp $hargaTotal",
                         ),
                       ),
                       (route) => route.isFirst,
@@ -193,11 +203,11 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          _buildDetailRow(Icons.person_outline, 'Nama Lengkap', MockDatabase.currentUser!.nama),
+          _buildDetailRow(Icons.person_outline, 'Nama Lengkap', AuthService.currentUserProfile!.nama),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.cake_outlined, 'Tanggal Lahir', MockDatabase.currentUser!.tglLahir),
+          _buildDetailRow(Icons.cake_outlined, 'Tanggal Lahir', AuthService.currentUserProfile!.tglLahir),
           const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.location_on_outlined, 'Alamat', MockDatabase.currentUser!.alamat),
+          _buildDetailRow(Icons.location_on_outlined, 'Alamat', AuthService.currentUserProfile!.alamat),
         ],
       ),
     );
@@ -234,7 +244,13 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           _buildDetailRow(
             Icons.access_time_outlined,
             'Jadwal Kunjungan',
-            '$tanggal\nPukul $jam WIB',
+            '${_getFormattedDate()}\nPukul $jam WIB',
+          ),
+          const Divider(height: 16, color: Color(0xFFF5F5F5)),
+          _buildDetailRow(
+            Icons.payments_outlined,
+            'Total Harga',
+            'Rp $hargaTotal',
           ),
         ],
       ),

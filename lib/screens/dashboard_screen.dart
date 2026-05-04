@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'layanan_screen.dart';
 import 'login_screen.dart';
 import 'riwayat_reservasi_screen.dart';
@@ -10,6 +11,7 @@ import 'pdf_viewer_screen.dart';
 
 import '../mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -28,7 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTabChange: (index) => setState(() => _currentIndex = index),
       ),
       _ReservasiPage(),
-      const ChatScreen(),
+      ChatScreen(),
       const _ArtikelPage(),
       const _ProfilPage(),
     ];
@@ -119,8 +121,16 @@ class _BerandaPageState extends State<_BerandaPage> {
 
   Future<void> _loadData() async {
     try {
-      final email = MockDatabase.currentUser?.email ?? '';
-      final res = await _supabaseService.getReservasi(emailPasien: email);
+      if (AuthService.currentUserProfile == null) {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          final profile = await _supabaseService.getUserProfile(user.id);
+          AuthService.currentUserProfile = profile;
+        }
+      }
+
+      final userId = AuthService.currentUserProfile?.id;
+      final res = await _supabaseService.getReservasi(userId: userId);
       final bidan = await _supabaseService.getBidan();
       if (mounted) {
         setState(() {
@@ -226,7 +236,7 @@ class _BerandaPageState extends State<_BerandaPage> {
             ),
           ),
           Text(
-            "${MockDatabase.currentUser?.nama.split(' ')[0] ?? 'Bunda'} ðŸ‘‹",
+            "${AuthService.currentUserProfile?.nama.split(' ')[0] ?? 'Bunda'} ðŸ‘‹",
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -822,11 +832,11 @@ class _ReservasiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final supabaseService = SupabaseService();
-    final currentUserEmail = MockDatabase.currentUser?.email;
+    final currentUserEmail = AuthService.currentUserProfile?.email;
 
     return SafeArea(
       child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: supabaseService.getReservasi(emailPasien: currentUserEmail),
+        future: supabaseService.getReservasi(userId: AuthService.currentUserProfile?.id),
         builder: (context, snapshot) {
           final reservations = snapshot.data ?? [];
           final isLoading = snapshot.connectionState == ConnectionState.waiting;
@@ -999,7 +1009,7 @@ class _ReservasiPage extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                "Halo, ${MockDatabase.currentUser?.nama.split(' ')[0] ?? 'Bunda'}! Mau layanan apa hari ini?",
+                "Halo, ${AuthService.currentUserProfile?.nama.split(' ')[0] ?? 'Bunda'}! Mau layanan apa hari ini?",
                 style: const TextStyle(fontSize: 12, color: Colors.black45),
               ),
             ],
@@ -1421,7 +1431,7 @@ class _ProfilPage extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  MockDatabase.currentUser?.nama ?? 'Mama',
+                  AuthService.currentUserProfile?.nama ?? 'Mama',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -1430,7 +1440,7 @@ class _ProfilPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  MockDatabase.currentUser?.email ?? "+62 812-3456-7890",
+                  AuthService.currentUserProfile?.email ?? "+62 812-3456-7890",
                   style: const TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ]
@@ -1509,7 +1519,7 @@ class _ProfilPage extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    MockDatabase.currentUser = null;
+                    AuthService.currentUserProfile = null;
                     if (!context.mounted) return;
                     Navigator.of(context, rootNavigator: true)
                         .pushAndRemoveUntil(
