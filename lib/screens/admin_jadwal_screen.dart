@@ -16,6 +16,23 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   final SupabaseService _supabaseService = SupabaseService();
   late Future<List<Map<String, dynamic>>> _reservasiFuture;
 
+  // ================= DESIGN TOKENS =================
+  static const _bgScaffold = Color(0xFFFCE4EC);
+  static const _bgInner = Color(0xFFFFF0F5);
+  static const _textPrimary = Color(0xFF1B2E35);
+  static const _textSecondary = Color(0xFF607D8B);
+  static const _accent = Color(0xFFC2185B);
+  static const _accentLight = Color(0xFFF8E1E9);
+  static const _cardRadius = 16.0;
+  static const _cardShadow = [
+    BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3)),
+  ];
+
+  static const List<String> _monthNames = [
+    'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+    'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -31,28 +48,32 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
     });
   }
 
-  static const List<String> _monthNames = [
-    'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
-    'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
-  ];
+  String _formatJam(String? jam) {
+    if (jam == null || jam.isEmpty || jam == '-') return '-';
+    final parts = jam.split(':');
+    if (parts.length >= 2) return "${parts[0]}:${parts[1]}";
+    return jam;
+  }
 
   @override
   Widget build(BuildContext context) {
     final selectedIso = _toIso(_selectedDate);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEECAD0),
+      backgroundColor: _bgScaffold,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFDDE6CF),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false),
         ),
         title: const Text(
-          "JADWAL",
-          style: TextStyle(color: Colors.black),
+          "Jadwal",
+          style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
         ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -74,11 +95,20 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                   _header(),
                   const SizedBox(height: 12),
                   if (isLoading)
-                    const Center(child: CircularProgressIndicator())
-                  else if (filtered.isEmpty)
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Text("Belum ada reservasi", style: TextStyle(color: Colors.black45)),
+                      padding: EdgeInsets.symmetric(vertical: 30),
+                      child: CircularProgressIndicator(color: _accent),
+                    )
+                  else if (filtered.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 30),
+                      child: Column(
+                        children: [
+                          Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade300),
+                          const SizedBox(height: 8),
+                          const Text("Belum ada reservasi", style: TextStyle(color: _textSecondary, fontSize: 13)),
+                        ],
+                      ),
                     )
                   else
                     ...filtered.map((res) => _card(res)),
@@ -95,10 +125,11 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   // ================= CALENDAR =================
   Widget _calendarUI(List<Map<String, dynamic>> allReservations) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEEF3),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(_cardRadius),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         children: [
@@ -109,53 +140,53 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                 '${_monthNames[_displayMonth.month - 1]} ${_displayMonth.year}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 15,
+                  color: _textPrimary,
                 ),
               ),
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 18),
-                    onPressed: () {
-                      setState(() {
-                        _displayMonth = DateTime(
-                          _displayMonth.year,
-                          _displayMonth.month - 1,
-                        );
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 18),
-                    onPressed: () {
-                      setState(() {
-                        _displayMonth = DateTime(
-                          _displayMonth.year,
-                          _displayMonth.month + 1,
-                        );
-                      });
-                    },
-                  ),
+                  _calNavButton(Icons.chevron_left, () {
+                    setState(() {
+                      _displayMonth = DateTime(_displayMonth.year, _displayMonth.month - 1);
+                    });
+                  }),
+                  const SizedBox(width: 4),
+                  _calNavButton(Icons.chevron_right, () {
+                    setState(() {
+                      _displayMonth = DateTime(_displayMonth.year, _displayMonth.month + 1);
+                    });
+                  }),
                 ],
-              )
+              ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Day("SEN"),
-              _Day("SEL"),
-              _Day("RAB"),
-              _Day("KAM"),
-              _Day("JUM"),
-              _Day("SAB"),
-              _Day("MIN"),
+              _Day("SEN"), _Day("SEL"), _Day("RAB"),
+              _Day("KAM"), _Day("JUM"), _Day("SAB"), _Day("MIN"),
             ],
           ),
           const SizedBox(height: 8),
           _calendarGrid(allReservations),
         ],
+      ),
+    );
+  }
+
+  Widget _calNavButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: _bgInner,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 18, color: _textPrimary),
       ),
     );
   }
@@ -182,16 +213,19 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
             _selectedDate.month == date.month &&
             _selectedDate.year == date.year;
 
-        // Cek apakah ada reservasi "Menunggu Persetujuan" di tanggal ini
-        final hasPending = allReservations.any((res) => 
+        final hasPending = allReservations.any((res) =>
           res['tanggal'] == dateIso && res['status'] == 'Menunggu Persetujuan'
+        );
+
+        final hasConfirmed = allReservations.any((res) =>
+          res['tanggal'] == dateIso && (res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai' || res['bidan_id'] != null)
         );
 
         return GestureDetector(
           onTap: () => setState(() => _selectedDate = date),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF1F7A8C) : Colors.transparent,
+              color: isSelected ? _accent : Colors.transparent,
               shape: BoxShape.circle,
             ),
             child: Column(
@@ -201,19 +235,27 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                   '${date.day}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : _textPrimary,
                   ),
                 ),
-                if (hasPending)
-                  Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    width: 4,
-                    height: 4,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (hasPending)
+                      Container(
+                        margin: const EdgeInsets.only(top: 2, right: 1),
+                        width: 4, height: 4,
+                        decoration: const BoxDecoration(color: Color(0xFFFF9800), shape: BoxShape.circle),
+                      ),
+                    if (hasConfirmed)
+                      Container(
+                        margin: const EdgeInsets.only(top: 2, left: 1),
+                        width: 4, height: 4,
+                        decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -225,38 +267,46 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
   // ================= HEADER =================
   Widget _header() {
     final bulan = _monthNames[_displayMonth.month - 1];
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3C4),
-        borderRadius: BorderRadius.circular(16),
+        color: _accentLight,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        "RESERVASI BULAN $bulan",
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        children: [
+          const Icon(Icons.event_note_rounded, size: 18, color: _accent),
+          const SizedBox(width: 8),
+          Text(
+            "Reservasi Bulan $bulan",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 13),
+          ),
+        ],
       ),
     );
   }
 
   // ================= CARD =================
   Widget _card(Map<String, dynamic> res) {
-    final isConfirmed = res['status'] == 'Dikonfirmasi';
+    final isConfirmed = res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai' || res['bidan_id'] != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFDFF5D8),
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(_cardRadius),
+        boxShadow: _cardShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircleAvatar(child: Icon(Icons.person)),
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: _bgInner,
+            child: const Icon(Icons.person_outline, color: _textSecondary, size: 20),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -264,10 +314,13 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               children: [
                 Text(
                   res['nama_pasien'] ?? res['namaPasien'] ?? 'Pasien',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
                 ),
                 const SizedBox(height: 4),
-                Text("${_displayDate(res['tanggal'])} • ${res['jam']}"),
+                Text(
+                  "${_displayDate(res['tanggal'])} • ${_formatJam(res['jam'])}",
+                  style: const TextStyle(fontSize: 12, color: _textSecondary),
+                ),
               ],
             ),
           ),
@@ -275,19 +328,18 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isConfirmed
-                      ? Colors.blue.shade100
-                      : Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(10),
+                  color: isConfirmed ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   isConfirmed ? "TERKONFIRMASI" : "PENDING",
                   style: TextStyle(
-                    fontSize: 10,
-                    color: isConfirmed ? Colors.blue : Colors.orange,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                    color: isConfirmed ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
                   ),
                 ),
               ),
@@ -297,21 +349,19 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          AdminJadwalDetailReservasiScreen(data: res),
+                      builder: (_) => AdminJadwalDetailReservasiScreen(data: res),
                     ),
                   ).then((_) => _refreshData());
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
-                    borderRadius: BorderRadius.circular(10),
+                    color: _accent,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    "Lihat Detail",
-                    style: TextStyle(color: Colors.white, fontSize: 10),
+                    "Detail",
+                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -337,7 +387,6 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
     final first = DateTime(month.year, month.month, 1);
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final start = first.weekday - 1;
-
     return List.generate(start + daysInMonth, (i) {
       if (i < start) return null;
       return DateTime(month.year, month.month, i - start + 1);
@@ -359,7 +408,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         backgroundColor: Colors.white,
 
         /// 🔥 STYLE BARU
-        selectedItemColor: const Color(0xFF00897B),
+        selectedItemColor: const Color(0xFFC2185B),
         unselectedItemColor: const Color(0xFFB0BEC5),
 
         selectedLabelStyle: const TextStyle(
@@ -430,7 +479,7 @@ class _Day extends StatelessWidget {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
+          style: const TextStyle(fontSize: 10, color: Color(0xFF607D8B), fontWeight: FontWeight.w600),
         ),
       ),
     );

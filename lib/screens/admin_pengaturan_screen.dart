@@ -19,31 +19,42 @@ class AdminPengaturanScreen extends StatefulWidget {
 
 class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
 
+  // ================= DESIGN TOKENS =================
+  static const _bgScaffold = Color(0xFFFCE4EC);
+  static const _bgInner = Color(0xFFFFF0F5);
+  static const _textPrimary = Color(0xFF1B2E35);
+  static const _textSecondary = Color(0xFF607D8B);
+  static const _accent = Color(0xFFC2185B);
+  static const _accentLight = Color(0xFFE0F2F1);
+  static const _cardRadius = 16.0;
+  static const _cardShadow = [
+    BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3)),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFCE4EC),
+      backgroundColor: _bgScaffold,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
               _buildHeader(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               _buildMenuItems(context),
               const SizedBox(height: 24),
             ],
           ),
         ),
       ),
-
-      /// ✅ FIX NAV
       bottomNavigationBar: _bottomNav(context),
     );
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -53,9 +64,9 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
               const Text(
                 'Pengaturan',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2E35),
+                  color: _textPrimary,
                 ),
               ),
               GestureDetector(
@@ -69,17 +80,16 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
                   );
                 },
                 child: Container(
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    color: _bgInner,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Icons.notifications_outlined,
                     size: 18,
-                    color: Color(0xFF546E7A),
+                    color: _textSecondary,
                   ),
                 ),
               ),
@@ -89,35 +99,45 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
 
           Container(
             width: double.infinity,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _accentLight,
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFE0E0E0), width: 1),
             ),
-            child: const Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pengaturan Akun',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B2E35),
-                    ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _accent,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Kelola data profesional dan layanan Anda',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF757575),
+                  child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pengaturan Akun',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: _textPrimary,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Kelola data profesional dan layanan Anda',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -131,7 +151,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         icon: Icons.person_outline,
         title: 'Cek Profil Bidan',
         subtitle: 'Lihat dan Perbarui Identitas',
-        iconColor: const Color(0xFF00897B),
+        iconColor: const Color(0xFFC2185B),
       ),
       MenuItemData(
         icon: Icons.star_outline,
@@ -170,7 +190,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
       child: Column(
         children: menuItems.map((item) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 10),
             child: _buildMenuItem(item, context),
           );
         }).toList(),
@@ -184,75 +204,56 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         if (item.title == 'Log Out') {
           _showLogoutConfirmation(context);
         } else if (item.title == 'Cek Profil Bidan') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const AdminCekProfilBidanScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminCekProfilBidanScreen()));
         } else if (item.title == 'Cek Review Pasien') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const AdminReviewPasienScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminReviewPasienScreen()));
         } else if (item.title == 'Jenis Pelayanan') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const AdminJenisPelayananScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminJenisPelayananScreen()));
         } else if (item.title == 'Upload Artikel') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const AdminArtikelScreen(),
-            ),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminArtikelScreen()));
         }
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border:
-              Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: _cardShadow,
         ),
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: item.iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(item.icon, color: item.iconColor, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item.title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
+                        style: const TextStyle(fontWeight: FontWeight.w600, color: _textPrimary)),
+                    const SizedBox(height: 2),
                     Text(item.subtitle,
-                        style: const TextStyle(fontSize: 12)),
+                        style: const TextStyle(fontSize: 12, color: _textSecondary)),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: _bgInner,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.arrow_forward_ios, size: 12, color: _textSecondary),
+              ),
             ],
           ),
         ),
@@ -265,23 +266,28 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Konfirmasi Log Out'),
-          content: const Text('Apakah Anda yakin ingin keluar?'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Konfirmasi Log Out', style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
+          content: const Text('Apakah Anda yakin ingin keluar?', style: TextStyle(color: _textSecondary)),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Batal')),
-            TextButton(
+                child: const Text('Batal', style: TextStyle(color: _textSecondary))),
+            ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
-              child: const Text('Log Out',
-                  style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Log Out'),
             ),
           ],
         );
@@ -294,7 +300,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
     return BottomNavigationBar(
       currentIndex: 4,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF00897B),
+      selectedItemColor: const Color(0xFFC2185B),
       unselectedItemColor: const Color(0xFFB0BEC5),
 
       onTap: (index) {
@@ -311,7 +317,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
               MaterialPageRoute(builder: (_) => AdminChatListScreen()));
         }
         if (index == 3) {
-          Navigator.push(context,
+          Navigator.pushReplacement(context,
               MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
         }
       },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'konfirmasi_bidan_screen.dart';
-import '../mock_data.dart';
 import '../services/supabase_service.dart';
 import '../services/auth_service.dart';
 
@@ -128,6 +127,8 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                     await supabaseService.tambahReservasi({
                       'user_id': AuthService.currentUserProfile?.id,
                       'layanan': layananNames,
+                      // FK ke tabel layanan (ambil id layanan pertama/utama)
+                      'layanan_id': selectedServices.isNotEmpty ? selectedServices.first['id'] : null,
                       'jam': jam,
                       'tanggal': "${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}",
                       'is_home_care': isHomeCare,

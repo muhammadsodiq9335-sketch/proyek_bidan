@@ -31,19 +31,70 @@ class SupabaseService {
   }
 
   // ================= RESERVASI =================
+
+  /// Helper: flatten nested joined data ke top-level map
+  Map<String, dynamic> _flattenReservasi(Map raw) {
+    final map = Map<String, dynamic>.from(raw);
+    // Flatten bidan_profiles
+    final bidan = map['bidan_profiles'];
+    if (bidan is Map) {
+      map['nama_bidan'] ??= bidan['nama'];
+    }
+    // Flatten user_profiles (tgl_lahir, alamat)
+    final up = map['user_profiles'];
+    if (up is Map) {
+      map['tgl_lahir'] ??= up['tgl_lahir'];
+      map['alamat'] ??= up['alamat'];
+      map['nama_user'] ??= up['nama'];
+    }
+    // Flatten layanan
+    final layan = map['layanan_data'];
+    if (layan is Map) {
+      map['nama_layanan'] ??= layan['nama'];
+      map['harga_layanan'] ??= layan['harga'];
+      map['kategori_layanan'] ??= layan['kategori'];
+      map['deskripsi_layanan'] ??= layan['deskripsi'];
+    }
+    return map;
+  }
+
   Future<List<Map<String, dynamic>>> getReservasi({String? userId}) async {
     try {
       var query = _supabase.from('reservasi').select('''
         *,
-        bidan_profiles (nama)
+        bidan_profiles (nama),
+        user_profiles (tgl_lahir, alamat, nama),
+        layanan_data:layanan_id ( nama, harga, kategori, deskripsi )
       ''');
       if (userId != null) {
         query = query.eq('user_id', userId);
       }
       final data = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(data);
+      return (data as List).map((r) => _flattenReservasi(r as Map)).toList();
     } catch (e) {
       print('Error getReservasi: $e');
+      return [];
+    }
+  }
+
+  /// Filter reservasi berdasarkan tanggal tertentu (field 'tanggal' di tabel reservasi)
+  Future<List<Map<String, dynamic>>> getReservasiByDate(DateTime date) async {
+    try {
+      final dateStr =
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final data = await _supabase
+          .from('reservasi')
+          .select('''
+            *,
+            bidan_profiles (nama),
+            user_profiles (tgl_lahir, alamat, nama),
+            layanan_data:layanan_id ( nama, harga, kategori, deskripsi )
+          ''')
+          .eq('tanggal', dateStr)
+          .order('created_at', ascending: false);
+      return (data as List).map((r) => _flattenReservasi(r as Map)).toList();
+    } catch (e) {
+      print('Error getReservasiByDate: $e');
       return [];
     }
   }
