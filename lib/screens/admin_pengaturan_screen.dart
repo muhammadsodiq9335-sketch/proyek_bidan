@@ -10,6 +10,7 @@ import 'admin_review_pasien_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_artikel_screen.dart';
 import 'admin_laporan_screen.dart';
+import 'admin_pengaturan_pembayaran_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -179,6 +180,12 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         iconColor: const Color(0xFF42A5F5),
       ),
       MenuItemData(
+        icon: Icons.qr_code_scanner_outlined,
+        title: 'Pengaturan QRIS & Bank',
+        subtitle: 'Atur Metode Pembayaran Klinik',
+        iconColor: const Color(0xFF009688),
+      ),
+      MenuItemData(
         icon: Icons.logout,
         title: 'Log Out',
         subtitle: 'Akhiri sesi',
@@ -214,6 +221,8 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminArtikelScreen()));
         } else if (item.title == 'Pelaporan') {
           Navigator.pushNamed(context, '/admin_laporan');
+        } else if (item.title == 'Pengaturan QRIS & Bank') {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminPengaturanPembayaranScreen()));
         }
       },
       child: Container(

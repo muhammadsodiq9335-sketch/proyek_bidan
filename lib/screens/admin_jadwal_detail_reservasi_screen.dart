@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'admin_input_rekam_medis_screen.dart';
 import '../services/supabase_service.dart';
 
 String _getFirstName(String fullName) {
@@ -249,6 +248,8 @@ class _AdminJadwalDetailReservasiScreenState
     final data = widget.data;
     final hasBidan = data['bidan_id'] != null;
     final bidanNama = data['bidan_profiles']?['nama'] ?? data['bidan'] ?? "Belum dipilih";
+    final selectedBidanMap = selectedBidan != -1 && selectedBidan < _bidanList.length ? _bidanList[selectedBidan] : null;
+    final selectedBidanFotoUrl = selectedBidanMap?['foto_url'];
 
     return Scaffold(
       backgroundColor: _bgScaffold,
@@ -333,10 +334,10 @@ class _AdminJadwalDetailReservasiScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _isChangingBidan ? "Pilih Bidan Baru" : "Bidan Pelayanan",
+                        _isChangingBidan && data['status'] == 'Menunggu Persetujuan' ? "Pilih Bidan Baru" : "Bidan Pelayanan",
                         style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
                       ),
-                      if (hasBidan && !_isChangingBidan)
+                      if (hasBidan && !_isChangingBidan && data['status'] == 'Menunggu Persetujuan')
                         TextButton.icon(
                           onPressed: () => setState(() => _isChangingBidan = true),
                           icon: const Icon(Icons.edit, size: 14),
@@ -345,7 +346,7 @@ class _AdminJadwalDetailReservasiScreenState
                     ],
                   ),
                   const SizedBox(height: 14),
-                  if (_isChangingBidan || !hasBidan) ...[
+                  if ((_isChangingBidan || !hasBidan) && data['status'] == 'Menunggu Persetujuan') ...[
                     if (_isLoadingBidan)
                       const Center(child: CircularProgressIndicator())
                     else
@@ -377,9 +378,16 @@ class _AdminJadwalDetailReservasiScreenState
                   ] else
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const CircleAvatar(child: Icon(Icons.person)),
+                      leading: CircleAvatar(
+                        backgroundImage: selectedBidanFotoUrl != null && selectedBidanFotoUrl.toString().isNotEmpty
+                            ? NetworkImage(selectedBidanFotoUrl.toString())
+                            : null,
+                        child: selectedBidanFotoUrl != null && selectedBidanFotoUrl.toString().isNotEmpty
+                            ? null
+                            : const Icon(Icons.person),
+                      ),
                       title: Text(bidanNama, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text("Dipilih oleh Pasien"),
+                      subtitle: Text(hasBidan ? "Dipilih oleh Pasien" : "Belum dipilih"),
                     ),
                 ],
               ),
@@ -387,7 +395,7 @@ class _AdminJadwalDetailReservasiScreenState
 
             const SizedBox(height: 20),
 
-            /// ================= BUTTONS =================
+            /// ================= BUTTONS & STATUS =================
             if (data['status'] == 'Menunggu Persetujuan')
               Row(
                 children: [
@@ -409,38 +417,107 @@ class _AdminJadwalDetailReservasiScreenState
                     ),
                   ),
                 ],
-              ),
-
-            // BUTTON REKAM MEDIS
-            if (data['status'] == 'Dikonfirmasi' || data['status'] == 'Selesai')
+              )
+            else
               Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AdminInputRekamMedisScreen(reservasi: data),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.medical_services_rounded, color: Colors.white),
-                    label: Text(
-                      data['status'] == 'Selesai' ? "Lihat/Edit Rekam Medis" : "Input Rekam Medis",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _accent,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
+                child: _statusCard(data['status'] ?? ''),
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _statusCard(String status) {
+    Color cardColor;
+    Color textColor;
+    IconData icon;
+    String title;
+    String subtitle;
+
+    switch (status) {
+      case 'Dikonfirmasi':
+        cardColor = const Color(0xFFE8F5E9); // Light green
+        textColor = const Color(0xFF2E7D32); // Deep green
+        icon = Icons.check_circle_rounded;
+        title = "Reservasi Dikonfirmasi";
+        subtitle = "Reservasi ini telah disetujui dan dikonfirmasi.";
+        break;
+      case 'Selesai':
+        cardColor = const Color(0xFFE0F2F1); // Light teal
+        textColor = const Color(0xFF00695C); // Deep teal
+        icon = Icons.task_alt_rounded;
+        title = "Pelayanan Selesai";
+        subtitle = "Pelayanan medis telah selesai dilaksanakan.";
+        break;
+      case 'Ditolak':
+        cardColor = const Color(0xFFFFEBEE); // Light red
+        textColor = const Color(0xFFC62828); // Deep red
+        icon = Icons.cancel_rounded;
+        title = "Reservasi Ditolak";
+        subtitle = widget.data['alasan_ditolak'] != null && widget.data['alasan_ditolak'].toString().isNotEmpty
+            ? "Alasan: ${widget.data['alasan_ditolak']}"
+            : "Reservasi ini telah ditolak oleh admin.";
+        break;
+      case 'Dibatalkan':
+        cardColor = const Color(0xFFFFEBEE); // Light red
+        textColor = const Color(0xFFC62828); // Deep red
+        icon = Icons.cancel_rounded;
+        title = "Reservasi Dibatalkan";
+        subtitle = "Reservasi ini telah dibatalkan oleh pasien.";
+        break;
+      case 'Bidan Diganti':
+        cardColor = const Color(0xFFFFF3E0); // Light orange
+        textColor = const Color(0xFFE65100); // Deep orange
+        icon = Icons.swap_horiz_rounded;
+        title = "Bidan Diganti";
+        subtitle = "Menunggu persetujuan pasien untuk bidan baru.";
+        break;
+      default:
+        cardColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade800;
+        icon = Icons.info_rounded;
+        title = status;
+        subtitle = "Status reservasi saat ini.";
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: textColor.withOpacity(0.3), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: textColor, size: 28),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -467,7 +544,12 @@ class _AdminJadwalDetailReservasiScreenState
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor: isSelected ? _accentLight : _bgInner,
-                  child: Icon(Icons.person, color: isSelected ? _accent : _textSecondary),
+                  backgroundImage: _bidanList[index]['foto_url'] != null && _bidanList[index]['foto_url'].toString().isNotEmpty
+                      ? NetworkImage(_bidanList[index]['foto_url'].toString())
+                      : null,
+                  child: _bidanList[index]['foto_url'] != null && _bidanList[index]['foto_url'].toString().isNotEmpty
+                      ? null
+                      : Icon(Icons.person, color: isSelected ? _accent : _textSecondary),
                 ),
               ),
               if (isSelected)

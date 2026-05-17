@@ -345,13 +345,18 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                               backgroundColor: isSelected
                                   ? const Color(0xFF00897B)
                                   : const Color(0xFFECEFF1),
-                              child: Icon(
-                                Icons.person,
-                                color: isSelected
-                                    ? Colors.white
-                                    : const Color(0xFF90A4AE),
-                                size: 22,
-                              ),
+                              backgroundImage: bidan['foto_url'] != null && bidan['foto_url'].toString().isNotEmpty
+                                  ? NetworkImage(bidan['foto_url'].toString())
+                                  : null,
+                              child: bidan['foto_url'] != null && bidan['foto_url'].toString().isNotEmpty
+                                  ? null
+                                  : Icon(
+                                      Icons.person,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color(0xFF90A4AE),
+                                      size: 22,
+                                    ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(

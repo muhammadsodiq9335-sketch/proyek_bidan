@@ -215,7 +215,7 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
                       );
                     },
                     icon: const Icon(Icons.medical_information_outlined, size: 18),
-                    label: const Text('Buku KIA Digital', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: const Text('Hasil Pemeriksaan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF00897B),
                       side: const BorderSide(color: Color(0xFF00897B)),

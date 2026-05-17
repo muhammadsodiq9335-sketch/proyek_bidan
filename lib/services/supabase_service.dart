@@ -47,12 +47,13 @@ class SupabaseService {
     if (bidan is Map) {
       map['nama_bidan'] ??= bidan['nama'];
     }
-    // Flatten user_profiles (tgl_lahir, alamat)
+    // Flatten user_profiles (tgl_lahir, alamat, foto_url)
     final up = map['user_profiles'];
     if (up is Map) {
       map['tgl_lahir'] ??= up['tgl_lahir'];
       map['alamat'] ??= up['alamat'];
       map['nama_user'] ??= up['nama'];
+      map['foto_url'] ??= up['foto_url'];
     }
     // Flatten layanan
     final layan = map['layanan_data'];
@@ -70,7 +71,7 @@ class SupabaseService {
       var query = _supabase.from('reservasi').select('''
         *,
         bidan_profiles (nama),
-        user_profiles (tgl_lahir, alamat, nama),
+        user_profiles (tgl_lahir, alamat, nama, foto_url),
         layanan_data:layanan_id ( nama, harga, kategori, deskripsi )
       ''');
       if (userId != null) {
@@ -94,7 +95,7 @@ class SupabaseService {
           .select('''
             *,
             bidan_profiles (nama),
-            user_profiles (tgl_lahir, alamat, nama),
+            user_profiles (tgl_lahir, alamat, nama, foto_url),
             layanan_data:layanan_id ( nama, harga, kategori, deskripsi )
           ''')
           .eq('tanggal', dateStr)
@@ -102,6 +103,31 @@ class SupabaseService {
       return (data as List).map((r) => _flattenReservasi(r as Map)).toList();
     } catch (e) {
       print('Error getReservasiByDate: $e');
+      return [];
+    }
+  }
+
+  /// Filter reservasi berdasarkan rentang tanggal (field 'tanggal' di tabel reservasi)
+  Future<List<Map<String, dynamic>>> getReservasiByDateRange(DateTime start, DateTime end) async {
+    try {
+      final startStr =
+          '${start.year.toString().padLeft(4, '0')}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
+      final endStr =
+          '${end.year.toString().padLeft(4, '0')}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
+      final data = await _supabase
+          .from('reservasi')
+          .select('''
+            *,
+            bidan_profiles (nama),
+            user_profiles (tgl_lahir, alamat, nama, foto_url),
+            layanan_data:layanan_id ( nama, harga, kategori, deskripsi )
+          ''')
+          .gte('tanggal', startStr)
+          .lte('tanggal', endStr)
+          .order('created_at', ascending: false);
+      return (data as List).map((r) => _flattenReservasi(r as Map)).toList();
+    } catch (e) {
+      print('Error getReservasiByDateRange: $e');
       return [];
     }
   }
@@ -555,6 +581,74 @@ class SupabaseService {
     } catch (e) {
       print('Error getReportData: $e');
       return [];
+    }
+  }
+
+  // ================= PAYMENT SETTINGS =================
+  Future<Map<String, dynamic>> getPaymentSettings() async {
+    try {
+      final data = await _supabase
+          .from('payment_settings')
+          .select()
+          .eq('id', 1)
+          .maybeSingle();
+      
+      if (data == null) {
+        return {
+          'bank_name': 'BCA Syariah',
+          'rek_number': '0631999999',
+          'rek_name': 'A.n ANNISA',
+          'qris_nmid': 'ID1026496531744',
+          'qris_name': 'TAMAN IBU BIDAN ANNISA - HOME SERVICE',
+          'qris_code': 'A01',
+          'qris_url': '',
+        };
+      }
+      return Map<String, dynamic>.from(data);
+    } catch (e) {
+      print('Error getPaymentSettings: $e');
+      return {
+        'bank_name': 'BCA Syariah',
+        'rek_number': '0631999999',
+        'rek_name': 'A.n ANNISA',
+        'qris_nmid': 'ID1026496531744',
+        'qris_name': 'TAMAN IBU BIDAN ANNISA - HOME SERVICE',
+        'qris_code': 'A01',
+        'qris_url': '',
+      };
+    }
+  }
+
+  Future<void> updatePaymentSettings(Map<String, dynamic> data) async {
+    try {
+      final updateData = Map<String, dynamic>.from(data);
+      updateData['id'] = 1;
+      updateData['updated_at'] = DateTime.now().toIso8601String();
+      await _supabase.from('payment_settings').upsert(updateData);
+    } catch (e) {
+      print('Error updatePaymentSettings: $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadQrisImage({
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final path = 'qris/$fileName';
+      
+      await _supabase.storage.from('avatars').uploadBinary(
+        path,
+        fileBytes as dynamic,
+        fileOptions: const FileOptions(upsert: true),
+      );
+
+      final String publicUrl = _supabase.storage.from('avatars').getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      print('Error uploadQrisImage: $e');
+      return null;
     }
   }
 }

@@ -59,37 +59,29 @@ class _PatientViewRekamMedisScreenState extends State<PatientViewRekamMedisScree
                 children: [
                   _buildHeader(accentColor),
                   const SizedBox(height: 24),
-                  _buildSectionTitle('Hasil Pemeriksaan Kehamilan'),
+                  _buildSectionTitle('Detail Pemeriksaan Medis (SOAP)'),
                   const SizedBox(height: 12),
-                  _buildInfoGrid([
-                    _infoItem('HPHT', _formatDate(_rekamMedis!['hpht']), Icons.calendar_today),
-                    _infoItem('HPL', _formatDate(_rekamMedis!['hpl']), Icons.event_available),
-                    _infoItem('Usia Kehamilan', _rekamMedis!['usia_kehamilan'] ?? '-', Icons.timer),
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle('Kondisi Fisik & Janin'),
-                  const SizedBox(height: 12),
-                  _buildInfoGrid([
-                    _infoItem('Berat Badan', '${_rekamMedis!['berat_badan'] ?? '-'} kg', Icons.monitor_weight_outlined),
-                    _infoItem('Tensi', '${_rekamMedis!['tensi'] ?? '-'} mmHg', Icons.speed),
-                    _infoItem('Tinggi Fundus', '${_rekamMedis!['tfu'] ?? '-'} cm', Icons.straighten),
-                    _infoItem('Detak Jantung Janin', '${_rekamMedis!['djj'] ?? '-'} bpm', Icons.favorite_outline),
-                    _infoItem('Posisi Janin', _rekamMedis!['posisi_janin'] ?? '-', Icons.child_care),
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle('Catatan & Saran Bidan'),
-                  const SizedBox(height: 12),
-                  _buildNoteCard('Keluhan Pasien', _rekamMedis!['keluhan'] ?? '-'),
-                  _buildNoteCard('Diagnosa / Hasil', _rekamMedis!['diagnosa'] ?? '-'),
-                  _buildNoteCard('Tindakan / Obat', _rekamMedis!['tindakan'] ?? '-'),
-                  
-                  if (_rekamMedis!['rencana_selanjutnya'] != null && _rekamMedis!['rencana_selanjutnya'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _buildSectionTitle('Rencana & Rekomendasi Selanjutnya'),
-                    const SizedBox(height: 12),
-                    _buildNoteCard('Saran / Jadwal Kontrol', _rekamMedis!['rencana_selanjutnya'], isSpecial: true),
-                  ],
-                  
+                  _buildNoteCard(
+                    'Subjective (S) - Keluhan & Kondisi Pasien',
+                    _rekamMedis!['subjective'] ?? '-',
+                    icon: Icons.chat_bubble_outline_rounded,
+                  ),
+                  _buildNoteCard(
+                    'Objective (O) - Hasil Pemeriksaan Fisik & Vital Sign',
+                    _rekamMedis!['objective'] ?? '-',
+                    icon: Icons.visibility_outlined,
+                  ),
+                  _buildNoteCard(
+                    'Assessment (A) - Diagnosa & Analisa Medis',
+                    _rekamMedis!['assessment'] ?? '-',
+                    icon: Icons.analytics_outlined,
+                  ),
+                  _buildNoteCard(
+                    'Plan (P) - Rencana Tindakan & Rekomendasi',
+                    _rekamMedis!['plan'] ?? '-',
+                    isSpecial: true,
+                    icon: Icons.assignment_outlined,
+                  ),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -168,7 +160,7 @@ class _PatientViewRekamMedisScreenState extends State<PatientViewRekamMedisScree
     );
   }
 
-  Widget _buildNoteCard(String title, String content, {bool isSpecial = false}) {
+  Widget _buildNoteCard(String title, String content, {bool isSpecial = false, IconData? icon}) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -178,12 +170,23 @@ class _PatientViewRekamMedisScreenState extends State<PatientViewRekamMedisScree
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isSpecial ? const Color(0xFF00897B).withOpacity(0.3) : Colors.grey.shade100),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 11, color: isSpecial ? const Color(0xFF00796B) : Colors.grey, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(content, style: const TextStyle(fontSize: 13, color: Color(0xFF1B2E35), height: 1.4)),
+          if (icon != null) ...[
+            Icon(icon, size: 20, color: isSpecial ? const Color(0xFF00796B) : const Color(0xFF00897B)),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontSize: 11, color: isSpecial ? const Color(0xFF00796B) : Colors.grey, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Text(content, style: const TextStyle(fontSize: 13, color: const Color(0xFF1B2E35), height: 1.4)),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -17,6 +17,7 @@ class AdminRingkasanHarianScreen extends StatefulWidget {
 class _AdminRingkasanHarianScreenState
     extends State<AdminRingkasanHarianScreen> {
   final SupabaseService _supabaseService = SupabaseService();
+  DateTime _selectedDate = DateTime.now();
 
   // ================= DESIGN TOKENS =================
   static const _bgScaffold = Color(0xFFFCE4EC);
@@ -32,7 +33,7 @@ class _AdminRingkasanHarianScreenState
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    final now = _selectedDate;
 
     return Scaffold(
       backgroundColor: _bgScaffold,
@@ -79,22 +80,52 @@ class _AdminRingkasanHarianScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// ================= DATE BADGE =================
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _accentLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.calendar_today_rounded, size: 14, color: _accent),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatDate(now),
-                        style: const TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
-                    ],
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: _accent,
+                              onPrimary: Colors.white,
+                              onSurface: _textPrimary,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (date != null) {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _accentLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_rounded, size: 14, color: _accent),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(now),
+                          style: const TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_drop_down_rounded, size: 16, color: _accent),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -136,11 +167,11 @@ class _AdminRingkasanHarianScreenState
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               "Pasien Dikonfirmasi",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -148,10 +179,14 @@ class _AdminRingkasanHarianScreenState
                                 color: Colors.white,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              "Hari Ini",
-                              style: TextStyle(fontSize: 12, color: Colors.white70),
+                              (now.year == DateTime.now().year &&
+                                      now.month == DateTime.now().month &&
+                                      now.day == DateTime.now().day)
+                                  ? "Hari Ini"
+                                  : _formatDate(now),
+                              style: const TextStyle(fontSize: 12, color: Colors.white70),
                             ),
                           ],
                         ),
@@ -222,7 +257,12 @@ class _AdminRingkasanHarianScreenState
                           CircleAvatar(
                             radius: 22,
                             backgroundColor: _bgInner,
-                            child: const Icon(Icons.person_outline, color: _textSecondary),
+                            backgroundImage: (e['foto_url'] != null && e['foto_url'].toString().trim().isNotEmpty)
+                                ? NetworkImage(e['foto_url'].toString())
+                                : null,
+                            child: (e['foto_url'] == null || e['foto_url'].toString().trim().isEmpty)
+                                ? const Icon(Icons.person_outline, color: _textSecondary)
+                                : null,
                           ),
                           const SizedBox(width: 12),
                           Expanded(

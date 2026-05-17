@@ -22,8 +22,11 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
 
   // Filter state
   String _searchQuery = '';
-  DateTime _selectedDate = DateTime.now();
-  bool _filterByDate = true; // true = filter by hari ini by default
+  DateTimeRange? _selectedDateRange = DateTimeRange(
+    start: DateTime.now(),
+    end: DateTime.now(),
+  );
+  bool _filterByDate = true; // true = filter by range by default
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
@@ -43,13 +46,27 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     _loadData();
   }
 
+  String _formatDateRangeStr() {
+    if (_selectedDateRange == null) return 'Pilih Periode Tanggal';
+    final start = _selectedDateRange!.start;
+    final end = _selectedDateRange!.end;
+    
+    final startStr = '${start.day} ${_monthNames[start.month - 1]} ${start.year}';
+    final endStr = '${end.day} ${_monthNames[end.month - 1]} ${end.year}';
+    
+    if (start.day == end.day && start.month == end.month && start.year == end.year) {
+      return startStr;
+    }
+    return '$startStr - $endStr';
+  }
+
   // Ambil semua data atau filter by tanggal
   Future<void> _loadData() async {
     setState(() { _isLoading = true; _errorMsg = null; });
     try {
       List<Map<String, dynamic>> data;
-      if (_filterByDate) {
-        data = await _supabaseService.getReservasiByDate(_selectedDate);
+      if (_filterByDate && _selectedDateRange != null) {
+        data = await _supabaseService.getReservasiByDateRange(_selectedDateRange!.start, _selectedDateRange!.end);
       } else {
         data = await _supabaseService.getReservasi();
       }
@@ -57,15 +74,6 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     } catch (e) {
       if (mounted) setState(() { _errorMsg = e.toString(); _isLoading = false; });
     }
-  }
-
-  void _onDateSelected(DateTime date) {
-    setState(() {
-      _selectedDate = date;
-      _filterByDate = true;
-      _currentPage = 0;
-    });
-    _loadData();
   }
 
   void _showAll() {
@@ -92,7 +100,16 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
       backgroundColor: _bgScaffold,
       appBar: AppBar(
         backgroundColor: Colors.white, surfaceTintColor: Colors.transparent, elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+            }
+          },
+        ),
         title: const Text("Riwayat Pembayaran Pasien", style: TextStyle(color: _textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
         centerTitle: true,
         actions: [
@@ -139,23 +156,55 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     );
   }
 
-  // ══════════════════════ DATE PICKER ══════════════════════
+  Future<DateTime?> _pickDate(DateTime initial) async {
+    return await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _accent,
+              onPrimary: Colors.white,
+              onSurface: _textPrimary,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: _accent,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+  }
+
+  // ══════════════════════ DATE RANGE PICKER ══════════════════════
   Widget _buildDatePicker() {
-    final now = DateTime.now();
-    // 7 hari: hari ini dan 6 hari ke depan (bisa scroll kiri = scroll semua)
-    final dates = List.generate(7, (i) => now.add(Duration(days: i - 3)));
+    final start = _selectedDateRange?.start ?? DateTime.now();
+    final end = _selectedDateRange?.end ?? DateTime.now();
+
+    final startStr = '${start.day} ${_monthNames[start.month - 1]} ${start.year}';
+    final endStr = '${end.day} ${_monthNames[end.month - 1]} ${end.year}';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: _cardShadow),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 16, color: _accent),
-              const SizedBox(width: 6),
-              const Text('Cek Tanggal', style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 13)),
+              const Icon(Icons.date_range_rounded, size: 18, color: _accent),
+              const SizedBox(width: 8),
+              const Text(
+                'Pilih Periode Tanggal',
+                style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 13, fontFamily: 'Outfit'),
+              ),
               const Spacer(),
               // Tombol Semua
               if (_filterByDate)
@@ -167,99 +216,131 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                     child: const Text('Semua', style: TextStyle(fontSize: 11, color: _accent, fontWeight: FontWeight.bold)),
                   ),
                 ),
-              const SizedBox(width: 6),
-              // Tombol buka calendar
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                    builder: (ctx, child) => Theme(
-                      data: Theme.of(ctx).copyWith(
-                        colorScheme: const ColorScheme.light(
-                          primary: Color(0xFF004D40), // Hijau pekat
-                          onPrimary: Colors.white,
-                          onSurface: Color(0xFF1B2E35),
-                        ),
-                      ),
-                      child: child!,
-                    ),
-                  );
-                  if (picked != null) _onDateSelected(picked);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFFF0F5), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.edit_calendar_rounded, size: 16, color: _accent),
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Status filter aktif
-          if (_filterByDate)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: const Color(0xFFFCE4EC), borderRadius: BorderRadius.circular(8)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.filter_alt_rounded, size: 13, color: _accent),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Menampilkan reservasi: ${_selectedDate.day} ${_monthNames[_selectedDate.month - 1]} ${_selectedDate.year}',
-                      style: const TextStyle(fontSize: 11, color: _accent, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Horizontal date scroll
-          SizedBox(
-            height: 64,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: dates.length,
-              itemBuilder: (context, i) {
-                final d = dates[i];
-                final isSelected = _filterByDate &&
-                    d.day == _selectedDate.day &&
-                    d.month == _selectedDate.month &&
-                    d.year == _selectedDate.year;
-                final isToday = d.day == now.day && d.month == now.month && d.year == now.year;
-                final dayName = _dayNames[d.weekday - 1];
-                return GestureDetector(
-                  onTap: () => _onDateSelected(d),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 52, margin: const EdgeInsets.only(right: 8),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              // Tanggal Mulai
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await _pickDate(start);
+                    if (picked != null) {
+                      setState(() {
+                        DateTime newStart = picked;
+                        DateTime newEnd = _selectedDateRange?.end ?? picked;
+                        if (newStart.isAfter(newEnd)) {
+                          newEnd = newStart;
+                        }
+                        _selectedDateRange = DateTimeRange(start: newStart, end: newEnd);
+                        _filterByDate = true;
+                        _currentPage = 0;
+                      });
+                      _loadData();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isSelected ? _accent : (isToday ? const Color(0xFFFCE4EC) : const Color(0xFFFFF0F5)),
-                      borderRadius: BorderRadius.circular(12),
-                      border: isSelected ? null : Border.all(color: isToday ? _accent.withAlpha(80) : Colors.grey.shade200),
+                      color: const Color(0xFFFFF0F5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _accent.withAlpha(40), width: 1),
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(dayName, style: TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white70 : (isToday ? _accent : _textSecondary),
-                        )),
-                        const SizedBox(height: 2),
-                        Text('${d.day}', style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : (isToday ? _accent : _textPrimary),
-                        )),
+                        const Text(
+                          'Mulai Dari',
+                          style: TextStyle(fontSize: 9, color: _textSecondary, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 12, color: _accent),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _filterByDate ? startStr : '-',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _accent,
+                                  fontSize: 12,
+                                  fontFamily: 'Outfit',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text('s/d', style: TextStyle(fontWeight: FontWeight.bold, color: _textSecondary, fontSize: 11, fontFamily: 'Outfit')),
+              const SizedBox(width: 8),
+              // Tanggal Selesai
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await _pickDate(end);
+                    if (picked != null) {
+                      setState(() {
+                        DateTime newStart = _selectedDateRange?.start ?? picked;
+                        DateTime newEnd = picked;
+                        if (newEnd.isBefore(newStart)) {
+                          newStart = newEnd;
+                        }
+                        _selectedDateRange = DateTimeRange(start: newStart, end: newEnd);
+                        _filterByDate = true;
+                        _currentPage = 0;
+                      });
+                      _loadData();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _accent.withAlpha(40), width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Sampai Dengan',
+                          style: TextStyle(fontSize: 9, color: _textSecondary, fontWeight: FontWeight.bold, fontFamily: 'Outfit'),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_rounded, size: 12, color: _accent),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _filterByDate ? endStr : '-',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _accent,
+                                  fontSize: 12,
+                                  fontFamily: 'Outfit',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -342,7 +423,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _filterByDate
-                    ? 'Tidak ada reservasi pada ${_selectedDate.day} ${_monthNames[_selectedDate.month - 1]} ${_selectedDate.year}'
+                    ? 'Tidak ada reservasi pada periode\n${_formatDateRangeStr()}'
                     : 'Belum ada data pembayaran',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: _textSecondary, fontSize: 13),
@@ -390,6 +471,8 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     final tanggalLahir = r['tgl_lahir'];
     final alamat = r['alamat'] ?? r['lokasi'] ?? '-';
     final isSelesai = r['status'] == 'Selesai' || r['status_pelayanan'] == 'Selesai & Pulang';
+    final String statusPelayanan = r['status_pelayanan'] ?? 'Menunggu';
+    final bool isServiceDone = statusPelayanan == 'Diproses' || statusPelayanan == 'Selesai & Pulang';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -402,18 +485,41 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
           Expanded(flex: 3, child: Text(alamat.toString(), style: const TextStyle(fontSize: 11, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis)),
           Expanded(flex: 2, child: Center(child: GestureDetector(
             onTap: () {
+              if (!isServiceDone) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Pelayanan belum diselesaikan! Silakan selesaikan pemeriksaan (SOAP) di Ringkasan Harian terlebih dahulu."),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
               Navigator.push(context, MaterialPageRoute(builder: (_) => AdminDetailPembayaranScreen(pasien: r))).then((_) => _loadData());
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
-                color: isSelesai ? const Color(0xFFE8F5E9) : const Color(0xFFFFF0F5),
+                color: isSelesai 
+                    ? const Color(0xFFE8F5E9) 
+                    : (!isServiceDone ? Colors.grey.shade100 : const Color(0xFFFFF0F5)),
                 borderRadius: BorderRadius.circular(6),
+                border: isSelesai 
+                    ? null 
+                    : (!isServiceDone ? Border.all(color: Colors.grey.shade300, width: 0.5) : null),
               ),
               child: Text(
-                isSelesai ? 'Selesai' : 'Detail\nPembayaran',
+                isSelesai 
+                    ? 'Selesai' 
+                    : (!isServiceDone ? 'Belum\nPelayanan' : 'Detail\nPembayaran'),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isSelesai ? const Color(0xFF2E7D32) : _accent),
+                style: TextStyle(
+                  fontSize: 9, 
+                  fontWeight: FontWeight.bold, 
+                  color: isSelesai 
+                      ? const Color(0xFF2E7D32) 
+                      : (!isServiceDone ? Colors.grey : _accent),
+                ),
               ),
             ),
           ))),

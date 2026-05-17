@@ -17,22 +17,17 @@ class _AdminDetailPelayananScreenState
   final SupabaseService _supabaseService = SupabaseService();
   final _formKey = GlobalKey<FormState>();
   
-  // Controllers Rekam Medis (Dibuat di initState agar aman)
-  late TextEditingController _hphtController;
-  late TextEditingController _hplController;
-  late TextEditingController _usiaController;
-  late TextEditingController _bbController;
-  late TextEditingController _tensiController;
-  late TextEditingController _tfuController;
-  late TextEditingController _djjController;
-  late TextEditingController _posisiController;
-  late TextEditingController _keluhanController;
-  late TextEditingController _diagnosaController;
-  late TextEditingController _tindakanController;
-  late TextEditingController _rencanaController;
+  // Controllers Rekam Medis (SOAP)
+  final TextEditingController _subjectiveController = TextEditingController();
+  final TextEditingController _objectiveController = TextEditingController();
+  final TextEditingController _assessmentController = TextEditingController();
+  final TextEditingController _planController = TextEditingController();
 
   late bool _layananSelesai;
   bool _isSaving = false;
+
+  bool get _isAlreadyPaid => widget.pasien['status'] == 'Selesai' ||
+                             widget.pasien['status_pelayanan'] == 'Selesai & Pulang';
 
   // ================= DESIGN TOKENS =================
   static const _bgScaffold = Color(0xFFFCE4EC);
@@ -46,47 +41,23 @@ class _AdminDetailPelayananScreenState
     BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3)),
   ];
 
-  DateTime? _selectedHpht;
-  DateTime? _selectedHpl;
-
   @override
   void initState() {
     super.initState();
-    // Inisialisasi semua controller
-    _hphtController = TextEditingController();
-    _hplController = TextEditingController();
-    _usiaController = TextEditingController();
-    _bbController = TextEditingController();
-    _tensiController = TextEditingController();
-    _tfuController = TextEditingController();
-    _djjController = TextEditingController();
-    _posisiController = TextEditingController();
-    _keluhanController = TextEditingController();
-    _diagnosaController = TextEditingController();
-    _tindakanController = TextEditingController();
-    _rencanaController = TextEditingController();
 
     _layananSelesai = widget.pasien['status_pelayanan'] == 'Selesai & Pulang' ||
                       widget.pasien['status'] == 'Selesai';
     
     _loadExistingMedicalData();
-    _keluhanController.text = widget.pasien['keluhan'] ?? '';
+    _subjectiveController.text = widget.pasien['keluhan'] ?? '';
   }
 
   @override
   void dispose() {
-    _hphtController.dispose();
-    _hplController.dispose();
-    _usiaController.dispose();
-    _bbController.dispose();
-    _tensiController.dispose();
-    _tfuController.dispose();
-    _djjController.dispose();
-    _posisiController.dispose();
-    _keluhanController.dispose();
-    _diagnosaController.dispose();
-    _tindakanController.dispose();
-    _rencanaController.dispose();
+    _subjectiveController.dispose();
+    _objectiveController.dispose();
+    _assessmentController.dispose();
+    _planController.dispose();
     super.dispose();
   }
 
@@ -95,24 +66,10 @@ class _AdminDetailPelayananScreenState
       final data = await _supabaseService.getRekamMedisByReservasi(widget.pasien['id']);
       if (data != null && mounted) {
         setState(() {
-          if (data['hpht'] != null) {
-            _selectedHpht = DateTime.parse(data['hpht']);
-            _hphtController.text = _formatDateDisplay(_selectedHpht!);
-          }
-          if (data['hpl'] != null) {
-            _selectedHpl = DateTime.parse(data['hpl']);
-            _hplController.text = _formatDateDisplay(_selectedHpl!);
-          }
-          _usiaController.text = data['usia_kehamilan'] ?? '';
-          _bbController.text = (data['berat_badan'] ?? '').toString();
-          _tensiController.text = data['tensi'] ?? '';
-          _tfuController.text = (data['tfu'] ?? '').toString();
-          _djjController.text = (data['djj'] ?? '').toString();
-          _posisiController.text = data['posisi_janin'] ?? '';
-          _keluhanController.text = data['keluhan'] ?? '';
-          _diagnosaController.text = data['diagnosa'] ?? '';
-          _tindakanController.text = data['tindakan'] ?? '';
-          _rencanaController.text = data['rencana_selanjutnya'] ?? '';
+          _subjectiveController.text = data['subjective'] ?? '';
+          _objectiveController.text = data['objective'] ?? '';
+          _assessmentController.text = data['assessment'] ?? '';
+          _planController.text = data['plan'] ?? '';
         });
       }
     } catch (e) {
@@ -120,41 +77,28 @@ class _AdminDetailPelayananScreenState
     }
   }
 
-  String _formatDateDisplay(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
-  }
-
-  void _calculateHpl(DateTime hpht) {
-    setState(() {
-      _selectedHpl = hpht.add(const Duration(days: 280));
-      _hplController.text = _formatDateDisplay(_selectedHpl!);
-      
-      final diff = DateTime.now().difference(hpht).inDays;
-      final weeks = diff ~/ 7;
-      final days = diff % 7;
-      _usiaController.text = "$weeks Minggu $days Hari";
-    });
-  }
-
   Future<void> _saveAndProceed() async {
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Semua kolom pemeriksaan SOAP wajib diisi dan tidak boleh kosong!"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final medData = {
         'reservasi_id': widget.pasien['id'],
         'user_id': widget.pasien['user_id'],
         'bidan_id': widget.pasien['bidan_id'],
-        'hpht': _selectedHpht?.toIso8601String().split('T')[0],
-        'hpl': _selectedHpl?.toIso8601String().split('T')[0],
-        'usia_kehamilan': _usiaController.text,
-        'berat_badan': double.tryParse(_bbController.text),
-        'tensi': _tensiController.text,
-        'tfu': double.tryParse(_tfuController.text),
-        'djj': double.tryParse(_djjController.text),
-        'posisi_janin': _posisiController.text,
-        'keluhan': _keluhanController.text,
-        'diagnosa': _diagnosaController.text,
-        'tindakan': _tindakanController.text,
-        'rencana_selanjutnya': _rencanaController.text,
+        'subjective': _subjectiveController.text.trim(),
+        'objective': _objectiveController.text.trim(),
+        'assessment': _assessmentController.text.trim(),
+        'plan': _planController.text.trim(),
       };
 
       await _supabaseService.tambahRekamMedis(medData);
@@ -170,7 +114,7 @@ class _AdminDetailPelayananScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan rekam medis: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Gagal menyimpan detail pemeriksaan: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -231,10 +175,15 @@ class _AdminDetailPelayananScreenState
                         CircleAvatar(
                           radius: 22,
                           backgroundColor: _accentLight,
-                          child: Text(
-                            ((pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-')[0]).toUpperCase(),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: _accent),
-                          ),
+                          backgroundImage: (pasien['foto_url'] != null && pasien['foto_url'].toString().trim().isNotEmpty)
+                              ? NetworkImage(pasien['foto_url'].toString())
+                              : null,
+                          child: (pasien['foto_url'] == null || pasien['foto_url'].toString().trim().isEmpty)
+                              ? Text(
+                                  ((pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-')[0]).toUpperCase(),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: _accent),
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 12),
                         Column(
@@ -243,7 +192,60 @@ class _AdminDetailPelayananScreenState
                             const Text("PASIEN", style: TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 1)),
                             Text(
                               pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 14),
+                            ),
+                            const SizedBox(height: 4),
+                            Builder(
+                              builder: (context) {
+                                final String patientId = pasien['user_id'] != null 
+                                    ? pasien['user_id'].toString().substring(0, 8).toUpperCase() 
+                                    : '-';
+                                final String tipeLayanan = pasien['tipe_layanan'] ?? 'Klinik';
+                                final bool isHomeCare = tipeLayanan.toLowerCase().contains('home');
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.grey.shade300, width: 0.5),
+                                      ),
+                                      child: Text(
+                                        "ID: #$patientId",
+                                        style: const TextStyle(fontSize: 9, color: _textSecondary, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: isHomeCare 
+                                            ? const Color(0xFFE3F2FD) 
+                                            : const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: isHomeCare 
+                                              ? const Color(0xFF90CAF9) 
+                                              : const Color(0xFFA5D6A7),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        tipeLayanan,
+                                        style: TextStyle(
+                                          fontSize: 9, 
+                                          color: isHomeCare 
+                                              ? const Color(0xFF1565C0) 
+                                              : const Color(0xFF2E7D32), 
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
                             ),
                           ],
                         ),
@@ -316,6 +318,7 @@ class _AdminDetailPelayananScreenState
                     const SizedBox(height: 12),
                     GestureDetector(
                       onTap: () async {
+                        if (_isAlreadyPaid) return;
                         if (!_layananSelesai && widget.pasien['id'] != null) {
                           try {
                             await _supabaseService.updateReservasi(
@@ -376,70 +379,82 @@ class _AdminDetailPelayananScreenState
                       const Divider(),
                       const SizedBox(height: 12),
                       const Text(
-                        "Input Rekam Medis (EHR)",
+                        "Input Detail Pemeriksaan (SOAP)",
                         style: TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 14),
                       ),
                       const SizedBox(height: 16),
-                      _buildDateField("HPHT (Hari Pertama Haid Terakhir)", _hphtController),
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField("HPL (Perkiraan)", _hplController, readOnly: true)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildTextField("Usia Hamil", _usiaController, readOnly: true)),
-                        ],
+                      _buildTextField(
+                        "Subjective (S) - Keluhan & Riwayat Pasien",
+                        _subjectiveController,
+                        maxLines: 3,
+                        hint: "Masukkan keluhan atau kondisi yang dirasakan pasien saat ini...",
+                        readOnly: _isAlreadyPaid,
                       ),
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField("BB (kg)", _bbController, keyboardType: TextInputType.number)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildTextField("Tensi", _tensiController, hint: "110/70")),
-                        ],
+                      _buildTextField(
+                        "Objective (O) - Hasil Pemeriksaan Fisik & Vital Sign",
+                        _objectiveController,
+                        maxLines: 3,
+                        hint: "Tensi, berat badan, suhu, detak jantung, dll...",
+                        readOnly: _isAlreadyPaid,
                       ),
-                      Row(
-                        children: [
-                          Expanded(child: _buildTextField("TFU (cm)", _tfuController, keyboardType: TextInputType.number)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildTextField("DJJ (bpm)", _djjController, keyboardType: TextInputType.number)),
-                        ],
+                      _buildTextField(
+                        "Assessment (A) - Diagnosa & Analisa Medis",
+                        _assessmentController,
+                        maxLines: 3,
+                        hint: "Diagnosa medis atau hasil analisis kondisi pasien...",
+                        readOnly: _isAlreadyPaid,
                       ),
-                      _buildTextField("Posisi Janin", _posisiController, hint: "Kepala Bawah / Sungsang"),
-                      _buildTextField("Keluhan Sekarang", _keluhanController, maxLines: 2),
-                      _buildTextField("Diagnosa / Hasil", _diagnosaController, maxLines: 2),
-                      _buildTextField("Tindakan / Terapi", _tindakanController, maxLines: 2),
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Rencana & Rekomendasi Selanjutnya",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00796B), fontSize: 13),
+                      _buildTextField(
+                        "Plan (P) - Rencana Tindakan & Rekomendasi",
+                        _planController,
+                        maxLines: 3,
+                        hint: "Rencana terapi, pemberian obat, saran, atau jadwal kontrol berikutnya...",
+                        readOnly: _isAlreadyPaid,
                       ),
-                      const SizedBox(height: 8),
-                      _buildTextField("Saran / Jadwal Kontrol Berikutnya", _rencanaController, maxLines: 3, hint: "Contoh: Kontrol lagi tgl 25 Mei, kurangi garam..."),
                     ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: (_layananSelesai && !_isSaving)
-                            ? _saveAndProceed
-                            : null,
-                        icon: _isSaving 
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.arrow_forward_rounded, size: 18),
-                        label: Text(
-                          _isSaving ? "Menyimpan..." : "Lanjutkan ke Pembayaran",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _accent,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey.shade200,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
+                     const SizedBox(height: 24),
+                     Builder(
+                       builder: (context) {
+                         final bool isAlreadyPaid = widget.pasien['status'] == 'Selesai' ||
+                                                    widget.pasien['status_pelayanan'] == 'Selesai & Pulang';
+                         return SizedBox(
+                           width: double.infinity,
+                           child: ElevatedButton.icon(
+                             onPressed: isAlreadyPaid
+                                 ? () {
+                                     ScaffoldMessenger.of(context).showSnackBar(
+                                       const SnackBar(
+                                         content: Text("Pembayaran untuk layanan ini telah selesai dilakukan."),
+                                         backgroundColor: Colors.green,
+                                       ),
+                                     );
+                                   }
+                                 : ((_layananSelesai && !_isSaving)
+                                     ? _saveAndProceed
+                                     : null),
+                             icon: _isSaving 
+                               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                               : Icon(isAlreadyPaid ? Icons.check_circle_rounded : Icons.arrow_forward_rounded, size: 18),
+                             label: Text(
+                               _isSaving 
+                                 ? "Menyimpan..." 
+                                 : (isAlreadyPaid ? "Pembayaran Selesai dilakukan" : "Lanjutkan ke Pembayaran"),
+                               style: const TextStyle(fontWeight: FontWeight.bold),
+                             ),
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: isAlreadyPaid ? const Color(0xFF4CAF50) : _accent,
+                               foregroundColor: Colors.white,
+                               disabledBackgroundColor: Colors.grey.shade200,
+                               padding: const EdgeInsets.symmetric(vertical: 14),
+                               elevation: 0,
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                             ),
+                           ),
+                         );
+                       }
+                     ),
                   ],
                 ),
               ),
@@ -456,7 +471,18 @@ class _AdminDetailPelayananScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textSecondary)),
+          RichText(
+            text: TextSpan(
+              text: label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textSecondary, fontFamily: 'Outfit'),
+              children: const [
+                TextSpan(
+                  text: ' *',
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: controller,
@@ -464,6 +490,12 @@ class _AdminDetailPelayananScreenState
             maxLines: maxLines,
             keyboardType: keyboardType,
             style: const TextStyle(fontSize: 13),
+            validator: (value) {
+              if (!readOnly && (value == null || value.trim().isEmpty)) {
+                return "Kolom ini wajib diisi dan tidak boleh kosong";
+              }
+              return null;
+            },
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -471,6 +503,8 @@ class _AdminDetailPelayananScreenState
               fillColor: readOnly ? Colors.grey[100] : Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
+              errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red, width: 1)),
+              focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
@@ -479,56 +513,5 @@ class _AdminDetailPelayananScreenState
     );
   }
 
-  Widget _buildDateField(String label, TextEditingController targetController) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textSecondary)),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: targetController,
-            readOnly: true,
-            style: const TextStyle(fontSize: 13),
-            onTap: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: _selectedHpht ?? DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: Color(0xFF004D40), // Hijau pekat
-                        onPrimary: Colors.white,
-                        onSurface: Color(0xFF1B2E35),
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (date != null) {
-                setState(() {
-                  _selectedHpht = date;
-                  targetController.text = _formatDateDisplay(date);
-                  _calculateHpl(date);
-                });
-              }
-            },
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.calendar_today, size: 16),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey[300]!)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

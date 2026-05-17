@@ -3,17 +3,10 @@ class RekamMedis {
   final String? reservasiId;
   final String? userId;
   final String? bidanId;
-  final DateTime? hpht;
-  final DateTime? hpl;
-  final String? usiaKehamilan;
-  final double? beratBadan;
-  final String? tensi;
-  final double? tfu;
-  final double? djj;
-  final String? posisiJanin;
-  final String? keluhan;
-  final String? diagnosa;
-  final String? tindakan;
+  final String? subjective;
+  final String? objective;
+  final String? assessment;
+  final String? plan;
   final DateTime? createdAt;
 
   RekamMedis({
@@ -21,17 +14,10 @@ class RekamMedis {
     this.reservasiId,
     this.userId,
     this.bidanId,
-    this.hpht,
-    this.hpl,
-    this.usiaKehamilan,
-    this.beratBadan,
-    this.tensi,
-    this.tfu,
-    this.djj,
-    this.posisiJanin,
-    this.keluhan,
-    this.diagnosa,
-    this.tindakan,
+    this.subjective,
+    this.objective,
+    this.assessment,
+    this.plan,
     this.createdAt,
   });
 
@@ -41,17 +27,10 @@ class RekamMedis {
       reservasiId: json['reservasi_id'],
       userId: json['user_id'],
       bidanId: json['bidan_id'],
-      hpht: json['hpht'] != null ? DateTime.parse(json['hpht']) : null,
-      hpl: json['hpl'] != null ? DateTime.parse(json['hpl']) : null,
-      usiaKehamilan: json['usia_kehamilan'],
-      beratBadan: json['berat_badan']?.toDouble(),
-      tensi: json['tensi'],
-      tfu: json['tfu']?.toDouble(),
-      djj: json['djj']?.toDouble(),
-      posisiJanin: json['posisi_janin'],
-      keluhan: json['keluhan'],
-      diagnosa: json['diagnosa'],
-      tindakan: json['tindakan'],
+      subjective: json['subjective'],
+      objective: json['objective'],
+      assessment: json['assessment'],
+      plan: json['plan'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
     );
   }
@@ -62,17 +41,10 @@ class RekamMedis {
       'reservasi_id': reservasiId,
       'user_id': userId,
       'bidan_id': bidanId,
-      'hpht': hpht?.toIso8601String().split('T')[0],
-      'hpl': hpl?.toIso8601String().split('T')[0],
-      'usia_kehamilan': usiaKehamilan,
-      'berat_badan': beratBadan,
-      'tensi': tensi,
-      'tfu': tfu,
-      'djj': djj,
-      'posisi_janin': posisiJanin,
-      'keluhan': keluhan,
-      'diagnosa': diagnosa,
-      'tindakan': tindakan,
+      'subjective': subjective,
+      'objective': objective,
+      'assessment': assessment,
+      'plan': plan,
     };
   }
 }

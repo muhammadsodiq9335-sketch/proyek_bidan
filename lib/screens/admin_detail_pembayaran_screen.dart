@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_chat_list_screen.dart';
@@ -18,9 +19,14 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
   final SupabaseService _supabaseService = SupabaseService();
   bool _isLoading = false;
   bool _isFetchingServices = false;
+  bool _isFetchingPaymentSettings = true;
+  Map<String, dynamic> _paymentSettings = {};
   int subtotal = 85000;
   List<Map<String, dynamic>> _availableServices = [];
   final List<Map<String, dynamic>> _selectedAdditionalServices = [];
+  String _selectedPaymentMethod = 'Tunai'; 
+  String _selectedBank = 'BCA Syariah';    
+  String _selectedQrisCode = 'A01';        
 
   // ── Design Tokens ──
   static const _bgScaffold = Color(0xFFFCE4EC);
@@ -51,15 +57,57 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     priceStr = priceStr.replaceAll(RegExp(r'[^0-9]'), '');
     subtotal = int.tryParse(priceStr) ?? 85000;
     _fetchAvailableServices();
+    _fetchPaymentSettings();
+  }
+
+  Future<void> _fetchPaymentSettings() async {
+    setState(() => _isFetchingPaymentSettings = true);
+    try {
+      final settings = await _supabaseService.getPaymentSettings();
+      setState(() {
+        _paymentSettings = settings;
+        _selectedBank = settings['bank_name'] ?? 'BCA Syariah';
+        _selectedQrisCode = settings['qris_code'] ?? 'A01';
+      });
+    } catch (e) {
+      debugPrint("Error fetching payment settings: $e");
+    } finally {
+      if (mounted) setState(() => _isFetchingPaymentSettings = false);
+    }
   }
 
   Future<void> _fetchAvailableServices() async {
     setState(() => _isFetchingServices = true);
     try {
       final services = await _supabaseService.getJenisPelayanan();
+      
+      // Ambil daftar nama layanan awal yang dipisahkan oleh koma
+      final String initialLayananStr1 = (widget.pasien['layanan'] ?? '').toString();
+      final String initialLayananStr2 = (widget.pasien['nama_layanan'] ?? '').toString();
+      
+      final List<String> initialLayananNames = [];
+      
+      if (initialLayananStr1.isNotEmpty) {
+        initialLayananNames.addAll(
+          initialLayananStr1.split(',').map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty)
+        );
+      }
+      if (initialLayananStr2.isNotEmpty) {
+        initialLayananNames.addAll(
+          initialLayananStr2.split(',').map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty)
+        );
+      }
+
       setState(() {
-        // Jangan tampilkan layanan yang sudah dipilih di reservasi awal
-        _availableServices = services.where((s) => s['id'] != widget.pasien['layanan_id']).toList();
+        // Jangan tampilkan layanan yang sudah dipilih di reservasi awal (baik kecocokan ID maupun multi-nama)
+        _availableServices = services.where((s) {
+          final isSameId = s['id'] == widget.pasien['layanan_id'];
+          
+          final String currentServiceName = (s['nama'] ?? '').toString().trim().toLowerCase();
+          final isSameName = initialLayananNames.contains(currentServiceName);
+          
+          return !isSameId && !isSameName;
+        }).toList();
       });
     } catch (e) {
       debugPrint("Error fetching services: $e");
@@ -88,12 +136,14 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
             userId: widget.pasien['user_id'].toString(),
             title: 'Pelayanan Selesai ✨',
             message: 'Pelayanan untuk ${widget.pasien['layanan']} telah selesai dan lunas. Yuk berikan bintang dan ulasan terbaik Bunda!',
+            screen: 'riwayat',
           );
         }
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text("Pembayaran berhasil dikonfirmasi"), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
-        Navigator.pop(context);
+        Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+        Navigator.pushNamed(context, '/admin_ringkasan');
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
@@ -125,62 +175,176 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
         centerTitle: true,
         leading: IconButton(icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary), onPressed: () => Navigator.pop(context)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          // ── INFO PASIEN ──
-          _cardContainer(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('INFORMASI PASIEN', style: TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 0.8, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text(pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _textPrimary)),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity, padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: _bgInner, borderRadius: BorderRadius.circular(12)),
+      body: _isFetchingPaymentSettings
+          ? const Center(child: CircularProgressIndicator(color: _accent))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(children: [
-                const Text("Layanan yang dibayar pasien :", style: TextStyle(fontSize: 10, color: _textSecondary)),
-                const SizedBox(height: 4),
-                Text(pasien['layanan'] ?? '-', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(_formatCurrency(subtotal), style: const TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 14)),
-              ]),
-            ),
-          ])),
+          // ── INFO PASIEN ──
+          _cardContainer(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: _accentLight,
+                    backgroundImage: (pasien['foto_url'] != null && pasien['foto_url'].toString().trim().isNotEmpty)
+                        ? NetworkImage(pasien['foto_url'].toString())
+                        : null,
+                    child: (pasien['foto_url'] == null || pasien['foto_url'].toString().trim().isEmpty)
+                        ? Text(
+                            ((pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-')[0]).toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 18),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('INFORMASI PASIEN', style: TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 0.8, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(
+                          pasien['nama_pasien'] ?? pasien['namaPasien'] ?? '-',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        Builder(
+                          builder: (context) {
+                            final String patientId = pasien['user_id'] != null 
+                                ? pasien['user_id'].toString().substring(0, 8).toUpperCase() 
+                                : '-';
+                            final String tipeLayanan = pasien['tipe_layanan'] ?? 'Klinik';
+                            final bool isHomeCare = tipeLayanan.toLowerCase().contains('home');
+                            final String tanggal = pasien['tanggal'] ?? '-';
+                            
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.grey.shade300, width: 0.5),
+                                      ),
+                                      child: Text(
+                                        "ID: #$patientId",
+                                        style: const TextStyle(fontSize: 9, color: _textSecondary, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: isHomeCare 
+                                            ? const Color(0xFFE3F2FD) 
+                                            : const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: isHomeCare 
+                                              ? const Color(0xFF90CAF9) 
+                                              : const Color(0xFFA5D6A7),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        tipeLayanan,
+                                        style: TextStyle(
+                                          fontSize: 9, 
+                                          color: isHomeCare 
+                                              ? const Color(0xFF1565C0) 
+                                              : const Color(0xFF2E7D32), 
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today_rounded, size: 11, color: _textSecondary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "Tanggal Pemeriksaan: $tanggal",
+                                      style: const TextStyle(fontSize: 11, color: _textSecondary, fontWeight: FontWeight.w500),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity, padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: _bgInner, borderRadius: BorderRadius.circular(12)),
+                child: Column(children: [
+                  const Text("Layanan yang dibayar pasien :", style: TextStyle(fontSize: 10, color: _textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(pasien['layanan'] ?? '-', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(_formatCurrency(subtotal), style: const TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 14)),
+                ]),
+              ),
+            ],
+          )),
 
           const SizedBox(height: 14),
 
           // ── LAYANAN TAMBAHAN ──
           _cardContainer(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Row(children: [
-                Icon(Icons.add_circle_outline_rounded, size: 18, color: _accent),
-                SizedBox(width: 8),
-                Text("Layanan Tambahan", style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
-              ]),
+              const Text("Layanan Tambahan", style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
               if (!_isAlreadyPaid)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: _accentLight, borderRadius: BorderRadius.circular(8)),
-                  child: const Text('Tambah\nLayanan', textAlign: TextAlign.center, style: TextStyle(fontSize: 9, color: _accent, fontWeight: FontWeight.bold)),
+                TextButton.icon(
+                  onPressed: _showAddServiceSheet,
+                  icon: const Icon(Icons.add_circle_rounded, size: 16, color: _accent),
+                  label: const Text('Tambah', style: TextStyle(fontSize: 12, color: _accent, fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(
+                    backgroundColor: _accentLight,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
             ]),
             const SizedBox(height: 4),
             Text(_isAlreadyPaid ? "Pembayaran sudah selesai" : "Pilih layanan tambahan jika diperlukan", style: const TextStyle(fontSize: 11, color: _textSecondary)),
             const SizedBox(height: 14),
-            if (_isFetchingServices)
-              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: _accent)))
-            else if (_availableServices.isEmpty)
-              const Text("Tidak ada layanan tambahan tersedia", style: TextStyle(fontSize: 12, color: _textSecondary))
+            if (_selectedAdditionalServices.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 14, color: _textSecondary),
+                    SizedBox(width: 6),
+                    Text("Belum ada layanan tambahan ditambahkan", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                  ],
+                ),
+              )
             else
-              ..._availableServices.map((service) {
-                final isSelected = _selectedAdditionalServices.any((s) => s['id'] == service['id']);
-                return Padding(padding: const EdgeInsets.only(bottom: 10), child: _serviceItem(
-                  title: service['nama'] ?? '-',
-                  durasi: service['deskripsi'] ?? service['durasi'] ?? '-',
-                  harga: int.tryParse(service['harga']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0,
-                  isSelected: isSelected,
-                  onTap: () => _toggleService(service),
-                ));
+              ..._selectedAdditionalServices.map((service) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _selectedServiceItem(
+                    title: service['nama'] ?? '-',
+                    durasi: service['deskripsi'] ?? service['durasi'] ?? '-',
+                    harga: int.tryParse(service['harga']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0,
+                    onDelete: () => _toggleService(service),
+                  ),
+                );
               }),
           ])),
 
@@ -211,6 +375,11 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
             ]),
           ])),
 
+          const SizedBox(height: 14),
+
+          // ── METODE PEMBAYARAN ──
+          _buildMetodePembayaranSection(),
+
           const SizedBox(height: 20),
 
           // ── BUTTON ──
@@ -240,26 +409,834 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     );
   }
 
+  Widget _buildMetodePembayaranSection() {
+    final String bankName = _paymentSettings['bank_name'] ?? 'BCA Syariah';
+    final String rekNumber = _paymentSettings['rek_number'] ?? '0631999999';
+    final String rekName = _paymentSettings['rek_name'] ?? 'A.n ANNISA';
+    final String qrisNmid = _paymentSettings['qris_nmid'] ?? 'ID1026496531744';
+    final String qrisName = _paymentSettings['qris_name'] ?? 'TAMAN IBU BIDAN ANNISA - HOME SERVICE';
+    final String qrisCode = _paymentSettings['qris_code'] ?? 'A01';
+    final String qrisUrl = _paymentSettings['qris_url'] ?? '';
+
+    return _cardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.payment_rounded, size: 18, color: _accent),
+              SizedBox(width: 8),
+              Text(
+                "Metode Pembayaran",
+                style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          
+          // Row Pilihan (Tabs)
+          Row(
+            children: [
+              _buildPaymentTab('Tunai', Icons.money_rounded),
+              const SizedBox(width: 8),
+              _buildPaymentTab('Transfer', Icons.account_balance_rounded),
+              const SizedBox(width: 8),
+              _buildPaymentTab('QRIS', Icons.qr_code_2_rounded),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Detail Berdasarkan Pilihan
+          if (_selectedPaymentMethod == 'Tunai')
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF81C784).withOpacity(0.3), width: 1),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32), size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Pembayaran dilakukan secara tunai (cash) langsung kepada Bidan.",
+                      style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (_selectedPaymentMethod == 'Transfer') ...[
+            const Text(
+              "Rekening Transfer Tujuan :",
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textSecondary),
+            ),
+            const SizedBox(height: 6),
+            // Tampilan info rekening
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _bgInner,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _accent.withOpacity(0.1), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        bankName.toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 13),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: rekNumber));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text("Nomor rekening berhasil disalin!"),
+                              backgroundColor: _accent,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _accentLight,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.copy_rounded, size: 12, color: _accent),
+                              SizedBox(width: 4),
+                              Text(
+                                "Salin",
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _accent),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Nomor Rekening:",
+                    style: TextStyle(fontSize: 10, color: _textSecondary),
+                  ),
+                  Text(
+                    rekNumber,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "Nama Penerima:",
+                    style: TextStyle(fontSize: 10, color: _textSecondary),
+                  ),
+                  Text(
+                    rekName,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textPrimary),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (_selectedPaymentMethod == 'QRIS') ...[
+            const Text(
+              "QRIS Pembayaran Klinik :",
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _textSecondary),
+            ),
+            const SizedBox(height: 6),
+            // Tampilan QRIS Gambar
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _bgInner,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _accent.withOpacity(0.1), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    qrisName.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 11),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "NMID : $qrisNmid",
+                    style: const TextStyle(color: _textSecondary, fontSize: 10, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "Kode: $qrisCode",
+                    style: const TextStyle(color: _accent, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  
+                  // Frame QRIS Gambar
+                  GestureDetector(
+                    onTap: () => _showLargeQRISDialog(context, qrisUrl, qrisName, qrisNmid, qrisCode),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: _cardShadow,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: qrisUrl.isNotEmpty
+                              ? Image.network(
+                                  qrisUrl,
+                                  height: 260,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/qris.jpg',
+                                      height: 260,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return _qrisErrorPlaceholder();
+                                      },
+                                    );
+                                  },
+                                )
+                              : Image.asset(
+                                  'assets/images/qris.jpg',
+                                  height: 260,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _qrisErrorPlaceholder();
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => _showLargeQRISDialog(context, qrisUrl, qrisName, qrisNmid, qrisCode),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.zoom_in_rounded, size: 14, color: _accent),
+                        SizedBox(width: 4),
+                        Text(
+                          "Ketuk gambar untuk memperbesar QRIS",
+                          style: TextStyle(color: _accent, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _qrisErrorPlaceholder() {
+    return Container(
+      height: 150,
+      color: Colors.grey.shade100,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.broken_image_rounded, color: Colors.grey, size: 36),
+          SizedBox(height: 8),
+          Text(
+            "Gagal memuat gambar QRIS\nPastikan aset terdaftar",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLargeQRISDialog(BuildContext context, String qrisUrl, String qrisName, String qrisNmid, String qrisCode) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+              ScaleTransition(
+                scale: CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.easeOutBack,
+                ),
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 8)),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Scan QRIS Pembayaran",
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textPrimary),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  qrisName.toUpperCase(),
+                                  style: const TextStyle(fontSize: 11, color: _accent, fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close_rounded, color: _textSecondary),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey.shade100,
+                              padding: const EdgeInsets.all(8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      InteractiveViewer(
+                        minScale: 1.0,
+                        maxScale: 3.0,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200, width: 1),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: qrisUrl.isNotEmpty
+                                ? Image.network(
+                                    qrisUrl,
+                                    width: double.infinity,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/qris.jpg',
+                                        width: double.infinity,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return _qrisErrorPlaceholder();
+                                        },
+                                      );
+                                    },
+                                  )
+                                : Image.asset(
+                                    'assets/images/qris.jpg',
+                                    width: double.infinity,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return _qrisErrorPlaceholder();
+                                    },
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _bgInner,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              "NMID: $qrisNmid",
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _textPrimary),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "Kode: $qrisCode",
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: _textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.zoom_in_rounded, size: 14, color: _textSecondary),
+                          SizedBox(width: 6),
+                          Text(
+                            "Gunakan 2 jari untuk memperbesar gambar",
+                            style: TextStyle(fontSize: 10, color: _textSecondary, fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentTab(String method, IconData icon) {
+    final isSelected = _selectedPaymentMethod == method;
+    return Expanded(
+      child: GestureDetector(
+        onTap: _isAlreadyPaid ? null : () => setState(() => _selectedPaymentMethod = method),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? _accent : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? _accent : Colors.grey.shade300,
+              width: 1.2,
+            ),
+            boxShadow: isSelected ? _cardShadow : null,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : _textSecondary,
+                size: 20,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                method,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : _textPrimary,
+                  fontFamily: 'Outfit',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _cardContainer({required Widget child}) {
     return Container(width: double.infinity, padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(_cardRadius), boxShadow: _cardShadow), child: child);
   }
 
-  Widget _serviceItem({required String title, required String durasi, required int harga, required bool isSelected, required VoidCallback onTap}) {
-    return GestureDetector(onTap: onTap, child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200), padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: isSelected ? _accentLight : _bgInner, borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? _accent : Colors.transparent, width: 1.5)),
+  Widget _selectedServiceItem({required String title, required String durasi, required int harga, required VoidCallback onDelete}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _bgInner,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _accent.withOpacity(0.1), width: 1),
+      ),
       child: Row(children: [
-        Container(width: 24, height: 24, decoration: BoxDecoration(color: isSelected ? _accent : Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: isSelected ? _accent : Colors.grey.shade300, width: 2)),
-          child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null),
-        const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? _accent : _textPrimary)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
+          const SizedBox(height: 2),
           Text(durasi, style: const TextStyle(fontSize: 11, color: _textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
         ])),
-        Text(_formatCurrency(harga), style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, fontSize: 12, color: isSelected ? _accent : _textPrimary)),
+        const SizedBox(width: 8),
+        Text(_formatCurrency(harga), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _accent)),
+        const SizedBox(width: 12),
+        if (!_isAlreadyPaid)
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+            onPressed: onDelete,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 20,
+          ),
       ]),
-    ));
+    );
+  }
+
+  void _showAddServiceSheet() {
+    String searchQuery = "";
+    bool isHomeCareTab = false;
+    final TextEditingController searchController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filteredServices = _availableServices.where((service) {
+              final nama = (service['nama'] ?? '').toString().toLowerCase();
+              final deskripsi = (service['deskripsi'] ?? service['durasi'] ?? '').toString().toLowerCase();
+              final query = searchQuery.toLowerCase();
+              final matchesSearch = nama.contains(query) || deskripsi.contains(query);
+
+              final isHomeCareService = service['is_home_care'] == true;
+              final matchesTab = isHomeCareService == isHomeCareTab;
+
+              return matchesSearch && matchesTab;
+            }).toList();
+
+            return Container(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Pilih Layanan Tambahan",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: _textPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Search Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: (val) {
+                        setModalState(() {
+                          searchQuery = val;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Cari layanan...",
+                        hintStyle: const TextStyle(color: _textSecondary, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search_rounded, color: _textSecondary, size: 20),
+                        suffixIcon: searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, color: _textSecondary, size: 18),
+                                onPressed: () {
+                                  searchController.clear();
+                                  setModalState(() {
+                                    searchQuery = "";
+                                  });
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Tab Toggle
+                  Container(
+                    width: double.infinity,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                isHomeCareTab = false;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: !isHomeCareTab ? _accent : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                "Layanan Klinik",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: !isHomeCareTab ? Colors.white : _textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                isHomeCareTab = true;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: isHomeCareTab ? _accent : Colors.transparent,
+                                borderRadius: BorderRadius.circular(9),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                "Home Care",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isHomeCareTab ? Colors.white : _textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // List
+                  Expanded(
+                    child: _isFetchingServices
+                        ? const Center(child: CircularProgressIndicator(color: _accent))
+                        : filteredServices.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade300),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      "Layanan tidak ditemukan",
+                                      style: TextStyle(color: _textSecondary, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: filteredServices.length,
+                                itemBuilder: (context, index) {
+                                  final service = filteredServices[index];
+                                  final isSelected = _selectedAdditionalServices.any((s) => s['id'] == service['id']);
+                                  
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _modalServiceItem(
+                                      title: service['nama'] ?? '-',
+                                      deskripsi: service['deskripsi'] ?? service['durasi'] ?? '-',
+                                      harga: int.tryParse(service['harga']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0,
+                                      kategori: service['kategori'] ?? 'Layanan',
+                                      isSelected: isSelected,
+                                      onTap: () {
+                                        _toggleService(service);
+                                        setModalState(() {});
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Selesai Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text(
+                        "Selesai",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _modalServiceItem({
+    required String title,
+    required String deskripsi,
+    required int harga,
+    required String kategori,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? _accent : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected ? _accent.withOpacity(0.04) : Colors.black.withOpacity(0.01),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    deskripsi,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: _textSecondary,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatCurrency(harga),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: _accent,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFCE4EC),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          kategori,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: _accent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isSelected ? _accent : Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isSelected ? _accent : Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _rowHarga(String title, int value, {bool isSmall = false}) {
