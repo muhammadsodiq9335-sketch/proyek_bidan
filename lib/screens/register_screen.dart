@@ -38,6 +38,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF004D40),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1B2E35),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -188,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: (val) {
                         setState(() => isChecked = val ?? false);
                       },
-                      activeColor: const Color(0xFFAED581),
+                      activeColor: const Color(0xFF004D40),
                       side: const BorderSide(color: Colors.black26),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
@@ -330,7 +342,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAED581),
+                    backgroundColor: const Color(0xFF004D40),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

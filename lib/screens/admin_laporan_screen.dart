@@ -17,6 +17,8 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
   List<Map<String, dynamic>> _allData = [];
   bool _isLoading = true;
   String _filterType = 'Bulanan'; // Harian, Bulanan, Tahunan
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void initState() {
@@ -33,8 +35,50 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
     });
   }
 
-  double get _totalRevenue => _allData.fold(0, (sum, item) => sum + (item['harga'] ?? 0));
-  int get _totalPatients => _allData.length;
+  List<Map<String, dynamic>> get _filteredData {
+    if (_startDate == null && _endDate == null) {
+      return _allData;
+    }
+    
+    return _allData.where((item) {
+      if (item['tanggal'] == null) return false;
+      try {
+        final date = DateTime.parse(item['tanggal']);
+        final normalizedDate = DateTime(date.year, date.month, date.day);
+        
+        if (_startDate != null) {
+          final start = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
+          if (normalizedDate.isBefore(start)) return false;
+        }
+        
+        if (_endDate != null) {
+          final end = DateTime(_endDate!.year, _endDate!.month, _endDate!.day);
+          if (normalizedDate.isAfter(end)) return false;
+        }
+        
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  double get _totalRevenue => _filteredData.fold(0, (sum, item) => sum + (item['harga'] ?? 0));
+  int get _totalPatients => _filteredData.length;
+
+  String _getPeriodText() {
+    if (_startDate == null && _endDate == null) {
+      return 'Semua Periode';
+    }
+    final df = DateFormat('dd MMM yyyy');
+    if (_startDate != null && _endDate != null) {
+      return '${df.format(_startDate!)} - ${df.format(_endDate!)}';
+    } else if (_startDate != null) {
+      return 'Mulai ${df.format(_startDate!)}';
+    } else {
+      return 'Sampai ${df.format(_endDate!)}';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +103,8 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  _buildDateFilterSection(),
+                  const SizedBox(height: 20),
                   _buildSummarySection(),
                   const SizedBox(height: 24),
                   _buildChartSection(),
@@ -67,6 +113,178 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildDateFilterSection() {
+    final df = DateFormat('dd MMM yyyy');
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.date_range_rounded, color: Color(0xFFC2185B), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Filter Periode Laporan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B2E35)),
+                  ),
+                ],
+              ),
+              if (_startDate != null || _endDate != null)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _startDate = null;
+                      _endDate = null;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Reset',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFC2185B), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _startDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                      builder: (ctx, child) => Theme(
+                        data: Theme.of(ctx).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFFC2185B),
+                            onPrimary: Colors.white,
+                            onSurface: Color(0xFF1B2E35),
+                          ),
+                        ),
+                        child: child!,
+                      ),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _startDate = picked;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFCDD2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFFC2185B)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Dari Tanggal', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _startDate != null ? df.format(_startDate!) : 'Pilih Tanggal',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B2E35)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _endDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                      builder: (ctx, child) => Theme(
+                        data: Theme.of(ctx).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: Color(0xFFC2185B),
+                            onPrimary: Colors.white,
+                            onSurface: Color(0xFF1B2E35),
+                          ),
+                        ),
+                        child: child!,
+                      ),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDate = picked;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFCDD2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_month_rounded, size: 16, color: Color(0xFFC2185B)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Sampai Tanggal', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _endDate != null ? df.format(_endDate!) : 'Pilih Tanggal',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B2E35)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -167,7 +385,7 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
 
   Widget _buildChart() {
     final Map<String, int> groupedData = {};
-    for (var item in _allData) {
+    for (var item in _filteredData) {
       final date = DateTime.parse(item['tanggal']);
       String key;
       if (_filterType == 'Harian') {
@@ -229,45 +447,58 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
       children: [
         const Text('Data Terakhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 12),
-        ..._allData.reversed.take(10).map((item) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.pink.shade50, shape: BoxShape.circle),
-                child: const Icon(Icons.assignment_turned_in_rounded, color: Color(0xFFC2185B), size: 20),
+        if (_filteredData.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            width: double.infinity,
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            child: const Center(
+              child: Text(
+                'Tidak ada data pada periode ini',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          )
+        else
+          ..._filteredData.reversed.take(10).map((item) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.pink.shade50, shape: BoxShape.circle),
+                  child: const Icon(Icons.assignment_turned_in_rounded, color: Color(0xFFC2185B), size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item['nama_pasien'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(item['layanan'] ?? '-', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(item['nama_pasien'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(item['layanan'] ?? '-', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(currencyFormat.format(item['harga'] ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00897B))),
+                    Text(item['tanggal'] ?? '-', style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(currencyFormat.format(item['harga'] ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00897B))),
-                  Text(item['tanggal'] ?? '-', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                ],
-              ),
-            ],
-          ),
-        )),
+              ],
+            ),
+          )),
       ],
     );
   }
 
   Future<void> _generatePdf() async {
     final pdfBytes = await PdfService.generateLaporan(
-      data: _allData,
-      period: 'Januari - Desember 2026', // Idealnya dinamis berdasarkan filter
+      data: _filteredData,
+      period: _getPeriodText(),
       totalRevenue: _totalRevenue,
       totalPatients: _totalPatients,
     );

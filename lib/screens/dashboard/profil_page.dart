@@ -91,10 +91,6 @@ class ProfilPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildProfileMenu(context, Icons.favorite_border,
-                      "Data Kesehatan Kehamilan",
-                      isComingSoon: true),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildProfileMenu(
                     context,
                     Icons.history,

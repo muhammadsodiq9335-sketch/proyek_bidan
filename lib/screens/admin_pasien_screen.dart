@@ -177,7 +177,13 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2030),
                     builder: (ctx, child) => Theme(
-                      data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: _accent)),
+                      data: Theme.of(ctx).copyWith(
+                        colorScheme: const ColorScheme.light(
+                          primary: Color(0xFF004D40), // Hijau pekat
+                          onPrimary: Colors.white,
+                          onSurface: Color(0xFF1B2E35),
+                        ),
+                      ),
                       child: child!,
                     ),
                   );
@@ -446,7 +452,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),

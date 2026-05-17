@@ -86,11 +86,20 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
               const SnackBar(content: Text('Foto profil berhasil diperbarui')),
             );
           }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Gagal upload. Pastikan bucket "avatars" sudah ada di Supabase.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal upload foto: $e')),
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
       } finally {
@@ -109,7 +118,7 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF00897B),
+              primary: Color(0xFF004D40),
               onPrimary: Colors.white,
               onSurface: Color(0xFF1B2E35),
             ),
@@ -227,10 +236,6 @@ class _PengaturanAkunScreenState extends State<PengaturanAkunScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-          ),
           TextButton(
             onPressed: () async {
               if (AuthService.currentUserProfile != null) {

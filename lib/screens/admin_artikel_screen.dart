@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
 import '../models/artikel_pdf.dart';
-import 'pdf_viewer_screen.dart';
 
 class AdminArtikelScreen extends StatefulWidget {
   const AdminArtikelScreen({super.key});
@@ -20,24 +20,93 @@ class _AdminArtikelScreenState extends State<AdminArtikelScreen> {
   static const _accent = Color(0xFFC2185B);
   static const _cardShadow = [BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3))];
 
-  Future<void> _pickPDF() async {
-    try {
-      setState(() => _isLoading = true);
-      FilePickerResult? result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-      if (result != null && result.files.single.path != null) {
-        String fileName = result.files.single.name;
-        String filePath = result.files.single.path!;
-        await _supabaseService.tambahArtikelPdf({'nama_file': fileName, 'url_pdf': filePath, 'tanggal_upload': DateTime.now().toIso8601String()});
-        setState(() {});
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('File berhasil ditambahkan!'), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
-        }
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memilih file: $e')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  Future<void> _addLink() async {
+    final TextEditingController urlController = TextEditingController();
+    final TextEditingController titleController = TextEditingController();
+    bool isFetching = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Tambah Link Artikel', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: urlController,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan Link Kemenkes',
+                  labelText: 'Link URL',
+                  suffixIcon: IconButton(
+                    icon: isFetching 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.sync_rounded),
+                    onPressed: () async {
+                      final url = urlController.text.trim();
+                      if (url.isEmpty) return;
+                      setDialogState(() => isFetching = true);
+                      try {
+                        final response = await http.get(Uri.parse(url));
+                        if (response.statusCode == 200) {
+                          final match = RegExp(r'<title>(.*?)<\/title>').firstMatch(response.body);
+                          if (match != null) {
+                            titleController.text = match.group(1) ?? '';
+                          }
+                        }
+                      } catch (e) {
+                        print("Error fetch title: $e");
+                      }
+                      setDialogState(() => isFetching = false);
+                    },
+                  ),
+                ),
+                onChanged: (val) {
+                  // Optional: auto fetch
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  hintText: 'Judul akan muncul otomatis',
+                  labelText: 'Judul Artikel',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            ElevatedButton(
+              onPressed: () async {
+                final url = urlController.text.trim();
+                final title = titleController.text.trim();
+                if (url.isEmpty || title.isEmpty) return;
+                
+                setState(() => _isLoading = true);
+                Navigator.pop(context);
+                
+                try {
+                  await _supabaseService.tambahArtikelPdf({
+                    'nama_file': title,
+                    'url_pdf': url,
+                    'tanggal_upload': DateTime.now().toIso8601String()
+                  });
+                  setState(() {});
+                } catch (e) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                } finally {
+                  if (mounted) setState(() => _isLoading = false);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _deleteArtikel(String id, String fileName) {
@@ -81,12 +150,17 @@ class _AdminArtikelScreenState extends State<AdminArtikelScreen> {
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: _cardShadow),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(12)),
-                        child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFE53935))),
+                      leading: Container(width: 44, height: 44, decoration: BoxDecoration(color: const Color(0xFFE0F2F1), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(Icons.language_rounded, color: Color(0xFF00897B))),
                       title: Text(artikel.namaFile, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      subtitle: Padding(padding: const EdgeInsets.only(top: 4), child: Text("Diunggah: $dateString", style: const TextStyle(fontSize: 12, color: _textSecondary))),
+                      subtitle: Padding(padding: const EdgeInsets.only(top: 4), child: Text("Ditambahkan: $dateString", style: const TextStyle(fontSize: 12, color: _textSecondary))),
                       trailing: IconButton(icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFE53935)), onPressed: () => _deleteArtikel(artikel.id, artikel.namaFile)),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PdfViewerScreen(filePath: artikel.urlPdf, fileName: artikel.namaFile))),
+                      onTap: () async {
+                        final url = Uri.parse(artikel.urlPdf);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        }
+                      },
                     ),
                   );
                 },
@@ -94,18 +168,18 @@ class _AdminArtikelScreenState extends State<AdminArtikelScreen> {
             },
           ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _pickPDF, backgroundColor: _accent, foregroundColor: Colors.white, elevation: 4,
-        icon: const Icon(Icons.upload_file_rounded), label: const Text('Upload PDF', style: TextStyle(fontWeight: FontWeight.bold))),
+        onPressed: _addLink, backgroundColor: _accent, foregroundColor: Colors.white, elevation: 4,
+        icon: const Icon(Icons.add_link_rounded), label: const Text('Tambah Link', style: TextStyle(fontWeight: FontWeight.bold))),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.picture_as_pdf_outlined, size: 64, color: Colors.grey.shade300),
+      Icon(Icons.language_rounded, size: 64, color: Colors.grey.shade300),
       const SizedBox(height: 16),
       const Text("Belum ada artikel", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
       const SizedBox(height: 8),
-      const Text("Klik tombol di bawah untuk mengunggah PDF", style: TextStyle(color: _textSecondary, fontSize: 13)),
+      const Text("Klik tombol di bawah untuk menambah link Kemenkes", style: TextStyle(color: _textSecondary, fontSize: 13)),
     ]));
   }
 }

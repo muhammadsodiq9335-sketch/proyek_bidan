@@ -64,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'BERANDA',
+            label: 'DASHBOARD',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month_outlined),

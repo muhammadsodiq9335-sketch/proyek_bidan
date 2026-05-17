@@ -106,6 +106,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
+
             // ===== INFO =====
             Container(
               padding: const EdgeInsets.all(12),
@@ -120,7 +121,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Dengan menekan tombol konfirmasi, Anda menyetujui jadwal dan ketentuan reservasi yang berlaku di Klinik Bidan Mandiri Salsah Amalia.',
+                      'Dengan menekan tombol konfirmasi, Anda menyetujui jadwal dan ketentuan reservasi yang berlaku di Taman Ibu.',
                       style: TextStyle(
                           fontSize: 11,
                           color: Color(0xFF00695C),
@@ -177,7 +178,8 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                       payload['bidan_id'] = bidanId;
                     }
 
-                    await supabaseService.tambahReservasi(payload);
+                    final newReservasi = await supabaseService.tambahReservasi(payload);
+                    final reservasiId = newReservasi['id'].toString();
 
                     // Tambahkan Notifikasi untuk Pasien
                     await supabaseService.tambahNotifikasi(
@@ -199,6 +201,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                           tanggal: _getFormattedDate(),
                           isHomeCare: isHomeCare,
                           harga: "Rp $hargaTotal",
+                          reservasiId: reservasiId,
                         ),
                       ),
                       (route) => route.isFirst,
@@ -213,7 +216,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFAED581),
+                  backgroundColor: const Color(0xFF004D40),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
@@ -268,7 +271,12 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           isHomeCare ? 'Home Care (Kunjungan Rumah)' : 'Datang ke Klinik',
         ),
         const Divider(height: 16, color: Color(0xFFF5F5F5)),
-        _buildDetailRow(Icons.payments_outlined, 'Total Harga', 'Rp $hargaTotal'),
+        _buildDetailRow(
+          Icons.payments_outlined,
+          'Total Harga',
+          'Rp $hargaTotal',
+          subtitle: 'Pembayaran dapat dilakukan melalui Transfer, Cash, dan QRIS',
+        ),
       ],
     );
   }
@@ -385,6 +393,87 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildPaymentBadge(String text, {bool isClickable = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F8E9),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: isClickable ? const Color(0xFF004D40) : const Color(0xFFC5E1A5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isClickable ? const Color(0xFF004D40) : const Color(0xFF33691E)),
+          ),
+          if (isClickable) ...[
+            const SizedBox(width: 4),
+            const Icon(Icons.qr_code_2, size: 12, color: Color(0xFF004D40)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showQRISDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.all(16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Scan QRIS untuk Bayar', style: TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/qris.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 300,
+                    width: double.infinity,
+                    color: Colors.grey[100],
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+                        SizedBox(height: 8),
+                        Text('Gambar QRIS belum tersedia', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Taman Ibu Bidan Annisa',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const Text(
+              'Pastikan nominal sesuai dengan total reservasi',
+              style: TextStyle(fontSize: 11, color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCard(
       {required String title, required List<Widget> children}) {
     return Container(
@@ -414,7 +503,7 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, {String? subtitle}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -443,6 +532,18 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF00897B),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -74,7 +74,6 @@ class _BerandaPageState extends State<BerandaPage> {
               _buildHeroBanner(context),
               _buildBidanSection(),
               _buildReservasiTerakhir(context),
-              _buildTipsSection(),
               const SizedBox(height: 24),
             ],
           ),
@@ -321,11 +320,14 @@ class _BerandaPageState extends State<BerandaPage> {
               ),
               if (hasReservasi)
                 GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const RiwayatReservasiScreen()),
-                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const RiwayatReservasiScreen()),
+                    );
+                    _loadData();
+                  },
                   child: const Text(
                     "Lihat Semua →",
                     style: TextStyle(
@@ -517,21 +519,13 @@ class _BerandaPageState extends State<BerandaPage> {
             padding: const EdgeInsets.only(right: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
+              children: const [
+                Text(
                   'Bidan Kami',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1B2E35),
-                  ),
-                ),
-                Text(
-                  '${_bidanList.length} Bidan Aktif',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF00897B),
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -619,15 +613,6 @@ class _BerandaPageState extends State<BerandaPage> {
                       : _buildFallbackAvatar(),
                   ),
                 ),
-                Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF43A047),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -655,133 +640,5 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  // ── Tips Kesehatan ──
-  Widget _buildTipsSection() {
-    final List<Map<String, String>> articles = [
-      {
-        "category": "NUTRITION",
-        "title": "Optimal diet for the second trimester",
-        "desc": "Fueling your baby's growth with...",
-        "image":
-            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=300&q=80",
-      },
-      {
-        "category": "MENTAL WELLNESS",
-        "title": "The art of the Fourth Trimester transition",
-        "desc": "Preparing your home and mind...",
-        "image":
-            "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=300&q=80",
-      },
-      {
-        "category": "KESEHATAN",
-        "title": "Persiapan melahirkan yang perlu kamu tahu",
-        "desc": "Panduan lengkap untuk persiapan...",
-        "image":
-            "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=300&q=80",
-      },
-    ];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Tips Kesehatan Bunda",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2E35),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...articles.map((article) => _buildArticleCard(article)).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildArticleCard(Map<String, String> article) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(14),
-              bottomLeft: Radius.circular(14),
-            ),
-            child: Image.network(
-              article["image"]!,
-              width: 90,
-              height: 90,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 90,
-                height: 90,
-                color: const Color(0xFFEEEEEE),
-                child: const Icon(Icons.image_outlined, color: Colors.black26),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2F1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      article["category"]!,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF00897B),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    article["title"]!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B2E35),
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    article["desc"]!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.black45,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
 }

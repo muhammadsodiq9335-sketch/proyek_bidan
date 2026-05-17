@@ -276,6 +276,55 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
                 ],
               ],
             ),
+          ] else if (status == 'Menunggu Persetujuan') ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Batalkan Reservasi?'),
+                      content: const Text('Apakah Bunda yakin ingin membatalkan reservasi ini?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Kembali')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    try {
+                      await supabaseService.updateStatusReservasi(res['id'].toString(), 'Dibatalkan');
+                      if (mounted) {
+                        setState(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Reservasi berhasil dibatalkan')),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal membatalkan: $e')),
+                        );
+                      }
+                    }
+                  }
+                },
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Batalkan Reservasi', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
           ],
           if (status == 'Bidan Diganti') ...[
             const SizedBox(height: 16),

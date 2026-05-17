@@ -534,7 +534,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),

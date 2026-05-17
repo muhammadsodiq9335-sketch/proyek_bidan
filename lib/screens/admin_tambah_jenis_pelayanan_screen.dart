@@ -164,7 +164,7 @@ class _AdminTambahJenisPelayananScreenState extends State<AdminTambahJenisPelaya
         if (index == 4) Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),

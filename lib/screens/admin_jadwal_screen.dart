@@ -451,7 +451,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: "Beranda",
+            label: "Dashboard",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),

@@ -303,6 +303,18 @@ class _AdminInputRekamMedisScreenState extends State<AdminInputRekamMedisScreen>
                 initialDate: DateTime.now(),
                 firstDate: DateTime(2020),
                 lastDate: DateTime(2030),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: Color(0xFF004D40), // Hijau pekat
+                        onPrimary: Colors.white,
+                        onSurface: Color(0xFF1B2E35),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
               );
               if (date != null) onPicked(date);
             },

@@ -56,8 +56,27 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: _cardShadow),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(radius: 22, backgroundColor: const Color(0xFFFFF0F5),
-                    child: Text(initial, style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 16))),
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFFFF0F5),
+                    ),
+                    child: ClipOval(
+                      child: (patient['foto_url'] != null && patient['foto_url'].toString().isNotEmpty)
+                          ? Image.network(
+                              patient['foto_url'].toString(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Center(
+                                child: Text(initial, style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 16)),
+                              ),
+                            )
+                          : Center(
+                              child: Text(initial, style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 16)),
+                            ),
+                    ),
+                  ),
                   title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
                   subtitle: const Padding(padding: EdgeInsets.only(top: 4), child: Text("Klik untuk chat", style: TextStyle(fontSize: 12, color: _textSecondary))),
                   trailing: Container(
@@ -100,7 +119,7 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),

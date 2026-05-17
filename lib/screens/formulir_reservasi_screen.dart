@@ -29,7 +29,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
   final _keluhanController = TextEditingController();
 
   final List<String> jamList = [
-    '08:00', '09:00', '10:00', '11:00', '13:00', '14:00'
+    '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
   ];
 
   List<Map<String, dynamic>> _existingReservations = [];
@@ -424,8 +424,24 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                       context: context,
                       initialDate: DateTime.now().add(const Duration(days: 1)),
                       firstDate: DateTime.now(),
-                      lastDate:
-                          DateTime.now().add(const Duration(days: 30)),
+                      lastDate: DateTime.now().add(const Duration(days: 7)),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF004D40), // Hijau pekat
+                              onPrimary: Colors.white,
+                              onSurface: Color(0xFF1B2E35),
+                            ),
+                            textButtonTheme: TextButtonThemeData(
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF004D40),
+                              ),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
@@ -574,7 +590,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFAED581),
+                  backgroundColor: const Color(0xFF004D40),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,

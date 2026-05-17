@@ -106,9 +106,10 @@ class SupabaseService {
     }
   }
 
-  Future<void> tambahReservasi(Map<String, dynamic> reservasiData) async {
+  Future<Map<String, dynamic>> tambahReservasi(Map<String, dynamic> reservasiData) async {
     try {
-      await _supabase.from('reservasi').insert(reservasiData);
+      final response = await _supabase.from('reservasi').insert(reservasiData).select().single();
+      return Map<String, dynamic>.from(response);
     } catch (e) {
       print('Error tambahReservasi: $e');
       rethrow;
@@ -361,6 +362,24 @@ class SupabaseService {
     }
   }
 
+  Future<void> updateChatMessage(String messageId, String text) async {
+    try {
+      await _supabase.from('chat_messages').update({'text': text}).eq('id', messageId);
+    } catch (e) {
+      print('Error updateChatMessage: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteChatMessage(String messageId) async {
+    try {
+      await _supabase.from('chat_messages').delete().eq('id', messageId);
+    } catch (e) {
+      print('Error deleteChatMessage: $e');
+      rethrow;
+    }
+  }
+
   // ================= ARTIKEL PDF =================
   Future<List<ArtikelPdf>> getArtikelPdf() async {
     try {
@@ -451,7 +470,32 @@ class SupabaseService {
       final String publicUrl = _supabase.storage.from('avatars').getPublicUrl(path);
       return publicUrl;
     } catch (e) {
-      print('Error uploadAvatar: $e');
+      print('DEBUG: Error uploadAvatar failed: $e');
+      return null;
+    }
+  }
+
+  /// Upload foto chat ke bucket 'chat_images'
+  Future<String?> uploadChatImage({
+    required String senderId,
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final path = 'chats/$senderId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      
+      // Upload ke storage
+      await _supabase.storage.from('chat_images').uploadBinary(
+        path,
+        fileBytes as dynamic,
+        fileOptions: const FileOptions(upsert: true),
+      );
+
+      // Ambil Public URL
+      return _supabase.storage.from('chat_images').getPublicUrl(path);
+    } catch (e) {
+      print('DEBUG: Error uploadChatImage failed: $e');
+      print('DEBUG: Make sure bucket "chat_images" exists and is PUBLIC');
       return null;
     }
   }

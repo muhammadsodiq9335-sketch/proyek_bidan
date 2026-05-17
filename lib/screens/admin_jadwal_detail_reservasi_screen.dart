@@ -614,7 +614,7 @@ class _AdminJadwalDetailReservasiScreenState
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
         BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),

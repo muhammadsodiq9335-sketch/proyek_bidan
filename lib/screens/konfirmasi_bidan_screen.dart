@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/supabase_service.dart';
 import 'pusat_bantuan_screen.dart';
 
 class KonfirmasiBidanScreen extends StatelessWidget {
@@ -8,6 +9,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
   final String tanggal;
   final bool isHomeCare;
   final String harga;
+  final String reservasiId;
 
   const KonfirmasiBidanScreen({
     super.key,
@@ -15,6 +17,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
     required this.jam,
     required this.tanggal,
     required this.isHomeCare,
+    required this.reservasiId,
     this.harga = '-',
   });
 
@@ -228,52 +231,23 @@ class KonfirmasiBidanScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Butuh bantuan
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PusatBantuanScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
-                  ],
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Butuh bantuan segera? ',
-                      style: TextStyle(fontSize: 13, color: Colors.black54),
-                    ),
-                    Icon(Icons.headset_mic_outlined, color: Color(0xFF00897B), size: 18),
-                    SizedBox(width: 4),
-                    Text(
-                      'Hubungi Customer Care',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF00897B),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 16),
 
             // Batalkan Button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst);
+                onPressed: () async {
+                  try {
+                    await SupabaseService().updateStatusReservasi(reservasiId, 'Dibatalkan');
+                    if (!context.mounted) return;
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal membatalkan: $e'), backgroundColor: Colors.redAccent),
+                    );
+                  }
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent,

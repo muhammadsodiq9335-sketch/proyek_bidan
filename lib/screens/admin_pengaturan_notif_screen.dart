@@ -109,7 +109,7 @@ class _PengaturanNotifikasiScreenState extends State<PengaturanNotifikasiScreen>
         }
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
