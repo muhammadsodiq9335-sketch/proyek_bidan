@@ -5,6 +5,7 @@ class UserProfile {
   final String tglLahir;
   final String alamat;
   final String role; // 'pasien' atau 'admin'
+  final String? fotoUrl;
 
   UserProfile({
     required this.id,
@@ -13,6 +14,7 @@ class UserProfile {
     this.tglLahir = '',
     this.alamat = '',
     this.role = 'pasien',
+    this.fotoUrl,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class UserProfile {
       tglLahir: json['tgl_lahir']?.toString() ?? '',
       alamat: json['alamat']?.toString() ?? '',
       role: json['role']?.toString() ?? 'pasien',
+      fotoUrl: json['foto_url']?.toString(),
     );
   }
 
@@ -34,6 +37,7 @@ class UserProfile {
       'tgl_lahir': tglLahir,
       'alamat': alamat,
       'role': role,
+      'foto_url': fotoUrl,
     };
   }
 }

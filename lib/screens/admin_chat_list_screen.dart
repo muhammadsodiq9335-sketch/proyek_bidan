@@ -82,18 +82,28 @@ class _AdminChatListScreenState extends State<AdminChatListScreen> {
       onTap: (index) {
         if (index == currentIndex) return;
         switch (index) {
-          case 0: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())); break;
-          case 1: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminJadwalScreen())); break;
-          case 2: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminChatListScreen())); break;
-          case 3: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPasienScreen())); break;
-          case 4: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPengaturanScreen())); break;
+          case 0:
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/admin_jadwal');
+            break;
+          case 2:
+            // Already here
+            break;
+          case 3:
+            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
+            break;
         }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

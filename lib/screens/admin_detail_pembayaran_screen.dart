@@ -57,7 +57,10 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     setState(() => _isFetchingServices = true);
     try {
       final services = await _supabaseService.getJenisPelayanan();
-      setState(() => _availableServices = services);
+      setState(() {
+        // Jangan tampilkan layanan yang sudah dipilih di reservasi awal
+        _availableServices = services.where((s) => s['id'] != widget.pasien['layanan_id']).toList();
+      });
     } catch (e) {
       debugPrint("Error fetching services: $e");
     } finally {
@@ -78,6 +81,15 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     try {
       if (widget.pasien['id'] != null) {
         await _supabaseService.updateReservasi(widget.pasien['id'].toString(), {'status': 'Selesai', 'status_pelayanan': 'Selesai & Pulang'});
+        
+        // Kirim Notifikasi ke Pasien untuk kasih Review
+        if (widget.pasien['user_id'] != null) {
+          await _supabaseService.tambahNotifikasi(
+            userId: widget.pasien['user_id'].toString(),
+            title: 'Pelayanan Selesai ✨',
+            message: 'Pelayanan untuk ${widget.pasien['layanan']} telah selesai dan lunas. Yuk berikan bintang dan ulasan terbaik Bunda!',
+          );
+        }
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text("Pembayaran berhasil dikonfirmasi"), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));

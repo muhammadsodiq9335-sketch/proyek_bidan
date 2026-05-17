@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/supabase_service.dart';
-import '../mock_data.dart';
 
 class AdminTambahBidanScreen extends StatefulWidget {
   final bool isEdit;
@@ -24,7 +24,10 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
   final strC = TextEditingController();
   final hpC = TextEditingController();
   final alamatC = TextEditingController();
+  
+  String? _fotoUrl;
   bool _isLoading = false;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -36,6 +39,32 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
       strC.text = widget.data!["str"]?.replaceAll("No. STR: ", "") ?? "";
       hpC.text = widget.data!["hp"] ?? "";
       alamatC.text = widget.data!["alamat"] ?? "";
+      _fotoUrl = widget.data!["foto_url"];
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    
+    if (image != null) {
+      setState(() => _isUploading = true);
+      try {
+        final bytes = await image.readAsBytes();
+        final fileName = 'bidan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final svc = SupabaseService();
+        
+        final id = widget.data?['id'] ?? 'temp';
+        final url = await svc.uploadAvatar(userId: id, fileBytes: bytes, fileName: fileName);
+        
+        if (url != null) {
+          setState(() => _fotoUrl = url);
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal upload: $e")));
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -45,7 +74,15 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
       return;
     }
     setState(() => _isLoading = true);
-    final dataBaru = {"nama": namaC.text, "nik": nikC.text, "nip": nipC.text, "str": "No. STR: ${strC.text}", "hp": hpC.text, "alamat": alamatC.text};
+    final dataBaru = {
+      "nama": namaC.text, 
+      "nik": nikC.text, 
+      "nip": nipC.text, 
+      "str": "No. STR: ${strC.text}", 
+      "hp": hpC.text, 
+      "alamat": alamatC.text,
+      "foto_url": _fotoUrl ?? ""
+    };
     final supabaseService = SupabaseService();
     try {
       if (widget.isEdit && widget.data != null && widget.data!['id'] != null) {
@@ -72,15 +109,35 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: _cardShadow),
           child: Column(children: [
-            // Upload foto placeholder
-            Container(width: 120, padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFFFFF0F5), borderRadius: BorderRadius.circular(16), border: Border.all(color: _accent.withOpacity(0.2), width: 1.5, strokeAlign: BorderSide.strokeAlignCenter)),
-              child: Column(children: const [
-                Icon(Icons.add_a_photo_rounded, size: 36, color: _accent),
-                SizedBox(height: 8),
-                Text("Upload Foto", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _textPrimary)),
-                Text("Foto formal 3x4", textAlign: TextAlign.center, style: TextStyle(fontSize: 9, color: _textSecondary)),
-              ]),
+            // Upload foto area
+            GestureDetector(
+              onTap: _isUploading ? null : _pickImage,
+              child: Container(
+                width: 120, height: 140,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F5), 
+                  borderRadius: BorderRadius.circular(16), 
+                  border: Border.all(color: _accent.withOpacity(0.2), width: 1.5),
+                  image: _fotoUrl != null ? DecorationImage(image: NetworkImage(_fotoUrl!), fit: BoxFit.cover) : null,
+                ),
+                child: _fotoUrl == null 
+                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      _isUploading 
+                        ? const CircularProgressIndicator(color: _accent)
+                        : const Icon(Icons.add_a_photo_rounded, size: 36, color: _accent),
+                      const SizedBox(height: 8),
+                      const Text("Upload Foto", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _textPrimary)),
+                    ])
+                  : Align(
+                      alignment: Alignment.bottomRight,
+                      child: Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle),
+                        child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                      ),
+                    ),
+              ),
             ),
             const SizedBox(height: 20),
             _input("Nama Lengkap", "Contoh: Siti Aminah, S.Tr.Keb", namaC, Icons.person_outline),

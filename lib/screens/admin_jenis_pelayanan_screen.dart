@@ -5,7 +5,7 @@ import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
 import 'admin_tambah_jenis_pelayanan_screen.dart';
 import 'admin_edit_pelayanan_screen.dart';
-import '../mock_data.dart';
+import '../models/jenis_pelayanan.dart';
 import 'admin_chat_list_screen.dart';
 
 class AdminJenisPelayananScreen extends StatefulWidget {

@@ -23,7 +23,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
   // Filter state
   String _searchQuery = '';
   DateTime _selectedDate = DateTime.now();
-  bool _filterByDate = false; // false = tampilkan semua
+  bool _filterByDate = true; // true = filter by hari ini by default
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
@@ -429,16 +429,27 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
       currentIndex: 3, type: BottomNavigationBarType.fixed,
       selectedItemColor: _accent, unselectedItemColor: const Color(0xFFB0BEC5),
       onTap: (index) {
-        if (index == 0) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-        if (index == 1) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-        if (index == 2) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminChatListScreen()));
-        if (index == 4) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPengaturanScreen()));
+        if (index == 3) return;
+        switch (index) {
+          case 0:
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/admin_jadwal');
+            break;
+          case 2:
+            Navigator.pushReplacementNamed(context, '/admin_chat_list');
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
+            break;
+        }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat Bidan"),
-        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
+        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

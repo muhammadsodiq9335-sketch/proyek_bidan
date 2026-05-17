@@ -1,67 +1,14 @@
 import 'models/user_profile.dart';
+import 'models/bidan_profile.dart';
+import 'models/jenis_pelayanan.dart';
+import 'models/review_pasien.dart';
+import 'models/artikel_pdf.dart';
+
 export 'models/user_profile.dart';
-class BidanProfile {
-  final String nama;
-  final String nik;
-  final String nip;
-  final String str;
-  final String hp;
-  final String alamat;
-
-  BidanProfile({
-    required this.nama,
-    required this.nik,
-    required this.nip,
-    required this.str,
-    required this.hp,
-    required this.alamat,
-  });
-}
-class JenisPelayanan {
-  String nama;
-  String deskripsi;
-  String harga;
-  String kategori;
-
-  JenisPelayanan({
-    required this.nama,
-    required this.deskripsi,
-    required this.harga,
-    required this.kategori,
-  });
-}
-
-class ReviewPasien {
-  final String name;
-  final int rating;
-  final String date;
-  final String content;
-  final int avatarColor;
-  String? adminReply;
-
-  ReviewPasien({
-    required this.name,
-    required this.rating,
-    required this.date,
-    required this.content,
-    required this.avatarColor,
-    this.adminReply,
-  });
-}
-
-class ArtikelPdf {
-  final String id;
-  final String namaFile;
-  final String urlPdf;
-  final DateTime tanggalUpload;
-
-  ArtikelPdf({
-    required this.id,
-    required this.namaFile,
-    required this.urlPdf,
-    required this.tanggalUpload,
-  });
-}
+export 'models/bidan_profile.dart';
+export 'models/jenis_pelayanan.dart';
+export 'models/review_pasien.dart';
+export 'models/artikel_pdf.dart';
 
 class MockDatabase {
   static final Map<String, String> registeredUsers = {};

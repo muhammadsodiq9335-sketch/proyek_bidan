@@ -106,9 +106,14 @@ class _AdminCekProfilBidanScreenState
         leading: CircleAvatar(
           radius: 22,
           backgroundColor: const Color(0xFFFFF0F5),
-          child: Text(initial,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: _accent, fontSize: 16)),
+          backgroundImage: bidan['foto_url'] != null && bidan['foto_url'].toString().isNotEmpty
+              ? NetworkImage(bidan['foto_url'].toString())
+              : null,
+          child: bidan['foto_url'] == null || bidan['foto_url'].toString().isEmpty
+              ? Text(initial,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: _accent, fontSize: 16))
+              : null,
         ),
         title: Text(nama,
             style: const TextStyle(

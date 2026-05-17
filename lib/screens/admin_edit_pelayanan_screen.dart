@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
-import '../mock_data.dart';
+import '../models/jenis_pelayanan.dart';
 
 class AdminEditPelayananScreen extends StatefulWidget {
   final JenisPelayanan layanan;

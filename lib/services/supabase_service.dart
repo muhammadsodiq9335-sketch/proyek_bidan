@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
-import '../mock_data.dart'; // Tetap diimpor sementara untuk model ArtikelPdf jika belum dipindah
+import '../models/artikel_pdf.dart';
 
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -8,15 +8,22 @@ class SupabaseService {
   // ================= USERS =================
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
+      print('SupabaseService: Mengambil profil untuk ID: $userId');
       final data = await _supabase
           .from('user_profiles')
           .select()
           .eq('id', userId)
           .maybeSingle();
-      if (data == null) return null;
+      
+      if (data == null) {
+        print('SupabaseService: Data profil tidak ditemukan di tabel user_profiles');
+        return null;
+      }
+      
+      print('SupabaseService: Data ditemukan: $data');
       return UserProfile.fromJson(data);
     } catch (e) {
-      print('Error getUserProfile: $e');
+      print('SupabaseService Error getUserProfile: $e');
       return null;
     }
   }
@@ -108,11 +115,12 @@ class SupabaseService {
     }
   }
 
-  Future<void> updateStatusReservasi(String id, String status, {String? statusPelayanan, String? bidanId}) async {
+  Future<void> updateStatusReservasi(String id, String status, {String? statusPelayanan, String? bidanId, String? alasanDitolak}) async {
     try {
       final Map<String, dynamic> updates = {'status': status};
       if (statusPelayanan != null) updates['status_pelayanan'] = statusPelayanan;
       if (bidanId != null) updates['bidan_id'] = bidanId;
+      if (alasanDitolak != null) updates['alasan_ditolak'] = alasanDitolak;
       
       await _supabase.from('reservasi').update(updates).eq('id', id);
     } catch (e) {
@@ -182,6 +190,40 @@ class SupabaseService {
     }
   }
 
+  Future<void> tambahNotifikasi({
+    required String userId,
+    required String title,
+    required String message,
+    String icon = 'info',
+    String? screen,
+  }) async {
+    try {
+      await _supabase.from('notifikasi').insert({
+        'user_id': userId,
+        'title': title,
+        'message': message,
+        'icon': icon,
+        'screen': screen,
+        'is_read': false,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error tambahNotifikasi: $e');
+    }
+  }
+
+  Future<void> markNotifikasiSebagaiDibaca(String userId) async {
+    try {
+      await _supabase
+          .from('notifikasi')
+          .update({'is_read': true})
+          .eq('user_id', userId)
+          .eq('is_read', false);
+    } catch (e) {
+      print('Error markNotifikasiSebagaiDibaca: $e');
+    }
+  }
+
   // ================= BIDAN (ADMIN) =================
   Future<void> tambahBidan(Map<String, dynamic> data) async {
     try {
@@ -241,12 +283,14 @@ class SupabaseService {
   // ================= ADMIN HELPERS =================
   Future<String?> getFirstAdminId() async {
     try {
+      // Mencari user dengan role 'admin' atau 'Admin'
       final data = await _supabase
           .from('user_profiles')
           .select('id')
-          .eq('role', 'admin')
+          .or('role.eq.admin,role.eq.Admin')
           .limit(1)
           .maybeSingle();
+      
       return data?['id']?.toString();
     } catch (e) {
       print('Error getFirstAdminId: $e');
@@ -353,6 +397,120 @@ class SupabaseService {
     } catch (e) {
       print('Error deleteArtikelPdf: $e');
       rethrow;
+    }
+  }
+
+  // ================= REKAM MEDIS =================
+  Future<Map<String, dynamic>?> getRekamMedisByReservasi(String reservasiId) async {
+    try {
+      final data = await _supabase
+          .from('rekam_medis')
+          .select()
+          .eq('reservasi_id', reservasiId)
+          .maybeSingle();
+      return data;
+    } catch (e) {
+      print('Error getRekamMedisByReservasi: $e');
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRekamMedisByUser(String userId) async {
+    try {
+      final data = await _supabase
+          .from('rekam_medis')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(data);
+    } catch (e) {
+      print('Error getRekamMedisByUser: $e');
+      return [];
+    }
+  }
+
+  // ================= STORAGE / AVATAR =================
+
+  /// Upload foto profil ke bucket 'avatars'
+  Future<String?> uploadAvatar({
+    required String userId,
+    required List<int> fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final path = 'avatars/$userId/$fileName';
+      
+      // Upload ke storage
+      await _supabase.storage.from('avatars').uploadBinary(
+        path,
+        fileBytes as dynamic, // Support web/mobile bytes
+        fileOptions: const FileOptions(upsert: true),
+      );
+
+      // Ambil Public URL
+      final String publicUrl = _supabase.storage.from('avatars').getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      print('Error uploadAvatar: $e');
+      return null;
+    }
+  }
+
+  /// Update URL foto di tabel user_profiles atau bidan_profiles
+  Future<bool> updateProfileFoto(String id, String fotoUrl, {bool isBidan = false}) async {
+    try {
+      final table = isBidan ? 'bidan_profiles' : 'user_profiles';
+      await _supabase.from(table).update({'foto_url': fotoUrl}).eq('id', id);
+      return true;
+    } catch (e) {
+      print('Error updateProfileFoto: $e');
+      return false;
+    }
+  }
+
+  Future<void> tambahRekamMedis(Map<String, dynamic> data) async {
+    try {
+      // Cek dulu apakah sudah ada rekam medis untuk reservasi ini
+      final existing = await _supabase
+          .from('rekam_medis')
+          .select('id')
+          .eq('reservasi_id', data['reservasi_id'])
+          .maybeSingle();
+
+      if (existing != null) {
+        // Jika ada, tambahkan ID-nya ke data agar Supabase melakukan UPDATE
+        data['id'] = existing['id'];
+      }
+
+      await _supabase.from('rekam_medis').upsert(data);
+    } catch (e) {
+      print('Error tambahRekamMedis: $e');
+      rethrow;
+    }
+  }
+
+  // ── NEW METHODS (NOT DUPLICATED) ──
+  Future<Map<String, dynamic>?> getReviewByReservation(String resId) async {
+    final res = await _supabase.from('reviews').select().eq('reservasi_id', resId).maybeSingle();
+    return res;
+  }
+
+  Future<void> updateAdminReply(String reviewId, String reply) async {
+    await _supabase.from('reviews').update({'admin_reply': reply}).eq('id', reviewId);
+  }
+
+  // ── REPORTING METHODS ──
+  Future<List<Map<String, dynamic>>> getReportData() async {
+    try {
+      final res = await _supabase
+          .from('reservasi')
+          .select()
+          .eq('status', 'Selesai')
+          .order('tanggal', ascending: true);
+      return List<Map<String, dynamic>>.from(res);
+    } catch (e) {
+      print('Error getReportData: $e');
+      return [];
     }
   }
 }

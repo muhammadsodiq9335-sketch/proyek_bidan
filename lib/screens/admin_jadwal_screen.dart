@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
 import '../services/supabase_service.dart';
 import 'admin_jadwal_detail_reservasi_screen.dart';
 
@@ -218,7 +217,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
         );
 
         final hasConfirmed = allReservations.any((res) =>
-          res['tanggal'] == dateIso && (res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai' || res['bidan_id'] != null)
+          res['tanggal'] == dateIso && (res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai')
         );
 
         return GestureDetector(
@@ -289,7 +288,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
 
   // ================= CARD =================
   Widget _card(Map<String, dynamic> res) {
-    final isConfirmed = res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai' || res['bidan_id'] != null;
+    final isConfirmed = res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -330,16 +329,24 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isConfirmed ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                  color: res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai'
+                      ? const Color(0xFFE8F5E9)
+                      : (res['status'] == 'Ditolak' || res['status'] == 'Dibatalkan'
+                          ? const Color(0xFFFFEBEE)
+                          : const Color(0xFFFFF3E0)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isConfirmed ? "TERKONFIRMASI" : "PENDING",
+                  res['status']?.toString().toUpperCase() ?? "PENDING",
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.3,
-                    color: isConfirmed ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                    color: res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai'
+                        ? const Color(0xFF2E7D32)
+                        : (res['status'] == 'Ditolak' || res['status'] == 'Dibatalkan'
+                            ? Colors.red
+                            : const Color(0xFFE65100)),
                   ),
                 ),
               ),
@@ -427,16 +434,16 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
             Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
           }
           if (index == 1) {
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_jadwal', (route) => false);
+            // Already here
           }
           if (index == 2) {
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_chat_list', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_chat_list');
           }
           if (index == 3) {
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_pasien', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
           }
           if (index == 4) {
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_pengaturan', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
           }
         },
 
@@ -455,7 +462,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
             label: "Chat",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.payments),
+            icon: Icon(Icons.payment),
             label: "Pembayaran",
           ),
           BottomNavigationBarItem(

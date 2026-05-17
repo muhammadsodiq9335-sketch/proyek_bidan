@@ -32,7 +32,18 @@ class _AdminBalasReviewScreenState extends State<AdminBalasReviewScreen> {
     setState(() => _isLoading = true);
     try {
       if (widget.review['id'] != null) {
-        await _supabaseService.balasReview(widget.review['id'].toString(), _controller.text);
+        await _supabaseService.updateAdminReply(widget.review['id'].toString(), _controller.text);
+        
+        // Kirim Notifikasi ke Pasien
+        if (widget.review['user_id'] != null) {
+          await _supabaseService.tambahNotifikasi(
+            userId: widget.review['user_id'].toString(),
+            title: 'Ulasan Bunda Dibalas! 💌',
+            message: 'Bidan telah membalas ulasan Bunda. Terima kasih atas masukannya!',
+            screen: 'riwayat',
+          );
+        }
+
         if (mounted) Navigator.pop(context);
       }
     } catch (e) {

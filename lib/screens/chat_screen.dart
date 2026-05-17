@@ -56,6 +56,16 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  String _formatTime(dynamic timestamp) {
+    if (timestamp == null) return '';
+    try {
+      DateTime dt = DateTime.parse(timestamp.toString()).toLocal();
+      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return '';
+    }
+  }
+
   Future<void> sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -64,11 +74,16 @@ class _ChatScreenState extends State<ChatScreen> {
     final receiverId = _dynamicReceiverId;
 
     if (senderId == null || receiverId == null) {
-      if (receiverId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ID Admin belum ditemukan. Mohon tunggu...')),
-        );
+      String errorMsg = 'Gagal mengirim pesan.';
+      if (senderId == null) {
+        errorMsg = 'Profil Anda tidak ditemukan. Silakan login ulang.';
+      } else if (receiverId == null) {
+        errorMsg = 'Admin sedang tidak tersedia. Mohon coba lagi nanti.';
       }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg)),
+      );
       return;
     }
 
@@ -148,11 +163,28 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: _supabaseService.getChatMessages(myId, otherId),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                }
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 
                 final messages = snapshot.data ?? [];
+                
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        const Text('Belum ada pesan. Silakan mulai chat!', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  );
+                }
                 
                 return ListView.builder(
                   reverse: true,
@@ -248,8 +280,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                   style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 13),
                                 ),
                               const SizedBox(height: 4),
-                              Text(
-                                'Baru saja',
+                               Text(
+                                _formatTime(msg['created_at']),
                                 style: TextStyle(fontSize: 10, color: isMe ? Colors.white60 : Colors.grey),
                               ),
                             ],

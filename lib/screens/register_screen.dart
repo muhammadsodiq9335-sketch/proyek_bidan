@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../mock_data.dart';
 import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -281,11 +280,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         builder: (context) => const Center(child: CircularProgressIndicator()),
                       );
 
+                      // Format tglLahir ke YYYY-MM-DD untuk database
+                      String formattedTgl = "";
+                      if (tglLahir.isNotEmpty && tglLahir.contains('/')) {
+                        try {
+                          final parts = tglLahir.split('/');
+                          if (parts.length == 3) {
+                            formattedTgl = "${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}";
+                          }
+                        } catch (_) {
+                          formattedTgl = tglLahir;
+                        }
+                      } else {
+                        formattedTgl = tglLahir;
+                      }
+
                       await authService.signUp(
                         email: email,
                         password: password,
                         nama: nama.isNotEmpty ? nama : "Pengguna Baru",
-                        tglLahir: tglLahir,
+                        tglLahir: formattedTgl,
                         alamat: alamat,
                       );
 

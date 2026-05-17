@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
 import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -147,12 +147,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: _accentLight,
                   borderRadius: BorderRadius.circular(10),
+                  image: AuthService.currentUserProfile?.fotoUrl != null && AuthService.currentUserProfile!.fotoUrl!.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(AuthService.currentUserProfile!.fotoUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                child: const Icon(Icons.local_hospital_rounded, color: _accent, size: 20),
+                child: AuthService.currentUserProfile?.fotoUrl == null || AuthService.currentUserProfile!.fotoUrl!.isEmpty
+                    ? const Icon(Icons.local_hospital_rounded, color: _accent, size: 20)
+                    : null,
               ),
               const SizedBox(width: 10),
               const Column(
@@ -175,14 +184,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ],
           ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: _bgInner,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.person_outline, color: _textSecondary, size: 20),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pushNamed(context, '/admin_laporan'),
+                icon: const Icon(Icons.bar_chart_rounded, color: _accent, size: 24),
+                tooltip: 'Laporan Pelayanan',
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: _bgInner,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.person_outline, color: _textSecondary, size: 20),
+              ),
+            ],
           ),
         ],
       ),
@@ -300,7 +319,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final total = reservations.where((res) {
       final date = _safeParseDate(res['tanggal']);
       final itemDate = DateTime(date.year, date.month, date.day);
-      return res['status'] == 'Dikonfirmasi' &&
+      final isHandled = res['status'] == 'Dikonfirmasi' || res['status'] == 'Selesai';
+      return isHandled &&
           itemDate.year == today.year &&
           itemDate.month == today.month &&
           itemDate.day == today.day;
@@ -360,7 +380,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  border: Border.all(color: _accent.withOpacity(0.3)),
+                  border: Border.all(color: _accent.withValues(alpha: 77)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
@@ -500,16 +520,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
             break;
           case 1:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_jadwal', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_jadwal');
             break;
           case 2:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_chat_list', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_chat_list');
             break;
           case 3:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_pasien', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
             break;
           case 4:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_pengaturan', (route) => false);
+            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
             break;
         }
       },
@@ -517,7 +537,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

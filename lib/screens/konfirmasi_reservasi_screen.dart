@@ -10,6 +10,9 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
   final DateTime tanggal;
   final bool isHomeCare;
   final int hargaTotal;
+  final String keluhan;
+  final String bidanId;
+  final String bidanNama;
 
   const KonfirmasiReservasiScreen({
     super.key,
@@ -19,6 +22,9 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
     required this.tanggal,
     required this.isHomeCare,
     required this.hargaTotal,
+    this.keluhan = '',
+    this.bidanId = '',
+    this.bidanNama = '',
   });
 
   String _getFormattedDate() {
@@ -52,7 +58,8 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.home_outlined, color: Color(0xFF1B2E35)),
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+            onPressed: () =>
+                Navigator.popUntil(context, (route) => route.isFirst),
           ),
         ],
       ),
@@ -77,14 +84,29 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // ===== PROFIL PASIEN =====
             if (AuthService.currentUserProfile != null) ...[
               _buildProfilCard(),
               const SizedBox(height: 16),
             ],
 
+            // ===== LAYANAN & JADWAL =====
             _buildLayananCard(),
             const SizedBox(height: 16),
 
+            // ===== BIDAN DIPILIH =====
+            if (bidanId.isNotEmpty && bidanNama.isNotEmpty) ...[
+              _buildBidanCard(),
+              const SizedBox(height: 16),
+            ],
+
+            // ===== KELUHAN =====
+            if (keluhan.isNotEmpty) ...[
+              _buildKeluhanCard(),
+              const SizedBox(height: 16),
+            ],
+
+            // ===== INFO =====
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -99,7 +121,10 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Dengan menekan tombol konfirmasi, Anda menyetujui jadwal dan ketentuan reservasi yang berlaku di Klinik Bidan Mandiri Salsah Amalia.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF00695C), height: 1.4),
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF00695C),
+                          height: 1.4),
                     ),
                   ),
                 ],
@@ -107,41 +132,64 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
+            // ===== TOMBOL KIRIM =====
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
                   final supabaseService = SupabaseService();
-                  final namaPasien = AuthService.currentUserProfile?.nama ?? 'Pasien';
-                  final emailPasien = AuthService.currentUserProfile?.email ?? '';
+                  final namaPasien =
+                      AuthService.currentUserProfile?.nama ?? 'Pasien';
+                  final emailPasien =
+                      AuthService.currentUserProfile?.email ?? '';
 
-                  // Tampilkan loading dialog
                   showDialog(
                     context: context,
                     barrierDismissible: false,
-                    builder: (context) => const Center(child: CircularProgressIndicator()),
+                    builder: (context) =>
+                        const Center(child: CircularProgressIndicator()),
                   );
 
                   try {
-                    // 1. Simpan ke Supabase (ISO Format untuk Database)
-                    await supabaseService.tambahReservasi({
+                    final Map<String, dynamic> payload = {
                       'user_id': AuthService.currentUserProfile?.id,
                       'layanan': layananNames,
-                      // FK ke tabel layanan (ambil id layanan pertama/utama)
-                      'layanan_id': selectedServices.isNotEmpty ? selectedServices.first['id'] : null,
+                      'layanan_id': selectedServices.isNotEmpty
+                          ? selectedServices.first['id']
+                          : null,
                       'jam': jam,
-                      'tanggal': "${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}",
+                      'tanggal':
+                          "${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}",
                       'is_home_care': isHomeCare,
                       'status': 'Menunggu Persetujuan',
                       'nama_pasien': namaPasien,
                       'email_pasien': emailPasien,
                       'harga': hargaTotal,
-                    });
+                    };
 
-                    // 2. Tutup loading
-                    Navigator.pop(context);
+                    // Tambahkan keluhan jika diisi
+                    if (keluhan.isNotEmpty) {
+                      payload['keluhan'] = keluhan;
+                    }
 
-                    // 3. Pindah ke halaman sukses
+                    // Tambahkan bidan_id jika dipilih
+                    if (bidanId.isNotEmpty) {
+                      payload['bidan_id'] = bidanId;
+                    }
+
+                    await supabaseService.tambahReservasi(payload);
+
+                    // Tambahkan Notifikasi untuk Pasien
+                    await supabaseService.tambahNotifikasi(
+                      userId: AuthService.currentUserProfile?.id ?? '',
+                      title: 'Reservasi Terkirim',
+                      message: 'Reservasi Bunda untuk $layananNames telah berhasil dikirim dan sedang menunggu persetujuan.',
+                      icon: 'check_circle',
+                      screen: 'riwayat',
+                    );
+
+                    Navigator.pop(context); // Tutup loading
+
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
@@ -156,9 +204,11 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                       (route) => route.isFirst,
                     );
                   } catch (e) {
-                    Navigator.pop(context); // Tutup loading
+                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal membuat reservasi: $e')),
+                      SnackBar(
+                          content: Text('Gagal membuat reservasi: $e'),
+                          backgroundColor: Colors.redAccent),
                     );
                   }
                 },
@@ -167,10 +217,11 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
-                  'Kirim',
+                  'Kirim Reservasi',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -183,38 +234,159 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
   }
 
   Widget _buildProfilCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Profil Pasien',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B2E35),
-            ),
-          ),
-          const SizedBox(height: 14),
-          _buildDetailRow(Icons.person_outline, 'Nama Lengkap', AuthService.currentUserProfile!.nama),
-          const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.cake_outlined, 'Tanggal Lahir', AuthService.currentUserProfile!.tglLahir),
-          const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(Icons.location_on_outlined, 'Alamat', AuthService.currentUserProfile!.alamat),
-        ],
-      ),
+    return _buildCard(
+      title: 'Profil Pasien',
+      children: [
+        _buildDetailRow(Icons.person_outline, 'Nama Lengkap',
+            AuthService.currentUserProfile!.nama),
+        const Divider(height: 16, color: Color(0xFFF5F5F5)),
+        _buildDetailRow(Icons.cake_outlined, 'Tanggal Lahir',
+            AuthService.currentUserProfile!.tglLahir),
+        const Divider(height: 16, color: Color(0xFFF5F5F5)),
+        _buildDetailRow(Icons.location_on_outlined, 'Alamat',
+            AuthService.currentUserProfile!.alamat),
+      ],
     );
   }
 
   Widget _buildLayananCard() {
+    return _buildCard(
+      title: 'Detail Layanan & Jadwal',
+      children: [
+        _buildDetailRow(
+            Icons.medical_services_outlined, 'Layanan Dipilih', layananNames),
+        const Divider(height: 16, color: Color(0xFFF5F5F5)),
+        _buildDetailRow(
+          Icons.access_time_outlined,
+          'Jadwal Kunjungan',
+          '${_getFormattedDate()}\nPukul $jam WIB',
+        ),
+        const Divider(height: 16, color: Color(0xFFF5F5F5)),
+        _buildDetailRow(
+          Icons.home_work_outlined,
+          'Jenis Kunjungan',
+          isHomeCare ? 'Home Care (Kunjungan Rumah)' : 'Datang ke Klinik',
+        ),
+        const Divider(height: 16, color: Color(0xFFF5F5F5)),
+        _buildDetailRow(Icons.payments_outlined, 'Total Harga', 'Rp $hargaTotal'),
+      ],
+    );
+  }
+
+  Widget _buildBidanCard() {
+    return _buildCard(
+      title: 'Bidan yang Dipilih',
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: const Color(0xFFE0F2F1),
+              child: const Icon(Icons.person,
+                  color: Color(0xFF00897B), size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bidanNama,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B2E35),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Bidan Terpilih',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF78909C)),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0F2F1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Dipilih',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00897B)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKeluhanCard() {
+    return _buildCard(
+      title: 'Keluhan Awal Pasien',
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FBE7),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFC5E1A5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.format_quote_rounded,
+                      color: Color(0xFF8BC34A), size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'Catatan Keluhan',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF558B2F)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                keluhan,
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1B2E35),
+                    height: 1.5),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Row(
+          children: [
+            Icon(Icons.lock_outline, size: 12, color: Color(0xFF78909C)),
+            SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Keluhan ini hanya dapat dilihat oleh admin dan bidan yang bertugas.',
+                style:
+                    TextStyle(fontSize: 11, color: Color(0xFF78909C), height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(
+      {required String title, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -227,32 +399,16 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Detail Layanan & Jadwal',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1B2E35),
             ),
           ),
           const SizedBox(height: 14),
-          _buildDetailRow(
-            Icons.medical_services_outlined,
-            'Layanan Dipilih',
-            layananNames,
-          ),
-          const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(
-            Icons.access_time_outlined,
-            'Jadwal Kunjungan',
-            '${_getFormattedDate()}\nPukul $jam WIB',
-          ),
-          const Divider(height: 16, color: Color(0xFFF5F5F5)),
-          _buildDetailRow(
-            Icons.payments_outlined,
-            'Total Harga',
-            'Rp $hargaTotal',
-          ),
+          ...children,
         ],
       ),
     );
@@ -271,21 +427,24 @@ class KonfirmasiReservasiScreen extends StatelessWidget {
           child: Icon(icon, color: const Color(0xFF00897B), size: 18),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: Colors.black45)),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2E35),
-                height: 1.4,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 11, color: Colors.black45)),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2E35),
+                  height: 1.4,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
+import '../services/auth_service.dart';
 import 'pusat_bantuan_screen.dart';
 
 class KonfirmasiBidanScreen extends StatelessWidget {
@@ -192,7 +192,7 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                   _buildRincianRow(
                     icon: Icons.location_on_outlined,
                     label: 'LOKASI ANDA',
-                    value: MockDatabase.currentUser?.alamat ?? 'Alamat belum diatur',
+                    value: AuthService.currentUserProfile?.alamat ?? 'Alamat belum diatur',
                   ),
                   const Divider(height: 20, color: Color(0xFFF5F5F5)),
                   _buildRincianRow(
@@ -273,15 +273,6 @@ class KonfirmasiBidanScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  // Hapus reservasi terakhir yang baru dibuat
-                  if (MockDatabase.userReservations.isNotEmpty) {
-                    MockDatabase.userReservations.removeAt(0);
-                  }
-                  // Hapus notifikasi reservasi terkait yang baru ditambahkan
-                  if (MockDatabase.notifications.isNotEmpty &&
-                      MockDatabase.notifications.first['title'] == 'Reservasi Terkirim') {
-                    MockDatabase.notifications.removeAt(0);
-                  }
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 style: OutlinedButton.styleFrom(

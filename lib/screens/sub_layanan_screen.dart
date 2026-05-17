@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'formulir_reservasi_screen.dart';
-import '../mock_data.dart';
+import '../services/auth_service.dart';
+import '../services/supabase_service.dart';
 
 class SubLayananScreen extends StatefulWidget {
   final String kategori;
@@ -36,49 +37,71 @@ class _SubLayananScreenState extends State<SubLayananScreen> {
     });
   }
 
-  void _checkAndNavigate() {
+  Future<void> _checkAndNavigate() async {
     if (_selectedServices.isEmpty) return;
 
-    // Check if there is an active reservation
-    final activeReservation = MockDatabase.userReservations.any((r) =>
-        r['status'] == 'Menunggu Persetujuan' ||
-        r['status'] == 'Menunggu Konfirmasi');
+    final userId = AuthService.currentUserProfile?.id;
+    if (userId == null) return;
 
-    if (activeReservation) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Reservasi Aktif'),
+    // Menampilkan loading saat cek data
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00897B))),
+    );
+
+    try {
+      final reservations = await SupabaseService().getReservasi(userId: userId);
+      if (!mounted) return;
+      Navigator.pop(context); // Tutup loading
+
+      // Cek apakah ada reservasi yang statusnya masih aktif (Menunggu atau Dikonfirmasi)
+      final hasActive = reservations.any((r) {
+        final status = r['status'];
+        return status == 'Menunggu Persetujuan' || status == 'Dikonfirmasi';
+      });
+
+      if (hasActive) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Reservasi Aktif'),
+              ],
+            ),
+            content: const Text(
+                'Bunda masih memiliki reservasi yang sedang diproses. Silakan tunggu konfirmasi atau selesaikan reservasi sebelumnya untuk membuat yang baru.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Ok', style: TextStyle(color: Color(0xFF00897B))),
+              ),
             ],
           ),
-          content: const Text(
-              'Bunda masih memiliki reservasi yang sedang diproses. Silakan tunggu konfirmasi atau batalkan reservasi sebelumnya untuk membuat yang baru.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Ok', style: TextStyle(color: Color(0xFF00897B))),
-            ),
-          ],
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FormulirReservasiScreen(
+            selectedServices: _selectedServices,
+            isHomeCare: widget.isHomeCare,
+          ),
         ),
       );
-      return;
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Tutup loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
+      );
     }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FormulirReservasiScreen(
-          selectedServices: _selectedServices,
-          isHomeCare: widget.isHomeCare,
-        ),
-      ),
-    );
   }
 
   @override

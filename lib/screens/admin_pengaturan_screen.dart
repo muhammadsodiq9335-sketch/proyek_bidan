@@ -9,6 +9,7 @@ import 'admin_jenis_pelayanan_screen.dart';
 import 'admin_review_pasien_screen.dart';
 import 'admin_chat_list_screen.dart';
 import 'admin_artikel_screen.dart';
+import 'admin_laporan_screen.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -211,6 +212,8 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminJenisPelayananScreen()));
         } else if (item.title == 'Upload Artikel') {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminArtikelScreen()));
+        } else if (item.title == 'Pelaporan') {
+          Navigator.pushNamed(context, '/admin_laporan');
         }
       },
       child: Container(
@@ -304,21 +307,20 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
       unselectedItemColor: const Color(0xFFB0BEC5),
 
       onTap: (index) {
-        if (index == 0) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-        }
-        if (index == 1) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const AdminJadwalScreen()));
-        }
-        if (index == 2) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => AdminChatListScreen()));
-        }
-        if (index == 3) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const AdminPasienScreen()));
+        if (index == 4) return;
+        switch (index) {
+          case 0:
+            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/admin_jadwal');
+            break;
+          case 2:
+            Navigator.pushReplacementNamed(context, '/admin_chat_list');
+            break;
+          case 3:
+            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
+            break;
         }
       },
 
@@ -326,7 +328,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Beranda"),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
         BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payments), label: "Pembayaran"),
+        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );

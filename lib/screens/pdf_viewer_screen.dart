@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class PdfViewerScreen extends StatefulWidget {
   final String filePath;
@@ -43,12 +44,20 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           ),
         ],
       ),
-      body: SfPdfViewer.file(
-        File(widget.filePath),
-        key: _pdfViewerKey,
-        canShowScrollHead: false,
-        canShowScrollStatus: false,
-      ),
+      body: kIsWeb
+          ? const Center(
+              child: Text(
+                'PDF viewer tidak didukung di web.\nSilakan gunakan aplikasi mobile.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            )
+          : SfPdfViewer.file(
+              File(widget.filePath),
+              key: _pdfViewerKey,
+              canShowScrollHead: false,
+              canShowScrollStatus: false,
+            ),
     );
   }
 }

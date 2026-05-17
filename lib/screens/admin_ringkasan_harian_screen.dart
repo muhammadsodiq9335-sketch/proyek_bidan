@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../mock_data.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_pengaturan_screen.dart';
@@ -60,7 +59,8 @@ class _AdminRingkasanHarianScreenState
 
           final confirmedToday = allReservations.where((e) {
             final date = DateTime.tryParse(e['tanggal'] ?? '') ?? DateTime.now();
-            return e['status'] == 'Dikonfirmasi' &&
+            final isHandled = e['status'] == 'Dikonfirmasi' || e['status'] == 'Selesai';
+            return isHandled &&
                 date.year == now.year &&
                 date.month == now.month &&
                 date.day == now.day;

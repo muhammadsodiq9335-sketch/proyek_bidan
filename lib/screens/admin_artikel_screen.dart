@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/supabase_service.dart';
-import '../mock_data.dart';
+import '../models/artikel_pdf.dart';
 import 'pdf_viewer_screen.dart';
 
 class AdminArtikelScreen extends StatefulWidget {
