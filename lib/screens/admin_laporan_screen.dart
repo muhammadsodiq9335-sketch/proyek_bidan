@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 import '../services/supabase_service.dart';
 import '../services/pdf_service.dart';
+import '../services/excel_service.dart';
 
 class AdminLaporanScreen extends StatefulWidget {
   const AdminLaporanScreen({super.key});
@@ -91,7 +92,13 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.table_chart_rounded, color: Color(0xFF1B7A47)),
+            tooltip: 'Download Excel',
+            onPressed: _generateExcel,
+          ),
+          IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFC2185B)),
+            tooltip: 'Download PDF',
             onPressed: _generatePdf,
           ),
         ],
@@ -109,7 +116,7 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
                   const SizedBox(height: 24),
                   _buildChartSection(),
                   const SizedBox(height: 24),
-                  _buildRecentList(),
+            
                 ],
               ),
             ),
@@ -401,41 +408,55 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
     final List<String> keys = groupedData.keys.toList();
     if (keys.isEmpty) return const Center(child: Text('Tidak ada data'));
 
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= 0 && value.toInt() < keys.length) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(keys[value.toInt()], style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  );
-                }
-                return const SizedBox();
-              },
+    final double minWidth = MediaQuery.of(context).size.width - 64;
+    final double calculatedWidth = keys.length * 40.0;
+    final double chartWidth = calculatedWidth > minWidth ? calculatedWidth : minWidth;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        width: chartWidth,
+        padding: const EdgeInsets.only(right: 16, top: 10, bottom: 10),
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 1,
+                  reservedSize: 30,
+                  getTitlesWidget: (value, meta) {
+                    final intValue = value.toInt();
+                    if (intValue >= 0 && intValue < keys.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(keys[intValue], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      );
+                    }
+                    return const SizedBox();
+                  },
+                ),
+              ),
+              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(keys.length, (index) {
+                  return FlSpot(index.toDouble(), groupedData[keys[index]]!.toDouble());
+                }),
+                isCurved: true,
+                color: const Color(0xFFC2185B),
+                barWidth: 3,
+                belowBarData: BarAreaData(show: true, color: const Color(0xFFC2185B).withOpacity(0.1)),
+                dotData: const FlDotData(show: true),
+              ),
+            ],
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(keys.length, (index) {
-              return FlSpot(index.toDouble(), groupedData[keys[index]]!.toDouble());
-            }),
-            isCurved: true,
-            color: const Color(0xFFC2185B),
-            barWidth: 3,
-            belowBarData: BarAreaData(show: true, color: const Color(0xFFC2185B).withOpacity(0.1)),
-            dotData: const FlDotData(show: true),
-          ),
-        ],
       ),
     );
   }
@@ -504,4 +525,38 @@ class _AdminLaporanScreenState extends State<AdminLaporanScreen> {
     );
     await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
   }
+
+  void _generateExcel() {
+    try {
+      ExcelService.downloadLaporan(
+        data: _filteredData,
+        period: _getPeriodText(),
+        totalRevenue: _totalRevenue,
+        totalPatients: _totalPatients,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+              SizedBox(width: 10),
+              Text('File Excel berhasil diunduh!'),
+            ],
+          ),
+          backgroundColor: Color(0xFF1B7A47),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengunduh Excel: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 }
+

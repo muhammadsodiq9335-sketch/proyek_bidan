@@ -129,30 +129,32 @@ class KonfirmasiBidanScreen extends StatelessWidget {
                               color: Color(0xFF00897B), size: 20),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'LAYANAN',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.black45,
-                                letterSpacing: 0.5,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'LAYANAN',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black45,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                            Text(
-                              layanan,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B2E35),
+                              Text(
+                                layanan,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1B2E35),
+                                ),
                               ),
-                            ),
-                            Text(
-                              isHomeCare ? 'Kunjungan Rumah • 60 Menit' : 'Datang ke Klinik • 60 Menit',
-                              style: const TextStyle(fontSize: 11, color: Colors.black45),
-                            ),
-                          ],
+                              Text(
+                                isHomeCare ? 'Kunjungan Rumah • 60 Menit' : 'Datang ke Klinik • 60 Menit',
+                                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

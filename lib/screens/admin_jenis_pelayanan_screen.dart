@@ -70,7 +70,9 @@ class _AdminJenisPelayananScreenState extends State<AdminJenisPelayananScreen> {
     if (data.isEmpty) return [const Padding(padding: EdgeInsets.all(30), child: Center(child: Text("Belum ada data", style: TextStyle(color: _textSecondary))))];
     return data.map((json) {
       final hargaRaw = json['harga'];
-      final hargaFormatted = (hargaRaw is int) ? "Rp $hargaRaw" : (hargaRaw?.toString() ?? "Rp 0");
+      String hargaStr = hargaRaw?.toString() ?? "0";
+      hargaStr = hargaStr.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+      final hargaFormatted = "Rp $hargaStr";
       final layanan = JenisPelayanan(nama: json['nama'] ?? '-', deskripsi: json['deskripsi'] ?? '-', harga: hargaFormatted, kategori: json['kategori'] ?? '-');
       return _card(layanan, json['id']?.toString());
     }).toList();
@@ -123,7 +125,7 @@ class _AdminJenisPelayananScreenState extends State<AdminJenisPelayananScreen> {
 
   Widget _bottomNav(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: 1, type: BottomNavigationBarType.fixed, selectedItemColor: _accent, unselectedItemColor: const Color(0xFFB0BEC5),
+      currentIndex: 4, type: BottomNavigationBarType.fixed, selectedItemColor: _accent, unselectedItemColor: const Color(0xFFB0BEC5),
       onTap: (index) {
         if (index == 0) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
         if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => AdminChatListScreen()));

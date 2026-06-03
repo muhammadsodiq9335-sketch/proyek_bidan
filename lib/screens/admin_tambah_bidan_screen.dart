@@ -19,8 +19,6 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
   static const _cardShadow = [BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3))];
 
   final namaC = TextEditingController();
-  final nikC = TextEditingController();
-  final nipC = TextEditingController();
   final strC = TextEditingController();
   final hpC = TextEditingController();
   final alamatC = TextEditingController();
@@ -34,8 +32,6 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
     super.initState();
     if (widget.isEdit && widget.data != null) {
       namaC.text = widget.data!["nama"] ?? "";
-      nikC.text = widget.data!["nik"] ?? "";
-      nipC.text = widget.data!["nip"] ?? "";
       strC.text = widget.data!["str"]?.replaceAll("No. STR: ", "") ?? "";
       hpC.text = widget.data!["hp"] ?? "";
       alamatC.text = widget.data!["alamat"] ?? "";
@@ -76,8 +72,6 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
     setState(() => _isLoading = true);
     final dataBaru = {
       "nama": namaC.text, 
-      "nik": nikC.text, 
-      "nip": nipC.text, 
       "str": "No. STR: ${strC.text}", 
       "hp": hpC.text, 
       "alamat": alamatC.text,
@@ -141,8 +135,6 @@ class _AdminTambahBidanScreenState extends State<AdminTambahBidanScreen> {
             ),
             const SizedBox(height: 20),
             _input("Nama Lengkap", "Contoh: Siti Aminah, S.Tr.Keb", namaC, Icons.person_outline),
-            _input("NIK (KTP)", "16 Digit Nomor Induk Kependudukan", nikC, Icons.credit_card_outlined),
-            _input("NIP (Pegawai)", "Nomor Induk Pegawai", nipC, Icons.badge_outlined),
             _input("Nomor STR", "Surat Tanda Registrasi", strC, Icons.verified_outlined),
             _input("No. HP", "08xx xxxx xxxx", hpC, Icons.phone_outlined),
             _input("Alamat Lengkap", "Jl. Raya Utama No.12", alamatC, Icons.location_on_outlined),

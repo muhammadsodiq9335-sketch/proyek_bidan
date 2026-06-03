@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Segoe UI',
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
       routes: {
         '/dashboard': (context) => const DashboardScreen(),
         '/admin_dashboard': (context) => const AdminDashboardScreen(),

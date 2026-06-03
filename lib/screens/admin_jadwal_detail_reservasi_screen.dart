@@ -77,7 +77,7 @@ class _AdminJadwalDetailReservasiScreenState
       await _supabaseService.updateStatusReservasi(
         widget.data['id'],
         status,
-        statusPelayanan: status == 'Dikonfirmasi' ? 'Diproses' : null,
+        statusPelayanan: status == 'Dikonfirmasi' ? 'Menunggu' : null,
         bidanId: bidanId,
         alasanDitolak: alasan,
       );
@@ -665,13 +665,15 @@ class _AdminJadwalDetailReservasiScreenState
             child: Icon(icon, color: _accent, size: 20),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 1, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 1, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
+              ],
+            ),
           ),
         ],
       ),

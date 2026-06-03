@@ -5,6 +5,19 @@ import '../models/artikel_pdf.dart';
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  // ================= AUTHENTICATION =================
+  Future<void> resetPassword(String email) async {
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'io.supabase.bidanapp://login-callback/',
+      );
+    } catch (e) {
+      print('Error resetPassword: $e');
+      rethrow;
+    }
+  }
+
   // ================= USERS =================
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
@@ -574,10 +587,21 @@ class SupabaseService {
     try {
       final res = await _supabase
           .from('reservasi')
-          .select()
+          .select('''
+            *,
+            bidan:bidan_id ( nama )
+          ''')
           .eq('status', 'Selesai')
           .order('tanggal', ascending: true);
-      return List<Map<String, dynamic>>.from(res);
+      return (res as List).map((r) {
+        final map = Map<String, dynamic>.from(r as Map);
+        // Flatten joined bidan name
+        final bidan = map['bidan'];
+        if (bidan is Map && bidan['nama'] != null) {
+          map['nama_bidan'] = bidan['nama'];
+        }
+        return map;
+      }).toList();
     } catch (e) {
       print('Error getReportData: $e');
       return [];

@@ -441,10 +441,14 @@ class _ChatScreenState extends State<ChatScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1B2E35)),
           onPressed: () {
-            if (widget.isAdmin) {
-              Navigator.of(context).pushNamedAndRemoveUntil('/admin_dashboard', (route) => false);
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
             } else {
-              Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+              if (widget.isAdmin) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/admin_dashboard', (route) => false);
+              } else {
+                Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+              }
             }
           },
         ),
@@ -561,9 +565,9 @@ class _ChatScreenState extends State<ChatScreen> {
                               onTap: isLocation ? () async {
                                 final address = text.replaceFirst('📍 ', '').replaceFirst('[Lokasi] ', '');
                                 final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
-                                if (await canLaunchUrl(url)) {
+                                try {
                                   await launchUrl(url, mode: LaunchMode.externalApplication);
-                                } else {
+                                } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Tidak dapat membuka peta')),
                                   );

@@ -29,6 +29,13 @@ class _AdminDetailPelayananScreenState
   bool get _isAlreadyPaid => widget.pasien['status'] == 'Selesai' ||
                              widget.pasien['status_pelayanan'] == 'Selesai & Pulang';
 
+  // SOAP terkunci jika sudah lanjut ke pembayaran atau sudah lunas
+  bool get _isSoapLocked =>
+      widget.pasien['status'] == 'Selesai' ||
+      widget.pasien['status_pelayanan'] == 'Selesai & Pulang' ||
+      widget.pasien['status'] == 'Menunggu Pembayaran' ||
+      widget.pasien['status'] == 'Menunggu Konfirmasi Pembayaran';
+
   // ================= DESIGN TOKENS =================
   static const _bgScaffold = Color(0xFFFCE4EC);
   static const _bgInner = Color(0xFFFFF0F5);
@@ -252,6 +259,26 @@ class _AdminDetailPelayananScreenState
                       ],
                     ),
                     const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _bgInner,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("BIDAN", style: TextStyle(fontSize: 10, color: _textSecondary, letterSpacing: 1)),
+                          const SizedBox(height: 4),
+                          Text(
+                            pasien['nama_bidan'] ?? 'Bidan Belum Ditentukan',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
@@ -366,7 +393,7 @@ class _AdminDetailPelayananScreenState
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
-                                "Layanan sedang/telah dilakukan",
+                                "Layanan telah dilakukan",
                                 style: TextStyle(fontWeight: FontWeight.w500, color: _textPrimary),
                               ),
                             ),
@@ -388,28 +415,28 @@ class _AdminDetailPelayananScreenState
                         _subjectiveController,
                         maxLines: 3,
                         hint: "Masukkan keluhan atau kondisi yang dirasakan pasien saat ini...",
-                        readOnly: _isAlreadyPaid,
+                        readOnly: _isSoapLocked,
                       ),
                       _buildTextField(
                         "Objective (O) - Hasil Pemeriksaan Fisik & Vital Sign",
                         _objectiveController,
                         maxLines: 3,
                         hint: "Tensi, berat badan, suhu, detak jantung, dll...",
-                        readOnly: _isAlreadyPaid,
+                        readOnly: _isSoapLocked,
                       ),
                       _buildTextField(
                         "Assessment (A) - Diagnosa & Analisa Medis",
                         _assessmentController,
                         maxLines: 3,
                         hint: "Diagnosa medis atau hasil analisis kondisi pasien...",
-                        readOnly: _isAlreadyPaid,
+                        readOnly: _isSoapLocked,
                       ),
                       _buildTextField(
                         "Plan (P) - Rencana Tindakan & Rekomendasi",
                         _planController,
                         maxLines: 3,
                         hint: "Rencana terapi, pemberian obat, saran, atau jadwal kontrol berikutnya...",
-                        readOnly: _isAlreadyPaid,
+                        readOnly: _isSoapLocked,
                       ),
                     ],
                      const SizedBox(height: 24),

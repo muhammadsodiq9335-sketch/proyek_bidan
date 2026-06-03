@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../notifikasi_screen.dart';
 import '../riwayat_reservasi_screen.dart';
+import '../kontraksi_screen.dart';
 import '../../services/supabase_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/notification_service.dart';
 
 class BerandaPage extends StatefulWidget {
   final Function(int) onTabChange;
@@ -15,15 +17,87 @@ class BerandaPage extends StatefulWidget {
 
 class _BerandaPageState extends State<BerandaPage> {
   final SupabaseService _supabaseService = SupabaseService();
+  final NotificationService _notifService = NotificationService();
   List<Map<String, dynamic>> _lastReservations = [];
   List<Map<String, dynamic>> _bidanList = [];
   bool _isLoading = true;
   bool _hasUnreadNotif = false;
+  RealtimeChannel? _notifChannel;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _subscribeNotifikasi();
+  }
+
+  void _subscribeNotifikasi() {
+    final userId = AuthService.currentUserProfile?.id;
+    if (userId == null) return;
+
+    _notifChannel = Supabase.instance.client
+        .channel('pasien_notif_$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notifikasi',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) async {
+            final newNotif = payload.newRecord;
+            final title = newNotif['title']?.toString() ?? 'Notifikasi Baru';
+            final message = newNotif['message']?.toString() ?? '';
+
+            // Bunyi + Getar
+            await _notifService.notify();
+
+            // Update badge & tampilkan SnackBar
+            if (mounted) {
+              setState(() => _hasUnreadNotif = true);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.notifications, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 13)),
+                            if (message.isNotEmpty)
+                              Text(message,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: const Color(0xFF00897B),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    _notifChannel?.unsubscribe();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -72,6 +146,7 @@ class _BerandaPageState extends State<BerandaPage> {
               _buildTopBar(context),
               _buildWelcomeSection(),
               _buildHeroBanner(context),
+              _buildMonitoringPersalinan(context),
               _buildBidanSection(),
               _buildReservasiTerakhir(context),
               const SizedBox(height: 24),
@@ -296,6 +371,92 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
+
+  // ── Monitoring Persalinan ──
+  Widget _buildMonitoringPersalinan(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Monitoring Persalinan',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1B2E35),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Penghitung Kontraksi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B2E35),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Pantau durasi dan frekuensi kontraksi Bunda secara real-time.',
+                        style: TextStyle(fontSize: 11, color: Colors.black45, height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const KontraksiScreen()),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00897B),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.timer_outlined, color: Colors.white, size: 14),
+                              SizedBox(width: 6),
+                              Text(
+                                'Mulai Timer',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(Icons.timer_outlined, size: 52, color: Colors.pink.shade100),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── Reservasi Terakhir ──
   Widget _buildReservasiTerakhir(BuildContext context) {

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
+import '../widgets/admin_bottom_nav.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -11,7 +14,9 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final SupabaseService _supabaseService = SupabaseService();
+  final NotificationService _notifService = NotificationService();
   late Future<List<Map<String, dynamic>>> _reservasiFuture;
+  RealtimeChannel? _reservasiChannel;
 
   // ================= DESIGN TOKENS =================
   static const _bgScaffold = Color(0xFFFCE4EC);
@@ -29,6 +34,83 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _reservasiFuture = _supabaseService.getReservasi();
+    _subscribeReservasi();
+  }
+
+  void _subscribeReservasi() {
+    _reservasiChannel = Supabase.instance.client
+        .channel('admin_reservasi_changes')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'reservasi',
+          callback: (payload) async {
+            // Reservasi baru masuk
+            final newData = payload.newRecord;
+            final status = newData['status']?.toString() ?? '';
+            if (status == 'Menunggu Persetujuan') {
+              await _notifService.notifyUrgent();
+              _refreshData();
+              if (mounted) {
+                final nama = newData['nama_pasien'] ?? 'Pasien';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('Reservasi baru dari $nama!')),
+                      ],
+                    ),
+                    backgroundColor: const Color(0xFFE65100),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'reservasi',
+          callback: (payload) async {
+            // Pasien konfirmasi sudah bayar
+            final newData = payload.newRecord;
+            final status = newData['status']?.toString() ?? '';
+            if (status == 'Menunggu Konfirmasi Pembayaran') {
+              await _notifService.notifyUrgent();
+              _refreshData();
+              if (mounted) {
+                final nama = newData['nama_pasien'] ?? 'Pasien';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.payment, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('$nama sudah konfirmasi pembayaran!')),
+                      ],
+                    ),
+                    backgroundColor: const Color(0xFF00897B),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    _reservasiChannel?.unsubscribe();
+    super.dispose();
   }
 
   void _refreshData() {
@@ -63,7 +145,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgScaffold,
-      bottomNavigationBar: _bottomNav(context, 0),
+      bottomNavigationBar: const AdminBottomNav(currentIndex: 0),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _reservasiFuture,
@@ -157,11 +239,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           image: NetworkImage(AuthService.currentUserProfile!.fotoUrl!),
                           fit: BoxFit.cover,
                         )
-                      : null,
+                      : const DecorationImage(
+                          image: AssetImage('assets/images/logo.png'),
+                          fit: BoxFit.cover,
+                        ),
                 ),
-                child: AuthService.currentUserProfile?.fotoUrl == null || AuthService.currentUserProfile!.fotoUrl!.isEmpty
-                    ? const Icon(Icons.local_hospital_rounded, color: _accent, size: 20)
-                    : null,
               ),
               const SizedBox(width: 10),
               const Column(
@@ -190,16 +272,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onPressed: () => Navigator.pushNamed(context, '/admin_laporan'),
                 icon: const Icon(Icons.bar_chart_rounded, color: _accent, size: 24),
                 tooltip: 'Laporan Pelayanan',
-              ),
-              const SizedBox(width: 4),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: _bgInner,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.person_outline, color: _textSecondary, size: 20),
               ),
             ],
           ),
@@ -399,12 +471,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> _getSchedules(List<Map<String, dynamic>> reservations) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final maxDate = today.add(const Duration(days: 1));
+    final maxDate = today.add(const Duration(days: 2));
 
     return reservations.where((res) {
       final date = _safeParseDate(res['tanggal']);
       final itemDate = DateTime(date.year, date.month, date.day);
+      
+      final statusPelayanan = res['status_pelayanan'] ?? 'Menunggu';
+      final isServiceDone = statusPelayanan == 'Diproses' || statusPelayanan == 'Selesai & Pulang';
+      
       return res['status'] == 'Dikonfirmasi' &&
+          !isServiceDone &&
           !itemDate.isBefore(today) &&
           !itemDate.isAfter(maxDate);
     }).toList()
@@ -502,43 +579,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             style: TextStyle(color: _accent, fontWeight: FontWeight.w600, fontSize: 12),
           ),
         ),
-      ],
-    );
-  }
-
-  // ================= NAV =================
-  Widget _bottomNav(BuildContext context, int currentIndex) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFFC2185B),
-      unselectedItemColor: Colors.grey,
-      onTap: (index) {
-        if (index == currentIndex) return;
-        switch (index) {
-          case 0:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/admin_jadwal');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/admin_chat_list');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
-            break;
-          case 4:
-            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
       ],
     );
   }

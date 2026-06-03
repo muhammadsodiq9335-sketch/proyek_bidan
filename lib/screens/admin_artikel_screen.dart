@@ -157,8 +157,10 @@ class _AdminArtikelScreenState extends State<AdminArtikelScreen> {
                       trailing: IconButton(icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFE53935)), onPressed: () => _deleteArtikel(artikel.id, artikel.namaFile)),
                       onTap: () async {
                         final url = Uri.parse(artikel.urlPdf);
-                        if (await canLaunchUrl(url)) {
+                        try {
                           await launchUrl(url, mode: LaunchMode.externalApplication);
+                        } catch (e) {
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal membuka link")));
                         }
                       },
                     ),

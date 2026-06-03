@@ -106,6 +106,18 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
     return months[month - 1];
   }
 
+  String _formatDateToDDMMYY(String dateString) {
+    if (dateString.isEmpty || dateString.length < 10) return dateString;
+    try {
+      final parts = dateString.split('-');
+      if (parts.length == 3) {
+        final year = parts[0].length >= 4 ? parts[0].substring(2) : parts[0];
+        return "${parts[2]}/${parts[1]}/$year";
+      }
+    } catch (_) {}
+    return dateString;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,7 +184,7 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                     'Tanggal Lahir',
                     AuthService.currentUserProfile!.tglLahir.isEmpty
                         ? '(Belum diisi)'
-                        : AuthService.currentUserProfile!.tglLahir,
+                        : _formatDateToDDMMYY(AuthService.currentUserProfile!.tglLahir),
                   ),
                   const SizedBox(height: 12),
                   _buildReadOnlyRow(
@@ -495,8 +507,10 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
                   runSpacing: 8,
                   children: jamList.map((jam) {
                     final isFull = _selectedDate != null &&
+                        _selectedBidanId != null &&
                         _existingReservations.any((res) =>
                             res['jam'] == jam &&
+                            res['bidan_id']?.toString() == _selectedBidanId &&
                             res['status'] != 'Dibatalkan' &&
                             res['status'] != 'Selesai');
                     final isSelected = _selectedJam == jam;
@@ -557,6 +571,15 @@ class _FormulirReservasiScreenState extends State<FormulirReservasiScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  if (_keluhanController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mohon isi keluhan awal Anda terlebih dahulu'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
                   if (_selectedDate == null || _selectedJam == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

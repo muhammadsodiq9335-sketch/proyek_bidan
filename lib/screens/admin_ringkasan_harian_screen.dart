@@ -69,7 +69,10 @@ class _AdminRingkasanHarianScreenState
 
           final allToday = allReservations.where((e) {
             final date = DateTime.tryParse(e['tanggal'] ?? '') ?? DateTime.now();
-            return date.year == now.year &&
+            final status = e['status'];
+            final isExcluded = status == 'Ditolak' || status == 'Dibatalkan';
+            return !isExcluded &&
+                date.year == now.year &&
                 date.month == now.month &&
                 date.day == now.day;
           }).toList();

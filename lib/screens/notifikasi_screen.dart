@@ -133,7 +133,6 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
   Widget _buildNotifCard(Map<String, dynamic> notif) {
     // Mapping icon from DB (string/int) to IconData
     IconData getIcon(dynamic iconData) {
-      if (iconData is int) return IconData(iconData, fontFamily: 'MaterialIcons');
       if (iconData is String) {
         if (iconData == 'calendar_today') return Icons.calendar_today;
         if (iconData == 'info') return Icons.info_outline;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import '../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_chat_list_screen.dart';
@@ -38,9 +39,23 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
   static const _cardRadius = 16.0;
   static const _cardShadow = [BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3))];
 
+  double _jarakKm = 0.0;
+  final int _ongkosPerKm = 3000;
+  final TextEditingController _jarakController = TextEditingController();
+
   bool get _isAlreadyPaid =>
       widget.pasien['status'] == 'Selesai' ||
       widget.pasien['status_pelayanan'] == 'Selesai & Pulang';
+      
+  bool get _isMenungguPembayaran => widget.pasien['status'] == 'Menunggu Pembayaran';
+  bool get _isMenungguKonfirmasi => widget.pasien['status'] == 'Menunggu Konfirmasi Pembayaran';
+
+  bool get _isLocked => _isAlreadyPaid || _isMenungguPembayaran || _isMenungguKonfirmasi;
+
+  bool get _isHomeCare {
+    final String tipeLayanan = widget.pasien['tipe_layanan'] ?? 'Klinik';
+    return tipeLayanan.toLowerCase().contains('home') || widget.pasien['is_home_care'] == true;
+  }
 
   int get tambahan => _selectedAdditionalServices.fold(0, (sum, item) {
     String priceStr = item['harga']?.toString() ?? "0";
@@ -48,7 +63,9 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     return sum + (int.tryParse(priceStr) ?? 0);
   });
 
-  int get total => subtotal + tambahan;
+  int get ongkosKirim => (_jarakKm * _ongkosPerKm).round();
+
+  int get total => subtotal + tambahan + ongkosKirim;
 
   @override
   void initState() {
@@ -56,8 +73,20 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     String priceStr = (widget.pasien['harga'] ?? "85000").toString();
     priceStr = priceStr.replaceAll(RegExp(r'[^0-9]'), '');
     subtotal = int.tryParse(priceStr) ?? 85000;
+    
+    _jarakKm = double.tryParse(widget.pasien['jarak_km']?.toString() ?? '0') ?? 0.0;
+    _jarakController.text = _jarakKm > 0 ? _jarakKm.toString().replaceAll(RegExp(r'\.0$'), '') : "";
+    
+    _selectedPaymentMethod = widget.pasien['metode_pembayaran'] ?? 'Tunai';
+
     _fetchAvailableServices();
     _fetchPaymentSettings();
+  }
+
+  @override
+  void dispose() {
+    _jarakController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchPaymentSettings() async {
@@ -117,36 +146,72 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
   }
 
   void _toggleService(Map<String, dynamic> service) {
-    if (_isAlreadyPaid) return; // prevent changes if already paid
+    if (_isLocked) return; // prevent changes if already billed/paid
     setState(() {
       final index = _selectedAdditionalServices.indexWhere((s) => s['id'] == service['id']);
       if (index != -1) { _selectedAdditionalServices.removeAt(index); } else { _selectedAdditionalServices.add(service); }
     });
   }
 
-  Future<void> _selesaikanPembayaran() async {
+  Future<void> _kirimTagihan() async {
     setState(() => _isLoading = true);
     try {
       if (widget.pasien['id'] != null) {
-        await _supabaseService.updateReservasi(widget.pasien['id'].toString(), {'status': 'Selesai', 'status_pelayanan': 'Selesai & Pulang'});
+        await _supabaseService.updateReservasi(widget.pasien['id'].toString(), {
+          'status': 'Menunggu Pembayaran',
+          'jarak_km': _jarakKm,
+          'ongkos_kirim': ongkosKirim,
+          'total_tagihan': total,
+          'layanan_tambahan': jsonEncode(_selectedAdditionalServices),
+          'metode_pembayaran': _selectedPaymentMethod,
+        });
         
-        // Kirim Notifikasi ke Pasien untuk kasih Review
+        // Kirim Notifikasi ke Pasien
         if (widget.pasien['user_id'] != null) {
           await _supabaseService.tambahNotifikasi(
             userId: widget.pasien['user_id'].toString(),
-            title: 'Pelayanan Selesai ✨',
-            message: 'Pelayanan untuk ${widget.pasien['layanan']} telah selesai dan lunas. Yuk berikan bintang dan ulasan terbaik Bunda!',
+            title: 'Tagihan Pembayaran 🧾',
+            message: 'Tagihan untuk layanan ${widget.pasien['layanan']} telah diterbitkan. Silakan cek dan selesaikan pembayaran.',
             screen: 'riwayat',
           );
         }
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text("Pembayaran berhasil dikonfirmasi"), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
-        Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
-        Navigator.pushNamed(context, '/admin_ringkasan');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text("Tagihan berhasil dikirim ke Pasien"), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+        Navigator.pushNamedAndRemoveUntil(context, '/admin_pasien', (route) => route.settings.name == '/admin_dashboard');
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: $e")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal mengirim tagihan: $e")));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _konfirmasiLunas() async {
+    setState(() => _isLoading = true);
+    try {
+      if (widget.pasien['id'] != null) {
+        await _supabaseService.updateReservasi(widget.pasien['id'].toString(), {
+          'status': 'Selesai', 
+          'status_pelayanan': 'Selesai & Pulang',
+        });
+        
+        // Kirim Notifikasi ke Pasien
+        if (widget.pasien['user_id'] != null) {
+          await _supabaseService.tambahNotifikasi(
+            userId: widget.pasien['user_id'].toString(),
+            title: 'Pembayaran Diterima ✨',
+            message: 'Terima kasih, pembayaran untuk ${widget.pasien['layanan']} telah lunas. Yuk berikan bintang dan ulasan terbaik Bunda!',
+            screen: 'riwayat',
+          );
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text("Pembayaran berhasil dikonfirmasi LUNAS"), backgroundColor: _accent, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+        Navigator.pushNamedAndRemoveUntil(context, '/admin_ringkasan', (route) => route.settings.name == '/admin_dashboard');
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal konfirmasi: $e")));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -217,8 +282,11 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
                             final String patientId = pasien['user_id'] != null 
                                 ? pasien['user_id'].toString().substring(0, 8).toUpperCase() 
                                 : '-';
-                            final String tipeLayanan = pasien['tipe_layanan'] ?? 'Klinik';
-                            final bool isHomeCare = tipeLayanan.toLowerCase().contains('home');
+                            // Deteksi Home Care dari is_home_care, tipe_layanan, atau isHomeCare
+                            final bool isHomeCare = pasien['is_home_care'] == true ||
+                                pasien['isHomeCare'] == true ||
+                                (pasien['tipe_layanan']?.toString().toLowerCase().contains('home') ?? false);
+                            final String badgeLabel = isHomeCare ? 'Home Care' : 'Klinik';
                             final String tanggal = pasien['tanggal'] ?? '-';
                             
                             return Column(
@@ -254,7 +322,7 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
                                         ),
                                       ),
                                       child: Text(
-                                        tipeLayanan,
+                                        badgeLabel,
                                         style: TextStyle(
                                           fontSize: 9, 
                                           color: isHomeCare 
@@ -307,7 +375,7 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
           _cardContainer(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text("Layanan Tambahan", style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
-              if (!_isAlreadyPaid)
+              if (!_isLocked)
                 TextButton.icon(
                   onPressed: _showAddServiceSheet,
                   icon: const Icon(Icons.add_circle_rounded, size: 16, color: _accent),
@@ -320,7 +388,7 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
                 ),
             ]),
             const SizedBox(height: 4),
-            Text(_isAlreadyPaid ? "Pembayaran sudah selesai" : "Pilih layanan tambahan jika diperlukan", style: const TextStyle(fontSize: 11, color: _textSecondary)),
+            Text(_isLocked ? "Rincian biaya telah dikunci" : "Pilih layanan tambahan jika diperlukan", style: const TextStyle(fontSize: 11, color: _textSecondary)),
             const SizedBox(height: 14),
             if (_selectedAdditionalServices.isEmpty)
               const Padding(
@@ -350,6 +418,12 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
 
           const SizedBox(height: 14),
 
+          // ── ONGKOS KIRIM ──
+          if (_isHomeCare) ...[
+            _buildOngkosKirimSection(),
+            const SizedBox(height: 14),
+          ],
+
           // ── RINGKASAN TAGIHAN ──
           _cardContainer(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Row(children: [
@@ -368,7 +442,11 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
                 return Padding(padding: const EdgeInsets.symmetric(vertical: 2), child: _rowHarga(service['nama'] ?? '-', price, isSmall: true));
               }),
             ],
-            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
+            if (_isHomeCare && _jarakKm > 0) ...[
+              const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
+              _rowHarga("Ongkos Kirim (${_jarakKm.toString().replaceAll(RegExp(r'\.0$'), '')} km)", ongkosKirim),
+            ],
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Colors.black12)),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text("Total Tagihan", style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary, fontSize: 14)),
               Text(_formatCurrency(total), style: const TextStyle(fontWeight: FontWeight.bold, color: _accent, fontSize: 18)),
@@ -383,29 +461,158 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
           const SizedBox(height: 20),
 
           // ── BUTTON ──
-          SizedBox(width: double.infinity, child: ElevatedButton.icon(
-            onPressed: _isAlreadyPaid ? null : (_isLoading ? null : _selesaikanPembayaran),
-            icon: _isLoading
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Icon(_isAlreadyPaid ? Icons.check_circle_rounded : Icons.payment_rounded, size: 20),
-            label: Text(
-              _isAlreadyPaid ? "Pembayaran Selesai Dilakukan" : "Pembayaran Selesai",
-              style: const TextStyle(fontWeight: FontWeight.bold),
+          if (_isAlreadyPaid)
+            _buildPrimaryButton(
+              onPressed: null,
+              icon: Icons.check_circle_rounded,
+              label: "Pembayaran Lunas",
+              color: const Color(0xFF4CAF50),
+            )
+          else if (_isMenungguPembayaran)
+            _buildPrimaryButton(
+              onPressed: null,
+              icon: Icons.access_time_filled_rounded,
+              label: "Menunggu Pasien Membayar...",
+              color: Colors.orange,
+            )
+          else if (_isMenungguKonfirmasi)
+            _buildPrimaryButton(
+              onPressed: _isLoading ? null : _konfirmasiLunas,
+              icon: Icons.verified_rounded,
+              label: "Verifikasi & Konfirmasi Lunas",
+              color: _accent,
+            )
+          else 
+            _buildPrimaryButton(
+              onPressed: _isLoading ? null : _kirimTagihan,
+              icon: Icons.send_rounded,
+              label: "Kirim Tagihan ke Pasien",
+              color: _accent,
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isAlreadyPaid ? const Color(0xFF4CAF50) : _accent,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFF81C784),
-              disabledForegroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          )),
           const SizedBox(height: 10),
         ]),
       ),
       bottomNavigationBar: _bottomNav(context),
+    );
+  }
+
+  Widget _buildPrimaryButton({required VoidCallback? onPressed, required IconData icon, required String label, required Color color}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: _isLoading && onPressed != null
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Icon(icon, size: 20),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: color.withOpacity(0.6),
+          disabledForegroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOngkosKirimSection() {
+    return _cardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.two_wheeler_rounded, size: 18, color: _accent),
+                  SizedBox(width: 8),
+                  Text("Ongkos Transportasi", style: TextStyle(fontWeight: FontWeight.bold, color: _textPrimary)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _accentLight,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  "${_formatCurrency(_ongkosPerKm)}/km",
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _accent),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _bgInner,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _accent.withOpacity(0.1), width: 1),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Jarak Tempuh (km)", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                    SizedBox(
+                      width: 80,
+                      height: 36,
+                      child: TextField(
+                        controller: _jarakController,
+                        enabled: !_isLocked,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _textPrimary),
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                          filled: true,
+                          fillColor: _isAlreadyPaid ? Colors.grey.shade100 : Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: _accent),
+                          ),
+                        ),
+                        onChanged: (val) {
+                          setState(() {
+                            final normalized = val.replaceAll(',', '.');
+                            _jarakKm = double.tryParse(normalized) ?? 0.0;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Divider(height: 1, color: Colors.black12),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Estimasi Ongkos", style: TextStyle(fontSize: 12, color: _textSecondary)),
+                    Text(_formatCurrency(ongkosKirim), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _textPrimary)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -826,7 +1033,7 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
     final isSelected = _selectedPaymentMethod == method;
     return Expanded(
       child: GestureDetector(
-        onTap: _isAlreadyPaid ? null : () => setState(() => _selectedPaymentMethod = method),
+        onTap: _isLocked ? null : () => setState(() => _selectedPaymentMethod = method),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -885,7 +1092,7 @@ class _AdminDetailPembayaranScreenState extends State<AdminDetailPembayaranScree
         const SizedBox(width: 8),
         Text(_formatCurrency(harga), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _accent)),
         const SizedBox(width: 12),
-        if (!_isAlreadyPaid)
+        if (!_isLocked)
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
             onPressed: onDelete,

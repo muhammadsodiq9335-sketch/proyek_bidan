@@ -11,39 +11,103 @@ class ArtikelPage extends StatefulWidget {
 }
 
 class _ArtikelPageState extends State<ArtikelPage> {
+  final SupabaseService _supabaseService = SupabaseService();
+  late Future<List<ArtikelPdf>> _articlesFuture;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _articlesFuture = _supabaseService.getArtikelPdf();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final supabaseService = SupabaseService();
-
     return SafeArea(
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  "Artikel Kesehatan",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B2E35),
+              children: [
+                if (!_isSearching)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      "Artikel Kesehatan",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B2E35),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: "Cari artikel...",
+                          border: InputBorder.none,
+                          icon: Icon(Icons.search, color: Colors.grey),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
                   ),
+                IconButton(
+                  icon: Icon(_isSearching ? Icons.close : Icons.search, color: const Color(0xFF546E7A)),
+                  onPressed: () {
+                    setState(() {
+                      if (_isSearching) {
+                        _isSearching = false;
+                        _searchController.clear();
+                        _searchQuery = "";
+                      } else {
+                        _isSearching = true;
+                      }
+                    });
+                  },
                 ),
-                Icon(Icons.search, color: Color(0xFF546E7A)),
               ],
             ),
           ),
           Expanded(
             child: FutureBuilder<List<ArtikelPdf>>(
-              future: supabaseService.getArtikelPdf(),
+              future: _articlesFuture,
               builder: (context, snapshot) {
-                final articles = snapshot.data ?? [];
                 final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
                 if (isLoading) {
                   return const Center(child: CircularProgressIndicator());
+                }
+
+                var articles = snapshot.data ?? [];
+
+                if (_searchQuery.isNotEmpty) {
+                  articles = articles.where((article) => 
+                    article.namaFile.toLowerCase().contains(_searchQuery)
+                  ).toList();
                 }
 
                 if (articles.isEmpty) {
@@ -60,7 +124,7 @@ class _ArtikelPageState extends State<ArtikelPage> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   itemCount: articles.length,
                   itemBuilder: (context, index) {
                     final article = articles[index];
@@ -70,9 +134,9 @@ class _ArtikelPageState extends State<ArtikelPage> {
                     return GestureDetector(
                       onTap: () async {
                         final url = Uri.parse(article.urlPdf);
-                        if (await canLaunchUrl(url)) {
+                        try {
                           await launchUrl(url, mode: LaunchMode.externalApplication);
-                        } else {
+                        } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Tidak dapat membuka link")),

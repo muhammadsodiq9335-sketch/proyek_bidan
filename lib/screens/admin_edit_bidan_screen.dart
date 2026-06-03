@@ -18,8 +18,6 @@ class _AdminEditBidanScreenState extends State<AdminEditBidanScreen> {
   static const _cardShadow = [BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 3))];
 
   late final TextEditingController namaC;
-  late final TextEditingController nikC;
-  late final TextEditingController nipC;
   late final TextEditingController strC;
   late final TextEditingController hpC;
   late final TextEditingController alamatC;
@@ -28,21 +26,19 @@ class _AdminEditBidanScreenState extends State<AdminEditBidanScreen> {
   void initState() {
     super.initState();
     namaC = TextEditingController(text: widget.bidanData['nama'] ?? '');
-    nikC = TextEditingController(text: widget.bidanData['nik'] ?? '');
-    nipC = TextEditingController(text: widget.bidanData['nip'] ?? '');
-    strC = TextEditingController(text: (widget.bidanData['str'] ?? '').toString().replaceAll('No. STR: ', ''));
+    strC = TextEditingController(text: widget.bidanData['str']?.replaceAll('No. STR: ', '') ?? '');
     hpC = TextEditingController(text: widget.bidanData['hp'] ?? '');
     alamatC = TextEditingController(text: widget.bidanData['alamat'] ?? '');
   }
 
   @override
-  void dispose() { namaC.dispose(); nikC.dispose(); nipC.dispose(); strC.dispose(); hpC.dispose(); alamatC.dispose(); super.dispose(); }
+  void dispose() { namaC.dispose(); strC.dispose(); hpC.dispose(); alamatC.dispose(); super.dispose(); }
 
   Future<void> _simpan() async {
     if (namaC.text.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama wajib diisi'))); return; }
     setState(() => _isLoading = true);
     try {
-      await _supabaseService.updateBidan(widget.bidanData['id'].toString(), {'nama': namaC.text, 'nik': nikC.text, 'nip': nipC.text, 'str': 'No. STR: ${strC.text}', 'hp': hpC.text, 'alamat': alamatC.text});
+      await _supabaseService.updateBidan(widget.bidanData['id'].toString(), {'nama': namaC.text, 'str': 'No. STR: ${strC.text}', 'hp': hpC.text, 'alamat': alamatC.text});
       if (mounted) Navigator.pop(context);
     } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'))); }
     finally { if (mounted) setState(() => _isLoading = false); }
@@ -64,9 +60,7 @@ class _AdminEditBidanScreenState extends State<AdminEditBidanScreen> {
             CircleAvatar(radius: 36, backgroundColor: const Color(0xFFFFF0F5),
               child: Text(namaC.text.isNotEmpty ? namaC.text[0].toUpperCase() : '?', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _accent))),
             const SizedBox(height: 20),
-            _inputField('Nama Lengkap', 'Contoh: Siti Aminah', namaC, Icons.person_outline),
-            _inputField('NIK (KTP)', '16 Digit NIK', nikC, Icons.credit_card_outlined),
-            _inputField('NIP', 'Nomor Induk Pegawai', nipC, Icons.badge_outlined),
+            _inputField('Nama Lengkap', 'Nama Bidan', namaC, Icons.person_outline),
             _inputField('Nomor STR', 'Surat Tanda Registrasi', strC, Icons.verified_outlined),
             _inputField('No. HP', '08xx xxxx xxxx', hpC, Icons.phone_outlined),
             _inputField('Alamat', 'Alamat lengkap', alamatC, Icons.location_on_outlined),

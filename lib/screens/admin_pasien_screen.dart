@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../widgets/admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
 import 'admin_pengaturan_screen.dart';
@@ -84,11 +85,20 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     _loadData();
   }
 
-  // Filter by search (dari data yang sudah diload)
+  // Filter by search (dari data yang sudah diload) dan status pelayanan
   List<Map<String, dynamic>> get _filtered {
-    if (_searchQuery.isEmpty) return _allData;
+    // 1. Hanya tampilkan pasien yang sudah dilayani
+    final servicedData = _allData.where((r) {
+      final String statusPelayanan = r['status_pelayanan'] ?? 'Menunggu';
+      final bool isServiceDone = statusPelayanan == 'Diproses' || statusPelayanan == 'Selesai & Pulang';
+      final bool isSelesai = r['status'] == 'Selesai';
+      return isServiceDone || isSelesai;
+    }).toList();
+
+    // 2. Pencarian nama
+    if (_searchQuery.isEmpty) return servicedData;
     final q = _searchQuery.toLowerCase();
-    return _allData.where((r) {
+    return servicedData.where((r) {
       final nama = (r['nama_pasien'] ?? r['namaPasien'] ?? '').toString().toLowerCase();
       return nama.contains(q);
     }).toList();
@@ -134,7 +144,7 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _bottomNav(context),
+      bottomNavigationBar: const AdminBottomNav(currentIndex: 3),
     );
   }
 
@@ -470,9 +480,41 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     final nama = r['nama_pasien'] ?? r['namaPasien'] ?? '-';
     final tanggalLahir = r['tgl_lahir'];
     final alamat = r['alamat'] ?? r['lokasi'] ?? '-';
-    final isSelesai = r['status'] == 'Selesai' || r['status_pelayanan'] == 'Selesai & Pulang';
+    final String status = r['status'] ?? 'Menunggu Persetujuan';
+    final bool isSelesai = status == 'Selesai';
+    final bool isMenungguPembayaran = status == 'Menunggu Pembayaran';
+    final bool isMenungguKonfirmasi = status == 'Menunggu Konfirmasi Pembayaran';
+    
     final String statusPelayanan = r['status_pelayanan'] ?? 'Menunggu';
     final bool isServiceDone = statusPelayanan == 'Diproses' || statusPelayanan == 'Selesai & Pulang';
+
+    // Logika Tampilan Button
+    Color bgColor = Colors.grey.shade100;
+    Color textColor = Colors.grey;
+    String btnText = 'Belum\nPelayanan';
+    Border? border = Border.all(color: Colors.grey.shade300, width: 0.5);
+
+    if (isSelesai) {
+      bgColor = const Color(0xFFE8F5E9);
+      textColor = const Color(0xFF2E7D32);
+      btnText = 'Lunas';
+      border = null;
+    } else if (isMenungguKonfirmasi) {
+      bgColor = Colors.blue.shade50;
+      textColor = Colors.blue.shade700;
+      btnText = 'Menunggu\nKonfirmasi';
+      border = null;
+    } else if (isMenungguPembayaran) {
+      bgColor = Colors.orange.shade50;
+      textColor = Colors.orange.shade800;
+      btnText = 'Menunggu\nPembayaran';
+      border = null;
+    } else if (isServiceDone) {
+      bgColor = const Color(0xFFFFF0F5);
+      textColor = _accent;
+      btnText = 'Detail\nPembayaran';
+      border = null;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -500,25 +542,17 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
-                color: isSelesai 
-                    ? const Color(0xFFE8F5E9) 
-                    : (!isServiceDone ? Colors.grey.shade100 : const Color(0xFFFFF0F5)),
+                color: bgColor,
                 borderRadius: BorderRadius.circular(6),
-                border: isSelesai 
-                    ? null 
-                    : (!isServiceDone ? Border.all(color: Colors.grey.shade300, width: 0.5) : null),
+                border: border,
               ),
               child: Text(
-                isSelesai 
-                    ? 'Selesai' 
-                    : (!isServiceDone ? 'Belum\nPelayanan' : 'Detail\nPembayaran'),
+                btnText,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 9, 
                   fontWeight: FontWeight.bold, 
-                  color: isSelesai 
-                      ? const Color(0xFF2E7D32) 
-                      : (!isServiceDone ? Colors.grey : _accent),
+                  color: textColor,
                 ),
               ),
             ),
@@ -535,35 +569,4 @@ class _AdminPasienScreenState extends State<AdminPasienScreen> {
     return '${d.day} ${_monthNames[d.month - 1]}\n${d.year}';
   }
 
-  // ══════════════════════ BOTTOM NAV ══════════════════════
-  Widget _bottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 3, type: BottomNavigationBarType.fixed,
-      selectedItemColor: _accent, unselectedItemColor: const Color(0xFFB0BEC5),
-      onTap: (index) {
-        if (index == 3) return;
-        switch (index) {
-          case 0:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/admin_jadwal');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/admin_chat_list');
-            break;
-          case 4:
-            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
-    );
-  }
 }

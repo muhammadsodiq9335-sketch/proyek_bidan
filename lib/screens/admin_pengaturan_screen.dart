@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_jadwal_screen.dart';
-import 'admin_pengaturan_notif_screen.dart';
 import 'admin_pasien_screen.dart';
 import 'admin_cek_profil_bidan_screen.dart';
 import 'admin_jenis_pelayanan_screen.dart';
@@ -11,6 +10,7 @@ import 'admin_chat_list_screen.dart';
 import 'admin_artikel_screen.dart';
 import 'admin_laporan_screen.dart';
 import 'admin_pengaturan_pembayaran_screen.dart';
+import '../widgets/admin_bottom_nav.dart';
 
 class AdminPengaturanScreen extends StatefulWidget {
   const AdminPengaturanScreen({super.key});
@@ -49,7 +49,7 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _bottomNav(context),
+      bottomNavigationBar: const AdminBottomNav(currentIndex: 4),
     );
   }
 
@@ -71,30 +71,6 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
                   color: _textPrimary,
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PengaturanNotifikasiScreen(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _bgInner,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.notifications_outlined,
-                    size: 18,
-                    color: _textSecondary,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -108,21 +84,12 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _accent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.local_hospital_rounded, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 12),
+
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pengaturan Akun',
+                      'Pengaturan Admin',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -307,41 +274,6 @@ class _AdminPengaturanScreenState extends State<AdminPengaturanScreen> {
     );
   }
 
-  /// ================= NAV =================
-  Widget _bottomNav(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 4,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFFC2185B),
-      unselectedItemColor: const Color(0xFFB0BEC5),
-
-      onTap: (index) {
-        if (index == 4) return;
-        switch (index) {
-          case 0:
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/admin_jadwal');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/admin_chat_list');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
-            break;
-        }
-      },
-
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Dashboard"),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Jadwal"),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-        BottomNavigationBarItem(icon: Icon(Icons.payment), label: "Pembayaran"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Pengaturan"),
-      ],
-    );
-  }
 }
 
 class MenuItemData {

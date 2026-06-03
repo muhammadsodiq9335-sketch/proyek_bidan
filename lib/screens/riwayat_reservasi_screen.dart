@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'patient_view_rekam_medis_screen.dart';
+import 'pasien_tagihan_screen.dart';
 import '../services/supabase_service.dart';
 import '../services/auth_service.dart';
 
@@ -102,6 +103,9 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
     } else if (status == 'Bidan Diganti') {
       statusBg = const Color(0xFFFFF3E0);
       statusTextColor = const Color(0xFFE65100);
+    } else if (status == 'Menunggu Pembayaran' || status == 'Menunggu Konfirmasi Pembayaran') {
+      statusBg = const Color(0xFFFFF3E0);
+      statusTextColor = Colors.orange;
     } else if (status == 'Selesai') {
       statusBg = const Color(0xFFE3F2FD);
       statusTextColor = Colors.blue;
@@ -197,7 +201,7 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
               ),
             ],
           ),
-          if (status == 'Dikonfirmasi' || status == 'Selesai') ...[
+          if (status == 'Selesai') ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -276,6 +280,25 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
                 ],
               ],
             ),
+            if (status == 'Selesai') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => PasienTagihanScreen(pasien: res)));
+                    if (mounted) setState(() {});
+                  },
+                  icon: const Icon(Icons.receipt_long_rounded, size: 16, color: Colors.blue),
+                  label: const Text('Lihat Nota (Lunas)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.blue),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+            ],
           ] else if (status == 'Menunggu Persetujuan') ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -322,6 +345,56 @@ class _RiwayatReservasiScreenState extends State<RiwayatReservasiScreen> {
                   side: const BorderSide(color: Colors.redAccent),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+          ] else if (status == 'Menunggu Pembayaran') ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => PasienTagihanScreen(pasien: res)));
+                  if (result == true && mounted) {
+                    setState(() {});
+                  }
+                },
+                icon: const Icon(Icons.receipt_long_rounded, size: 18, color: Colors.white),
+                label: const Text('Lihat Tagihan & Bayar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
+          ] else if (status == 'Menunggu Konfirmasi Pembayaran') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(10)),
+              child: Row(
+                children: const [
+                  Icon(Icons.hourglass_empty_rounded, size: 16, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Menunggu Bidan memverifikasi pembayaran Anda.', style: TextStyle(fontSize: 11, color: Colors.orange))),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => PasienTagihanScreen(pasien: res)));
+                  if (mounted) setState(() {});
+                },
+                icon: const Icon(Icons.receipt_long_rounded, size: 16, color: Colors.orange),
+                label: const Text('Lihat Tagihan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.orange),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
               ),
             ),

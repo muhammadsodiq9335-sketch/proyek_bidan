@@ -95,6 +95,7 @@ class AuthService {
     final response = await _supabase.auth.signUp(
       email: email,
       password: password,
+      emailRedirectTo: 'io.supabase.bidanapp://login-callback/',
       data: {
         'nama': nama,
         'tgl_lahir': tglLahir,

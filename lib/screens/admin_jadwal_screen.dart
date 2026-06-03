@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
+import '../widgets/admin_bottom_nav.dart';
 import 'admin_jadwal_detail_reservasi_screen.dart';
 
 class AdminJadwalScreen extends StatefulWidget {
@@ -117,7 +118,7 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
           },
         ),
       ),
-      bottomNavigationBar: _bottomNav(context),
+      bottomNavigationBar: const AdminBottomNav(currentIndex: 1),
     );
   }
 
@@ -398,80 +399,6 @@ class _AdminJadwalScreenState extends State<AdminJadwalScreen> {
       if (i < start) return null;
       return DateTime(month.year, month.month, i - start + 1);
     });
-  }
-
-  // ================= NAV =================
- Widget _bottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-
-        /// 🔥 STYLE BARU
-        selectedItemColor: const Color(0xFFC2185B),
-        unselectedItemColor: const Color(0xFFB0BEC5),
-
-        selectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 10,
-          letterSpacing: 0.5,
-        ),
-
-        /// 🔥 NAVIGASI (TETAP PUNYA KAMU)
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushNamedAndRemoveUntil(context, '/admin_dashboard', (route) => false);
-          }
-          if (index == 1) {
-            // Already here
-          }
-          if (index == 2) {
-            Navigator.pushReplacementNamed(context, '/admin_chat_list');
-          }
-          if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/admin_pembayaran');
-          }
-          if (index == 4) {
-            Navigator.pushReplacementNamed(context, '/admin_pengaturan');
-          }
-        },
-
-        /// 🔥 ICON (SAMA, TAPI SUDAH IKUT WARNA)
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Dashboard",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: "Jadwal",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chat",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.payment),
-            label: "Pembayaran",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: "Pengaturan",
-          ),
-        ],
-      ),
-    );
   }
 }
 

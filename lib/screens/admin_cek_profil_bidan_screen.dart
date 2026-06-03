@@ -121,7 +121,7 @@ class _AdminCekProfilBidanScreenState
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            bidan['str'] ?? bidan['nip'] ?? '-',
+            bidan['str'] ?? '-',
             style: const TextStyle(fontSize: 12, color: _textSecondary),
           ),
         ),
